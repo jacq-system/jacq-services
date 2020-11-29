@@ -90,9 +90,9 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0)
             // basic query
             $sql = "SELECT `herbar_view`.GetScientificName( ts.`taxonID`, 0 ) AS `scientificName`,
                            ts.taxonID,
-                           ANY_VALUE(ts.tax_syn_ID) AS `tax_syn_ID`,
-                           ANY_VALUE(tc.`number`) AS `number`,
-                           ANY_VALUE(tc.`order`) AS `order`,
+                           ts.tax_syn_ID AS `tax_syn_ID`,
+                           tc.`number` AS `number`,
+                           tc.`order` AS `order`,
                            tr.rank_abbr,
                            tr.rank_hierarchy,
                            MAX(`has_children`.`tax_syn_ID` IS NOT NULL) AS `hasChildren`,
@@ -358,7 +358,7 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0)
     // ONLY_FULL_GROUP_BY,
     $sqlSyns = "SELECT ts.source_citationID AS referenceId,
                        `herbar_view`.GetProtolog(`ts`.`source_citationID`) AS `referenceName`,
-                       ANY_VALUE(ts.acc_taxon_ID) AS acceptedId
+                       ts.acc_taxon_ID AS acceptedId
                 FROM tbl_tax_synonymy ts
                  LEFT JOIN tbl_lit l ON l.citationID = ts.source_citationID
                  LEFT JOIN tbl_lit_authors le ON le.autorID = l.editorsID

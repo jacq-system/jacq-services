@@ -3,6 +3,13 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
+//use function OpenApi\scan;
+//        "zircote/swagger-php": "^3.1"
+
+
+/**
+ * @OA\Info(title="JACQ Webservices", version="0.1")
+ */
 
 /************************
  * include all settings *
@@ -77,6 +84,23 @@ $container['db'] = function ($c)
 /*******************
  * Register routes *
  *******************/
+/**
+ * @OA\Get(
+ *     path="/references/{referenceType}",
+ *     tags={"references"},
+ *     summary="Fetch a list of all references (which have a classification attached)",
+ *     @OA\Parameter(
+ *         name="referenceType",
+ *         in="path",
+ *         description="Type of references to return (citation, person, service, specimen, periodical)",
+ *         required=true,
+ *         @OA\Schema(
+ *             type="string"
+ *         )
+ *     ),
+ *     @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/references/{referenceType}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called references ");
@@ -146,6 +170,20 @@ $app->get('/periodicalStatistics/{referenceId}', function (Request $request, Res
     $jsonResponse = $response->withJson($statistics);
     return $jsonResponse;
 });
+
+/**
+ * @OA\Get(
+ *     path="/openapi",
+ *     tags={"documentation"},
+ *     summary="OpenAPI JSON File that describes the API",
+ *     @OA\Response(response="200", description="OpenAPI Description File"),
+ * )
+ */
+//$app->get('/openapi', function ($request, $response, $args) {
+//    $swagger = scan(__DIR__);
+//    $jsonResponse = $response->withJson($swagger);
+//    return $jsonResponse;
+//});
 
 $app->get('/[{name}]', function (Request $request, Response $response, array $args)
 {

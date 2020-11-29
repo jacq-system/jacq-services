@@ -2,3 +2,4 @@
 variables.php
 /rest/vendor/
 /rest/logs/
+composer.lock
