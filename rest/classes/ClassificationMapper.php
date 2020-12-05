@@ -75,13 +75,14 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0)
             $dbRows = $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
             foreach ($dbRows as $dbRow) {
                 $results[] = array(
-                    "taxonID"       => 0,
-                    "referenceId"   => $dbRow['referenceID'],
-                    "referenceName" => $dbRow['referenceName'],
-                    "referenceType" => "citation",
-                    "hasChildren"   => true,
-                    "hasType"       => false,
-                    "hasSpecimen"   => false,
+                    "taxonID"          => 0,
+                    "referenceId"      => $dbRow['referenceID'],
+                    "referenceName"    => $dbRow['referenceName'],
+                    "referenceType"    => "citation",
+                    "hasChildren"      => true,
+                    "hasType"          => false,
+                    "hasSpecimen"      => false,
+                    "insertedCitation" => false,
                 );
             }
             break;
@@ -125,14 +126,15 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0)
 
             foreach( $dbRows as $dbRow ) {
                 $results[] = array(
-                    "taxonID"       => $dbRow['taxonID'],
-                    "referenceId"   => intval($referenceID),
-                    "referenceName" => $dbRow['scientificName'],
-                    "referenceType" => "citation",
-                    "hasChildren"   => ($dbRow['hasChildren'] > 0 || $dbRow['hasSynonyms'] > 0 || $dbRow['hasBasionym']),
-                    "hasType"       => $this->hasType($dbRow['taxonID']),
-                    "hasSpecimen"   => $this->hasSpecimen($dbRow['taxonID']),
-                    "referenceInfo" => array(
+                    "taxonID"          => $dbRow['taxonID'],
+                    "referenceId"      => intval($referenceID),
+                    "referenceName"    => $dbRow['scientificName'],
+                    "referenceType"    => "citation",
+                    "hasChildren"      => ($dbRow['hasChildren'] > 0 || $dbRow['hasSynonyms'] > 0 || $dbRow['hasBasionym']),
+                    "hasType"          => $this->hasType($dbRow['taxonID']),
+                    "hasSpecimen"      => $this->hasSpecimen($dbRow['taxonID']),
+                    "insertedCitation" => false,
+                    "referenceInfo"    => array(
                         "number"         => $dbRow['number'],
                         "order"          => $dbRow['order'],
                         "rank_abbr"      => $dbRow['rank_abbr'],
@@ -140,6 +142,19 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0)
                         "tax_syn_ID"     => $dbRow['tax_syn_ID'],
                     )
                 );
+                $insertedCitations = $this->getInsertedCitation($referenceID, $dbRow['taxonID']);
+                if (!empty($insertedCitations)) {
+                    foreach ($insertedCitations as $citation) {
+                        $results[] = array(
+                            "taxonID"          => $citation['taxonID'],
+                            "referenceId"      => $citation['referenceId'],
+                            "referenceName"    => $citation['referenceName'],
+                            "referenceType"    => $citation['referenceType'],
+                            "hasChildren"      => $citation['hasChildren'],
+                            "insertedCitation" => true,
+                        );
+                    }
+                }
             }
             break;
     }
@@ -315,6 +330,10 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0)
              AND ts.acc_taxon_ID IS NULL
              AND ts.taxonID = $taxonIDfiltered
              AND (tc.tax_syn_ID IS NOT NULL OR has_children_syn.tax_syn_ID IS NOT NULL)
+             AND ts.source_citationID NOT IN (SELECT citationID
+                                              FROM tbl_classification_citation_insert
+                                              WHERE taxonID = $taxonIDfiltered
+                                               AND referenceId = $excludeReferenceIdfiltered)
             GROUP BY ts.source_citationID
             ORDER BY la.autor, l.jahr, le.autor, l.suptitel, lp.periodical, l.vol, l.part, l.pp";
     $dbRows = $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
@@ -322,7 +341,7 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0)
         // check for exclude id
         if ($dbRow['referenceId'] != $excludeReferenceIdfiltered) {
 
-            // check if there any classification children of the taxonID according to this reference?
+            // check if there are any classification children of the taxonID according to this reference?
             $child = $this->db->query("SELECT ts.taxonID
                                        FROM tbl_tax_synonymy ts
                                         LEFT JOIN tbl_tax_classification tc ON ts.tax_syn_ID = tc.tax_syn_ID
@@ -400,6 +419,58 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0)
 
     return $results;
 }
+
+public function getInsertedCitation($referenceID, $taxonID)
+{
+    $taxonIDfiltered = intval($taxonID);
+
+    $results = array();
+
+    $result = $this->db->query("SELECT citationID
+                                FROM tbl_classification_citation_insert
+                                WHERE taxonID = $taxonIDfiltered
+                                 AND referenceId = " . intval($referenceID) . "
+                                ORDER BY sequence");
+    if ($result->num_rows > 0) {
+        $dbRows = $result->fetch_all(MYSQLI_ASSOC);
+        foreach ($dbRows as $row) {
+            $referenceName = $this->db->query("SELECT `herbar_view`.GetProtolog(`citationID`) AS `referenceName`
+                                               FROM `tbl_lit`
+                                               WHERE `citationID` = " . $row['citationID'])->fetch_assoc();
+
+            // check if there are any classification children of the taxonID according to this reference?
+            $child = $this->db->query("SELECT ts.taxonID
+                                       FROM tbl_tax_synonymy ts
+                                        LEFT JOIN tbl_tax_classification tc ON ts.tax_syn_ID = tc.tax_syn_ID
+                                       WHERE ts.source_citationID = " . $row['citationID'] . "
+                                        AND ts.acc_taxon_ID IS NULL
+                                        AND tc.parent_taxonID = $taxonIDfiltered")
+                        ->fetch_assoc();
+            if ($child) {
+                $hasChildren = true;
+            } else {
+                $child = $this->db->query("SELECT ts.taxonID
+                                           FROM tbl_tax_synonymy ts
+                                           WHERE ts.source_citationID = " . $row['citationID'] . "
+                                            AND ts.acc_taxon_ID = $taxonIDfiltered")
+                            ->fetch_assoc();
+                $hasChildren = ($child) ? true : false;
+            }
+
+            $results[] = array(
+                'referenceName' => $referenceName['referenceName'],
+                'referenceId'   => $row['citationID'],
+                "referenceType" => "citation",
+                "taxonID"       => $taxonIDfiltered,
+                "hasChildren"   => $hasChildren,
+            );
+        }
+    }
+
+    return $results;
+}
+
+
 
 /**
  * Get the parent entry of a given reference
