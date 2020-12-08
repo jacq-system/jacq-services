@@ -82,7 +82,7 @@ $app->get('/scientificNames/{term}', function (Request $request, Response $respo
 //    $this->logger->addInfo("called scientificNames with <" . $args['term'] . ">");
 
     $mapper = new AutocompleteMapper($this->db);
-    $names = $mapper->getScientificNames($args['term']);
+    $names = $mapper->getScientificNames(trim(filter_var($args['term'], FILTER_SANITIZE_STRING)));
     $jsonResponse = $response->withJson($names);
     return $jsonResponse;
 });
