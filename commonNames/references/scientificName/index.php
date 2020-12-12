@@ -16,7 +16,7 @@ $row = $db->query("SELECT name FROM tbl_scientific_name_cache WHERE id = $scient
 $name = ($row) ? $row['name'] : '';
 
 // get all common names
-$service_url = $_CONFIG['JACQ_NAMES_SERVICE'] . '?query=' . rawurlencode('{"type":"/name/common","query":"' . $name . '"}');
+$service_url = $_CONFIG['JACQ_NAMES_SERVICE'] . '?query=' . rawurlencode($name);
 $curl = curl_init($service_url);
 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 $curl_response = curl_exec($curl);
@@ -40,7 +40,7 @@ $commonName_results = $commonNames['result']
 
 	<link rel="stylesheet" type="text/css" href="<?php $baseUrl; ?>css/main.css" />
 	<link rel="stylesheet" type="text/css" href="<?php $baseUrl; ?>css/form.css" />
-    <title></title>
+    <title>OpenUp! Common Names Webservice - ShowReferencesForScientificName CommonNames</title>
 </head>
 
 <body>

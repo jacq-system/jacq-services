@@ -116,7 +116,9 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
 //    $this->logger->addInfo("called references ");
 
     $mapper = new ClassificationMapper($this->db);
-    $nameReferences = $mapper->getNameReferences(intval($args['taxonID']), intval($request->getQueryParam('excludeReferenceId')));
+    $nameReferences = $mapper->getNameReferences(intval($args['taxonID']),
+                                                 intval($request->getQueryParam('excludeReferenceId')),
+                                                 intval($request->getQueryParam('insertSeries')));
     $jsonResponse = $response->withJson($nameReferences);
     return $jsonResponse;
 });
@@ -128,7 +130,8 @@ $app->get('/children/{referenceType}/{referenceId}', function (Request $request,
     $mapper = new ClassificationMapper($this->db);
     $children = $mapper->getChildren(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)),
                                      intval($args['referenceId']),
-                                     intval($request->getQueryParam('taxonID')));
+                                     intval($request->getQueryParam('taxonID')),
+                                     intval($request->getQueryParam('insertSeries')));
     $jsonResponse = $response->withJson($children);
     return $jsonResponse;
 });
@@ -140,7 +143,8 @@ $app->get('/synonyms/{referenceType}/{referenceId}/{taxonID}', function (Request
     $mapper = new ClassificationMapper($this->db);
     $synonyms = $mapper->getSynonyms(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)),
                                      intval($args['referenceId']),
-                                     intval($args['taxonID']));
+                                     intval($args['taxonID']),
+                                     intval($request->getQueryParam('insertSeries')));
     $jsonResponse = $response->withJson($synonyms);
     return $jsonResponse;
 });

@@ -56,9 +56,10 @@ public function getReferences ($referenceType)
  * @param string $referenceType Type of reference (periodical, citation, service, etc.)
  * @param int $referenceID ID of reference
  * @param int $taxonID optional ID of taxon
+ * @param int $insertSeries optional ID of cication-Series to insert
  * @return array structured array with classification information
  */
-public function getChildren($referenceType, $referenceID, $taxonID = 0)
+public function getChildren($referenceType, $referenceID, $taxonID = 0, $insertSeries = 0)
 {
     $results = array();
 
@@ -144,7 +145,7 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0)
                         "tax_syn_ID"     => $dbRow['tax_syn_ID'],
                     )
                 );
-                $insertedCitations = $this->getInsertedCitation($referenceID, $dbRow['taxonID']);
+                $insertedCitations = $this->getInsertedCitation($insertSeries, $referenceID, $dbRow['taxonID']);
                 if (!empty($insertedCitations)) {
                     foreach ($insertedCitations as $citation) {
                         $results[] = array(
@@ -226,9 +227,10 @@ public function getNumberOfChildrenWithChildrenCitation ($referenceID, $taxonID 
  * @param string $referenceType type of reference (periodical, citation, service, etc.)
  * @param int $referenceID ID of reference
  * @param int $taxonID ID of taxon name
+ * @param int $insertSeries optional ID of cication-Series to insert
  * @return array List of synonyms including extra information
  */
-public function getSynonyms($referenceType, $referenceID, $taxonID)
+public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSeries = 0)
 {
     $results = array();
     $basID = 0;
@@ -286,7 +288,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID)
                             'cited'         => true
                         )
                     );
-                    $insertedCitations = $this->getInsertedCitation($referenceID, $dbRow['taxonID']);
+                    $insertedCitations = $this->getInsertedCitation($insertSeries, $referenceID, $dbRow['taxonID']);
                     if (!empty($insertedCitations)) {
                         foreach ($insertedCitations as $citation) {
                             $results[] = array(
@@ -306,7 +308,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID)
 
     // if we have a basionym, prepend it to list
     if( $basionymResult != null ) {
-        $insertedCitations = $this->getInsertedCitation($referenceID, $basionymResult['taxonID']);
+        $insertedCitations = $this->getInsertedCitation($insertSeries, $referenceID, $basionymResult['taxonID']);
         if (!empty($insertedCitations)) {
             foreach ($insertedCitations as $citation) {
                 $buffer = array(
@@ -331,9 +333,10 @@ public function getSynonyms($referenceType, $referenceID, $taxonID)
  *
  * @param int $taxonID ID of name to look for
  * @param int $excludeReferenceId optional Reference-ID to exclude (to avoid returning the "active" reference)
+ * @param int $insertSeries optional ID of cication-Series to insert
  * @return array List of references which do include this name
  */
-public function getNameReferences($taxonID, $excludeReferenceId = 0)
+public function getNameReferences($taxonID, $excludeReferenceId = 0, $insertSeries = 0)
 {
     // check for valid parameter
     if ($taxonID <= 0) {
@@ -357,13 +360,16 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0)
             WHERE ts.source_citationID IS NOT NULL
              AND ts.acc_taxon_ID IS NULL
              AND ts.taxonID = $taxonID
-             AND (tc.tax_syn_ID IS NOT NULL OR has_children_syn.tax_syn_ID IS NOT NULL)
-             AND ts.source_citationID NOT IN (SELECT citationID
-                                              FROM tbl_classification_citation_insert
-                                              WHERE taxonID = $taxonID
-                                               AND referenceId = $excludeReferenceId)
-            GROUP BY ts.source_citationID
-            ORDER BY la.autor, l.jahr, le.autor, l.suptitel, lp.periodical, l.vol, l.part, l.pp";
+             AND (tc.tax_syn_ID IS NOT NULL OR has_children_syn.tax_syn_ID IS NOT NULL) ";
+    if ($insertSeries) {
+        $sql .= " AND ts.source_citationID NOT IN (SELECT citationID
+                                                   FROM tbl_classification_citation_insert
+                                                   WHERE series = $insertSeries
+                                                    AND taxonID = $taxonID
+                                                    AND referenceId = $excludeReferenceId)";
+    }
+    $sql .= " GROUP BY ts.source_citationID
+              ORDER BY la.autor, l.jahr, le.autor, l.suptitel, lp.periodical, l.vol, l.part, l.pp";
     $dbRows = $this->db->query($sql)->fetch_all(MYSQLI_ASSOC);
     foreach ($dbRows as $dbRow) {
         // check for exclude id
@@ -448,13 +454,14 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0)
     return $results;
 }
 
-public function getInsertedCitation($referenceID, $taxonID)
+public function getInsertedCitation($insertSeries, $referenceID, $taxonID)
 {
     $results = array();
 
     $result = $this->db->query("SELECT citationID
                                 FROM tbl_classification_citation_insert
-                                WHERE taxonID = $taxonID
+                                WHERE series = $insertSeries
+                                 AND taxonID = $taxonID
                                  AND referenceId = $referenceID
                                 ORDER BY sequence");
     if ($result->num_rows > 0) {
