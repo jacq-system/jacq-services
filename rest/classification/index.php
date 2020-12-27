@@ -33,6 +33,10 @@ $settings = [
             'path' => __DIR__ . '/../logs/classification.log',
             'level' => \Monolog\Logger::DEBUG,
         ],
+
+        'jacq_input_services' => $_CONFIG['JACQ_INPUT_SERVICES'],
+        'APIKEY' => $_CONFIG['APIKEY'],
+        'classifications_license' => $_CONFIG['classifications_license'],
     ],
 ];
 
@@ -178,6 +182,21 @@ $app->get('/periodicalStatistics/{referenceId}', function (Request $request, Res
     $mapper = new ClassificationMapper($this->db);
     $statistics = $mapper->getPeriodicalStatistics(intval($args['referenceId']));
     $jsonResponse = $response->withJson($statistics);
+    return $jsonResponse;
+});
+
+$app->get('/download/{referenceType}/{referenceId}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called download ");
+
+    $mapper = new ClassificationDownloadMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
+                                                                'apikey' => $this->get('settings')['APIKEY'],
+                                                                'classifications_license' => $this->get('settings')['classifications_license']));
+    $data = $mapper->createDownload(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)),
+                                    intval($args['referenceId']),
+                                    intval($request->getQueryParam('scientificNameId')),
+                                    filter_var($request->getQueryParam('hideScientificNameAuthors'), FILTER_SANITIZE_STRING));
+    $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
 
