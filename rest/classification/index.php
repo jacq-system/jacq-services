@@ -8,7 +8,7 @@ use Slim\Http\Response;
 
 
 /**
- * @OA\Info(title="JACQ Webservices", version="0.1")
+ * @OA\Info(title="JACQ Webservices: classification", version="0.1")
  */
 
 /************************
@@ -90,19 +90,16 @@ $container['db'] = function ($c)
  *******************/
 /**
  * @OA\Get(
- *     path="/references/{referenceType}",
- *     tags={"references"},
- *     summary="Fetch a list of all references (which have a classification attached)",
- *     @OA\Parameter(
- *         name="referenceType",
- *         in="path",
- *         description="Type of references to return (citation, person, service, specimen, periodical)",
- *         required=true,
- *         @OA\Schema(
- *             type="string"
- *         )
- *     ),
- *     @OA\Response(response="200", description="successful operation"),
+ *  path="/references/{referenceType}",
+ *  summary="Fetch a list of all references (which have a classification attached)",
+ *  @OA\Parameter(
+ *      name="referenceType",
+ *      in="path",
+ *      description="Type of reference (citation, person, service, specimen, periodical)",
+ *      required=true,
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/references/{referenceType}', function (Request $request, Response $response, array $args)
@@ -115,6 +112,32 @@ $app->get('/references/{referenceType}', function (Request $request, Response $r
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/nameReferences/{taxonID}",
+ *  summary="Return (other) references for this name which include them in their classification",
+ *  @OA\Parameter(
+ *      name="taxonID",
+ *      in="path",
+ *      description="ID of name to look for",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="excludeReferenceId",
+ *      in="query",
+ *      description="optional Reference-ID to exclude (to avoid returning the 'active' reference)",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="insertSeries",
+ *      in="query",
+ *      description="optional ID of cication-Series to insert",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/nameReferences/{taxonID}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called references ");
@@ -127,6 +150,39 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/children/{referenceType}/{referenceId}",
+ *  summary="Get classification children of a given taxonID according to a given reference",
+ *  @OA\Parameter(
+ *      name="referenceType",
+ *      in="path",
+ *      description="Type of reference (citation, person, service, specimen, periodical)",
+ *      required=true,
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="referenceId",
+ *      in="path",
+ *      description="ID of reference",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="taxonID",
+ *      in="query",
+ *      description="optional ID of taxon name",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="insertSeries",
+ *      in="query",
+ *      description="optional ID of cication-Series to insert",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/children/{referenceType}/{referenceId}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called children " . intval($request->getQueryParam('taxonID')));
@@ -140,6 +196,40 @@ $app->get('/children/{referenceType}/{referenceId}', function (Request $request,
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/synonyms/{referenceType}/{referenceId}/{taxonID}",
+ *  summary="fetch synonyms (and basionym) for a given taxonID, according to a given reference",
+ *  @OA\Parameter(
+ *      name="referenceType",
+ *      in="path",
+ *      description="Type of reference (citation, person, service, specimen, periodical)",
+ *      required=true,
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="referenceId",
+ *      in="path",
+ *      description="ID of reference",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="taxonID",
+ *      in="path",
+ *      description="ID of taxon name",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="insertSeries",
+ *      in="query",
+ *      description="optional ID of cication-Series to insert",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/synonyms/{referenceType}/{referenceId}/{taxonID}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called synonyms. args=" . var_export($args, true));
@@ -153,6 +243,34 @@ $app->get('/synonyms/{referenceType}/{referenceId}/{taxonID}', function (Request
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/parent/{referenceType}/{referenceId}/{taxonID}",
+ *  summary="Get the parent entry of a given reference",
+ *  @OA\Parameter(
+ *      name="referenceType",
+ *      in="path",
+ *      description="Type of reference (citation, person, service, specimen, periodical)",
+ *      required=true,
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="referenceId",
+ *      in="path",
+ *      description="ID of reference",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="taxonID",
+ *      in="path",
+ *      description="ID of taxon name",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/parent/{referenceType}/{referenceId}/{taxonID}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called parent. args=" . var_export($args, true));
@@ -165,6 +283,26 @@ $app->get('/parent/{referenceType}/{referenceId}/{taxonID}', function (Request $
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/numberOfChildrenWithChildrenCitation/{referenceId}",
+ *  summary="Get number of classification children who have children themselves of a given taxonID according to a given reference of type citation",
+ *  @OA\Parameter(
+ *      name="referenceId",
+ *      in="path",
+ *      description="ID of reference",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="taxonID",
+ *      in="query",
+ *      description="optional ID of taxon name",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/numberOfChildrenWithChildrenCitation/{referenceId}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called references ");
@@ -175,6 +313,20 @@ $app->get('/numberOfChildrenWithChildrenCitation/{referenceId}', function (Reque
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/periodicalStatistics/{referenceId}",
+ *  summary="Get statistics information of a given reference",
+ *  @OA\Parameter(
+ *      name="referenceId",
+ *      in="path",
+ *      description="ID of reference",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/periodicalStatistics/{referenceId}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called periodicalStatistics ");
@@ -185,6 +337,39 @@ $app->get('/periodicalStatistics/{referenceId}', function (Request $request, Res
     return $jsonResponse;
 });
 
+/**
+ * @OA\Get(
+ *  path="/download/{referenceType}/{referenceId}",
+ *  summary="Get an array, filled with header and data for download",
+ *  @OA\Parameter(
+ *      name="referenceType",
+ *      in="path",
+ *      description="Type of reference (citation, person, service, specimen, periodical)",
+ *      required=true,
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="referenceId",
+ *      in="path",
+ *      description="ID of reference",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="scientificNameId",
+ *      in="query",
+ *      description="optional ID of scientific name",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="hideScientificNameAuthors",
+ *      in="query",
+ *      description="hide authors name in scientific name (optional, default = use database)",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/download/{referenceType}/{referenceId}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called download ");

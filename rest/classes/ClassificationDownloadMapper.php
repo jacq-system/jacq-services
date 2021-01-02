@@ -26,6 +26,10 @@ private $outputHeaderPrefixLen;
  */
 private $outputBody = array();
 
+/**
+ * all necessary settings
+ * @var array
+ */
 private $settings;
 
 
@@ -36,6 +40,15 @@ public function __construct (mysqli $db, $settings)
     parent::__construct($db);
 }
 
+/**
+ * create an array, filled with header and data for download
+ *
+ * @param string $referenceType Type of reference (only 'citation' allowed at this time)
+ * @param int $referenceId ID of reference
+ * @param int $scientificNameId optional ID of scientific name
+ * @param mixed $hideScientificNameAuthors hide authors name in scientific name (default = use database)
+ * @return array data for download
+ */
 public function createDownload($referenceType, $referenceId, $scientificNameId = 0, $hideScientificNameAuthors = null)
 {
     if (empty($referenceType) || empty($referenceId)) {
@@ -55,7 +68,6 @@ public function createDownload($referenceType, $referenceId, $scientificNameId =
             break;
     }
 
-    // check if a certain scientific name id is specified & load the fitting synonymy entry
     $sql = "SELECT tsy.source_citationID, tsy.taxonID, tsy.acc_taxon_ID,
                    tr.rank_hierarchy,
                    tc.parent_taxonID,
@@ -65,6 +77,7 @@ public function createDownload($referenceType, $referenceId, $scientificNameId =
              LEFT JOIN tbl_tax_rank tr ON tr.tax_rankID = ts.tax_rankID
              LEFT JOIN tbl_lit l ON l.citationID = tsy.source_citationID
              LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = tsy.tax_syn_ID ";
+    // check if a certain scientific name id is specified & load the fitting synonymy entry
     if ($scientificNameId > 0) {
         $dbRowsTaxSynonymy[] = $this->db->query($sql . " WHERE tsy.source_citationID = $referenceId
                                                           AND tsy.acc_taxon_ID IS NULL
@@ -81,11 +94,13 @@ public function createDownload($referenceType, $referenceId, $scientificNameId =
 
     $this->outputHeaderPrefixLen = count($this->outputHeader);
 
+    // fetch all ranks, sorted by hierarchy for creating the headings of the download
     $tax_ranks = $this->getRankHierarchies();
     foreach ($tax_ranks as $rank) {
-        $this->outputHeader[] = $rank['rank'];
+        $this->outputHeader[$this->outputHeaderPrefixLen - 1 + $rank['hierarchy']] = $rank['rank'];
     }
 
+    // cycle through top-level elements and continue exporting their children
     foreach ($dbRowsTaxSynonymy as $dbRowTaxSynonymy) {
         $this->exportClassification(array(), $dbRowTaxSynonymy);
     }
@@ -97,6 +112,12 @@ public function createDownload($referenceType, $referenceId, $scientificNameId =
 
 ////////////////////////////// private functions //////////////////////////////
 
+/**
+ * Map a given tax synonymy entry to an array, including all children recursively
+ *
+ * @param array $parentTaxSynonymies an array of db-rows of all parent tax-synonymy entries
+ * @param array $taxSynonymy db-row of the currently active tax-synonym entry
+ */
 private function exportClassification ($parentTaxSynonymies, $taxSynonymy)
 {
 
@@ -125,8 +146,7 @@ private function exportClassification ($parentTaxSynonymies, $taxSynonymy)
     $taxSynonymySynonyms = $this->db->query("SELECT tsy.source_citationID, tsy.taxonID, tsy.acc_taxon_ID,
                                                     tr.rank_hierarchy,
                                                     tc.parent_taxonID,
-                                                    `herbar_view`.GetProtolog(l.citationID) AS citation,
-                                                    tc.classification_id
+                                                    `herbar_view`.GetProtolog(l.citationID) AS citation
                                              FROM tbl_tax_synonymy tsy
                                               LEFT JOIN tbl_tax_species ts ON ts.taxonID = tsy.taxonID
                                               LEFT JOIN tbl_tax_rank tr ON tr.tax_rankID = ts.tax_rankID
@@ -144,8 +164,7 @@ private function exportClassification ($parentTaxSynonymies, $taxSynonymy)
     $taxSynonymyChildren = $this->db->query("SELECT tsy.source_citationID, tsy.taxonID, tsy.acc_taxon_ID,
                                                     tr.rank_hierarchy,
                                                     tc.parent_taxonID,
-                                                    `herbar_view`.GetProtolog(l.citationID) AS citation,
-                                                    tc.classification_id
+                                                    `herbar_view`.GetProtolog(l.citationID) AS citation
                                              FROM tbl_tax_synonymy tsy
                                               LEFT JOIN tbl_tax_species ts ON ts.taxonID = tsy.taxonID
                                               LEFT JOIN tbl_tax_rank tr ON tr.tax_rankID = ts.tax_rankID

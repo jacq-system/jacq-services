@@ -509,7 +509,7 @@ public function getInsertedCitation($insertSeries, $referenceID, $taxonID)
  * Get the parent entry of a given reference
  *
  * @param string $referenceType type of reference (periodical, citation, service, etc.)
- * @param int $referenceID ID of reference
+ * @param int $referenceId ID of reference
  * @param int $taxonID ID of taxon name
  * @return array data of the parent
  */
