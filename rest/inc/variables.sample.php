@@ -5,3 +5,7 @@ $_CONFIG['DATABASES']['HERBARINPUT'] = array(
     "user" => "user",
     "pass" => "password"
 );
+$_CONFIG['JACQ_INPUT_SERVICES'] = "http://url-to-input-service/";
+$_CONFIG['APIKEY'] = "api-key";
+
+$_CONFIG['classifications_license'] = 'CC-BY-SA';

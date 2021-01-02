@@ -216,7 +216,7 @@ private function getHideScientificNameAuthors ($referenceId)
  */
 private function getUuidUrl ($type, $id)
 {
-    $curl = curl_init($this->settings['jacq_input_services'] . "uuid/$type/$id");
+    $curl = curl_init($this->settings['jacq_input_services'] . "tags/uuid/$type/$id");
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_HTTPHEADER, array('APIKEY: ' . $this->settings['apikey']));
     $curl_response = curl_exec($curl);
