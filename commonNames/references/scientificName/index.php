@@ -22,7 +22,7 @@ curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
 $curl_response = curl_exec($curl);
 curl_close($curl);
 $commonNames = json_decode($curl_response, true);
-$commonName_results = $commonNames['result']
+$commonName_results = $commonNames['result'];
 
 // show all common names with a score of at least 100
 
@@ -39,7 +39,6 @@ $commonName_results = $commonNames['result']
 	<![endif]-->
 
 	<link rel="stylesheet" type="text/css" href="<?php $baseUrl; ?>css/main.css" />
-	<link rel="stylesheet" type="text/css" href="<?php $baseUrl; ?>css/form.css" />
     <title>OpenUp! Common Names Webservice - ShowReferencesForScientificName CommonNames</title>
 </head>
 
@@ -58,7 +57,7 @@ $commonName_results = $commonNames['result']
     <?php
     foreach ($commonName_results as $commonName_result) {
         // only display 100% matches for reference
-        if ($commonName_result['score'] >= 100) {
+        if ($commonName_result['score'] >= 100 || $commonName_result['score'] == 0) {
             ?>
             <p>
                 <b><?php echo htmlspecialchars($commonName_result['name']); ?></b>
