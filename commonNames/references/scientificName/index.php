@@ -31,6 +31,7 @@ $commonName_results = $commonNames['result'];
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<meta name="language" content="en" />
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
 
 	<!-- blueprint CSS framework -->
 	<link rel="stylesheet" type="text/css" href="<?php echo $baseUrl; ?>css/screen.css" media="screen, projection" />
