@@ -3,7 +3,7 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-//use function OpenApi\scan;
+use function OpenApi\scan;
 //        "zircote/swagger-php": "^3.1"
 
 
@@ -69,15 +69,15 @@ $container['db'] = function ($c)
 
 //Add container to handle all runtime exceptions/errors, fail safe and return json
 //works only for PHP 7.x
-//$container['phpErrorHandler'] = function ($container) {
-//    return function ($request, $response, $exception) use ($container) {
-//        $data = [
-//            'message' => $exception->getMessage()
-//        ];
-//        $jsonResponse = $response->withStatus(500)->withJson($data);
-//        return $jsonResponse;
-//    };
-//};
+$container['phpErrorHandler'] = function ($container) {
+    return function ($request, $response, $exception) use ($container) {
+        $data = [
+            'message' => $exception->getMessage()
+        ];
+        $jsonResponse = $response->withStatus(500)->withJson($data);
+        return $jsonResponse;
+    };
+};
 
 
 
@@ -154,11 +154,11 @@ $app->get('/results/{periodStart}/{periodEnd}/{updated}/{type}/{interval}', func
  *     @OA\Response(response="200", description="OpenAPI Description File"),
  * )
  */
-//$app->get('/openapi', function ($request, $response, $args) {
-//    $swagger = scan(__DIR__);
-//    $jsonResponse = $response->withJson($swagger);
-//    return $jsonResponse;
-//});
+$app->get('/openapi', function ($request, $response, $args) {
+    $swagger = scan(__DIR__);
+    $jsonResponse = $response->withJson($swagger);
+    return $jsonResponse;
+});
 
 $app->get('/[{name}]', function (Request $request, Response $response, array $args)
 {

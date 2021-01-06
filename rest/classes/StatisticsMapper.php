@@ -22,23 +22,15 @@ public function getResults($periodStart, $periodEnd, $updated, $type, $interval)
     switch ($interval) {
         case 'day':
             $period = "dayofyear(l.timestamp) AS period";
-            $periodMin = $this->db->query("SELECT dayofyear('$periodStartEscaped') AS `start`")->fetch_assoc()['start'];
-            $periodMax = $this->db->query("SELECT dayofyear('$periodEndEscaped') AS `end`")->fetch_assoc()['end'];
             break;
         case 'year':
             $period = "year(l.timestamp) AS period";
-            $periodMin = $this->db->query("SELECT year('$periodStartEscaped') AS `start`")->fetch_assoc()['start'];
-            $periodMax = $this->db->query("SELECT year('$periodEndEscaped') AS `end`")->fetch_assoc()['end'];
             break;
         case 'month':
             $period = "month(l.timestamp) AS period";
-            $periodMin = $this->db->query("SELECT month('$periodStartEscaped') AS `start`")->fetch_assoc()['start'];
-            $periodMax = $this->db->query("SELECT month('$periodEndEscaped') AS `end`")->fetch_assoc()['end'];
             break;
         default :
             $period = "week(l.timestamp, 1) AS period";
-            $periodMin = $this->db->query("SELECT week('$periodStartEscaped', 1) AS `start`")->fetch_assoc()['start'];
-            $periodMax = $this->db->query("SELECT week('$periodEndEscaped', 1) AS `end`")->fetch_assoc()['end'];
             break;
     }
 
@@ -164,28 +156,37 @@ public function getResults($periodStart, $periodEnd, $updated, $type, $interval)
     }
 
     if (count($dbRows) > 0) {
-        $result['periodMin'] = $periodMin;
-        $result['periodMax'] = $periodMax;
+        $result = array();
+
         // save source_codes of all institutions
         foreach ($institutionOrder as $institution) {
             $result['results'][$institution['source_id']]['source_code'] = $institution['source_code'];
         }
-        // preset stat of every institution in every given interval with 0
+
+        $periodMin = $periodMax = $dbRows[0]['period'];
+        // set every found statistics result in the respective column and row
+        // and find the max and min values of the intervals
+        foreach ($dbRows as $dbRow) {
+            $periodMin = ($dbRow['period'] < $periodMin) ? $dbRow['period'] : $periodMin;
+            $periodMax = ($dbRow['period'] > $periodMin) ? $dbRow['period'] : $periodMax;
+            $result['results'][$dbRow['source_id']]['stat'][$dbRow['period']] = $dbRow['cnt'];
+        }
+        // set the remaining stats of every institution in every given interval with 0
         for ($i = $periodMin; $i <= $periodMax; $i++) {
             foreach ($institutionOrder as $institution) {
-                $result['results'][$institution['source_id']]['stat'][$i] = 0;
+                if (empty($result['results'][$institution['source_id']]['stat'][$i])) {
+                    $result['results'][$institution['source_id']]['stat'][$i] = 0;
+                }
             }
-        }
-        // set every found statistics result in the respective column and row
-        foreach ($dbRows as $dbRow) {
-            $result['results'][$dbRow['source_id']]['stat'][$dbRow['period']] = $dbRow['cnt'];
         }
         // calculate totals
         foreach ($institutionOrder as $institution) {
             $result['results'][$institution['source_id']]['total'] = array_sum($result['results'][$institution['source_id']]['stat']);
         }
+        $result['periodMin'] = $periodMin;
+        $result['periodMax'] = $periodMax;
     } else {
-        $result = array('periodMin' => $periodMin, 'periodMax' => $periodMax, 'results' => array());
+        $result = array('periodMin' => 0, 'periodMax' => 0, 'results' => array());
     }
 
     return $result;
