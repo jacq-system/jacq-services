@@ -8,7 +8,7 @@ use function OpenApi\scan;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: statistics", version="0.1")
+ * @OA\Info(title="JACQ Webservices: JACQscinames", version="0.1")
  */
 
 /************************
@@ -30,9 +30,13 @@ $settings = [
         // Monolog settings
         'logger' => [
             'name' => 'slim-app',
-            'path' => __DIR__ . '/../logs/statistics.log',
+            'path' => __DIR__ . '/../logs/JACQscinames.log',
             'level' => \Monolog\Logger::DEBUG,
         ],
+
+        'jacq_input_services' => $_CONFIG['JACQ_INPUT_SERVICES'],
+        'APIKEY' => $_CONFIG['APIKEY'],
+        'classifications_license' => $_CONFIG['classifications_license'],
     ],
 ];
 
@@ -86,63 +90,55 @@ $container['phpErrorHandler'] = function ($container) {
  *******************/
 /**
  * @OA\Get(
- *  path="/results/{periodStart}/{periodEnd}/{updated}/{type}/{interval}",
- *  summary="Get statistics result for given type, interval and period",
- *  @OA\Parameter(
- *      name="periodStart",
+ *  path="/uuid/{taxonID}",
+ *  summary="Get uuid, uuid-url and scientific name of a given taxonID",
+  *  @OA\Parameter(
+ *      name="taxonID",
  *      in="path",
- *      description="start of period (yyyy-mm-dd)",
- *      required=true,
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Parameter(
- *      name="periodEnd",
- *      in="path",
- *      description="end of period (yyyy-mm-dd)",
- *      required=true,
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Parameter(
- *      name="updated",
- *      in="path",
- *      description="new (0) or updated (1) types only",
+ *      description="ID of taxon name",
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
- *  @OA\Parameter(
- *      name="type",
- *      in="path",
- *      description="type of statistics analysis",
- *      required=true,
- *      @OA\Schema(
- *          type="string",
- *          enum={"names", "citations", "names_citations", "specimens", "type_specimens", "names_type_specimens", "types_name", "synonyms"}
- *      )
- *  ),
- *  @OA\Parameter(
- *      name="interval",
- *      in="path",
- *      description="resolution of statistics analysis",
- *      required=true,
- *      @OA\Schema(
- *          type="string",
- *          enum={"day", "week", "month", "year"}
- *      )
- *  ),
- *  @OA\Response(response="200", description="successful operation"),
+*  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/results/{periodStart}/{periodEnd}/{updated}/{type}/{interval}', function (Request $request, Response $response, array $args)
+$app->get('/uuid/{taxonID}', function (Request $request, Response $response, array $args)
 {
-//    $this->logger->addInfo("called results with <" . $args['interval'] . ">");
+//    $this->logger->addInfo("called uuid ");
 
-    $mapper = new StatisticsMapper($this->db);
-    $names = $mapper->getResults(substr(trim(filter_var($args['periodStart'], FILTER_SANITIZE_STRING)), 0, 10),
-                                 substr(trim(filter_var($args['periodEnd'], FILTER_SANITIZE_STRING)), 0, 10),
-                                 ((!empty($args['updated'])) ? 1 : 0),
-                                 trim(filter_var($args['type'], FILTER_SANITIZE_STRING)),
-                                 trim(filter_var($args['interval'], FILTER_SANITIZE_STRING)));
-    $jsonResponse = $response->withJson($names);
+    $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
+                                                      'apikey' => $this->get('settings')['APIKEY']));
+    $taxonID = intval(filter_var($args['taxonID'], FILTER_SANITIZE_NUMBER_INT));
+    $data = $mapper->getUuid($taxonID);
+    $data['scientificName'] = $mapper->getScientificName($taxonID);
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+});
+
+/**
+ * @OA\Get(
+ *  path="/name/{taxonID}",
+ *  summary="Get scientific name, uuid and uuid-url of a given taxonID",
+  *  @OA\Parameter(
+ *      name="taxonID",
+ *      in="path",
+ *      description="ID of taxon name",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+*  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/name/{taxonID}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called uuid ");
+
+    $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
+                                                      'apikey' => $this->get('settings')['APIKEY']));
+    $taxonID = intval(filter_var($args['taxonID'], FILTER_SANITIZE_NUMBER_INT));
+    $data = $mapper->getUuid($taxonID);
+    $data['scientificName'] = $mapper->getScientificName($taxonID);
+    $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
 
@@ -162,8 +158,8 @@ $app->get('/openapi', function ($request, $response, $args) {
 
 $app->get('/[{name}]', function (Request $request, Response $response, array $args)
 {
-    // Sample log message
-    $this->logger->addInfo("Slim-Skeleton '/' route");
+    // catch-all log message
+    $this->logger->addInfo("catch-all '/' route");
 
     $name = array('catch-all: ' => $args['name']);
     $jsonResponse = $response->withJson($name);

@@ -17,7 +17,7 @@ use function OpenApi\scan;
 include __DIR__ . '/../inc/variables.php';
 $settings = [
     'settings' => [
-        'displayErrorDetails' => true, // set to false in production
+        'displayErrorDetails' => $_CONFIG['displayErrorDetails'], // set to false in production
         'addContentLengthHeader' => false, // Allow the web server to send the content-length header
 
         'db' => [

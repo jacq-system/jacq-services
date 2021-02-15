@@ -130,6 +130,7 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0, $insertS
             foreach($dbRows as $dbRow) {
                 $results[] = array(
                     "taxonID"          => $dbRow['taxonID'],
+                    "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $dbRow['taxonID']),
                     "referenceId"      => $referenceID,
                     "referenceName"    => $dbRow['scientificName'],
                     "referenceType"    => "citation",
@@ -143,13 +144,14 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0, $insertS
                         "rank_abbr"      => $dbRow['rank_abbr'],
                         "rank_hierarchy" => $dbRow['rank_hierarchy'],
                         "tax_syn_ID"     => $dbRow['tax_syn_ID'],
-                    )
+                    ),
                 );
                 $insertedCitations = $this->getInsertedCitation($insertSeries, $referenceID, $dbRow['taxonID']);
                 if (!empty($insertedCitations)) {
                     foreach ($insertedCitations as $citation) {
                         $results[] = array(
                             "taxonID"          => $citation['taxonID'],
+                            "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $citation['taxonID']),
                             "referenceId"      => $citation['referenceId'],
                             "referenceName"    => $citation['referenceName'],
                             "referenceType"    => $citation['referenceType'],
@@ -247,6 +249,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSerie
 
         $basionymResult = array(
             "taxonID"          => $basID,
+            "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $basID),
             "referenceName"    => $dbRows[0]['scientificName'],
             "referenceId"      => $referenceID,
             "referenceType"    => $referenceType,
@@ -256,7 +259,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSerie
             "referenceInfo"    => array(
                 "type"          => "homotype",
                 "cited"         => false
-            )
+            ),
         );
     }
 
@@ -277,6 +280,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSerie
                 } else {
                     $results[] = array(
                         "taxonID"          => $dbRow['taxonID'],
+                        "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $dbRow['taxonID']),
                         "referenceName"    => $dbRow['scientificName'],
                         "referenceId"      => $referenceID,
                         "referenceType"    => $referenceType,
@@ -286,13 +290,14 @@ public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSerie
                         "referenceInfo"    => array(
                             "type"          => ($dbRow['homotype'] > 0) ? "homotype" : "heterotype",
                             'cited'         => true
-                        )
+                        ),
                     );
                     $insertedCitations = $this->getInsertedCitation($insertSeries, $referenceID, $dbRow['taxonID']);
                     if (!empty($insertedCitations)) {
                         foreach ($insertedCitations as $citation) {
                             $results[] = array(
                                 "taxonID"          => $citation['taxonID'],
+                                "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $citation['taxonID']),
                                 "referenceId"      => $citation['referenceId'],
                                 "referenceName"    => $citation['referenceName'],
                                 "referenceType"    => $citation['referenceType'],
@@ -313,6 +318,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSerie
             foreach ($insertedCitations as $citation) {
                 $buffer = array(
                     "taxonID"          => $citation['taxonID'],
+                    "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $citation['taxonID']),
                     "referenceId"      => $citation['referenceId'],
                     "referenceName"    => $citation['referenceName'],
                     "referenceType"    => $citation['referenceType'],
@@ -399,6 +405,7 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0, $insertSeri
                 "referenceId"   => $dbRow['referenceId'],
                 "referenceType" => "citation",
                 "taxonID"       => $taxonID,
+                "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),
                 "hasChildren"   => $hasChildren,
                 "hasType"       => false,
                 "hasSpecimen"   => false
@@ -444,6 +451,7 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0, $insertSeri
                 "referenceId"   => $dbSyn['referenceId'],
                 "referenceType" => "citation",
                 "taxonID"       => $taxonID,
+                "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),
                 "hasChildren"   => false,
                 "hasType"       => false,
                 "hasSpecimen"   => false,
@@ -495,6 +503,7 @@ public function getInsertedCitation($insertSeries, $referenceID, $taxonID)
                 'referenceId'   => $row['citationID'],
                 "referenceType" => "citation",
                 "taxonID"       => $taxonID,
+                "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),
                 "hasChildren"   => $hasChildren,
             );
         }
@@ -538,15 +547,16 @@ public function getParent($referenceType, $referenceId, $taxonID)
                 if (count($dbRows) > 0) {
                     $dbRow = $dbRows[0];
                     $parent = array(
-                        "taxonID" => $dbRow['taxonID'],
-                        "referenceId" => $referenceId,
+                        "taxonID"       => $dbRow['taxonID'],
+                        "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $dbRow['taxonID']),
+                        "referenceId"   => $referenceId,
                         "referenceName" => $dbRow['referenceName'],
                         "referenceType" => "citation",
-                        "hasType" => $this->hasType($dbRow['taxonID']),
-                        "hasSpecimen" => $this->hasSpecimen($dbRow['taxonID']),
+                        "hasType"       => $this->hasType($dbRow['taxonID']),
+                        "hasSpecimen"   => $this->hasSpecimen($dbRow['taxonID']),
                         "referenceInfo" => array(
-                            "number" => $dbRow['number'],
-                            "order" => $dbRow['order']
+                            "number"     => $dbRow['number'],
+                            "order"      => $dbRow['order']
                         )
                     );
                 }
@@ -561,12 +571,13 @@ public function getParent($referenceType, $referenceId, $taxonID)
                     // if we have found an accepted taxon for our synonym then return it
                     if ($accTaxon) {
                         $parent = array(
-                            "taxonID" => $accTaxon['acc_taxon_ID'],
-                            "referenceId" => $referenceId,
+                            "taxonID"       => $accTaxon['acc_taxon_ID'],
+                            "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $accTaxon['acc_taxon_ID']),
+                            "referenceId"   => $referenceId,
                             "referenceName" => $accTaxon['referenceName'],
                             "referenceType" => "citation",
-                            "hasType" => $this->hasType($accTaxon['acc_taxon_ID']),
-                            "hasSpecimen" => $this->hasSpecimen($accTaxon['acc_taxon_ID'])
+                            "hasType"       => $this->hasType($accTaxon['acc_taxon_ID']),
+                            "hasSpecimen"   => $this->hasSpecimen($accTaxon['acc_taxon_ID'])
                         );
                     }
                     // if not we have to return the citation entry
@@ -577,12 +588,12 @@ public function getParent($referenceType, $referenceId, $taxonID)
                         if (count($dbRows) > 0) {
                             $dbRow = $dbRows[0];
                             $parent = array(
-                                "taxonID" => 0,
-                                "referenceId" => $dbRow['referenceId'],
+                                "taxonID"       => 0,
+                                "referenceId"   => $dbRow['referenceId'],
                                 "referenceName" => $dbRow['referenceName'],
                                 "referenceType" => "citation",
-                                "hasType" => false,
-                                "hasSpecimen" => false
+                                "hasType"       => false,
+                                "hasSpecimen"   => false
                             );
                         }
                     }
@@ -712,6 +723,20 @@ private function hasType ($taxonID)
                                 WHERE tst.typusID IS NOT NULL
                                  AND tst.taxonID = $taxonID");
     return ($result->num_rows > 0);
+}
+
+/**
+ * get the url of the parent directory to call another jacq service
+ * @return string url to parent directory
+ */
+private function getParentUrl()
+{
+    $path = dirname(filter_input(INPUT_SERVER, 'SCRIPT_NAME', FILTER_SANITIZE_STRING));
+    $pos  = strrpos($path, '/');
+
+    return filter_input(INPUT_SERVER, 'REQUEST_SCHEME', FILTER_SANITIZE_STRING) . "://"
+         . filter_input(INPUT_SERVER, 'HTTP_HOST', FILTER_SANITIZE_STRING)
+         . substr($path, 0, $pos) . '/';
 }
 
 }

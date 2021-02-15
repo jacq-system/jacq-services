@@ -14,6 +14,10 @@ public function getScientificNames($term)
         return array();
     }
 
+    $baseUrl = filter_input(INPUT_SERVER, 'REQUEST_SCHEME', FILTER_SANITIZE_STRING) . "://"
+             . filter_input(INPUT_SERVER, 'HTTP_HOST', FILTER_SANITIZE_STRING)
+             . dirname(filter_input(INPUT_SERVER, 'SCRIPT_NAME', FILTER_SANITIZE_STRING)) . '/';
+
     $sql_1 = "SELECT ts.taxonID, herbar_view.GetScientificName(ts.taxonID, 0) AS ScientificName
               FROM tbl_tax_species ts
                LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID ";
@@ -40,11 +44,30 @@ public function getScientificNames($term)
                 "label" => $scientificName,
                 "value" => $scientificName,
                 "id"    => $taxonID,
+                "uuid"  => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),
             );
         }
     }
 
     return $results;
+}
+
+
+
+////////////////////////////// private functions //////////////////////////////
+
+/**
+ * get the url of the parent directory to call another jacq service
+ * @return string url to parent directory
+ */
+private function getParentUrl()
+{
+    $path = dirname(filter_input(INPUT_SERVER, 'SCRIPT_NAME', FILTER_SANITIZE_STRING));
+    $pos  = strrpos($path, '/');
+
+    return filter_input(INPUT_SERVER, 'REQUEST_SCHEME', FILTER_SANITIZE_STRING) . "://"
+         . filter_input(INPUT_SERVER, 'HTTP_HOST', FILTER_SANITIZE_STRING)
+         . substr($path, 0, $pos) . '/';
 }
 
 }
