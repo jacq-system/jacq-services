@@ -1,12 +1,9 @@
 <?php
-$_CONFIG['DATABASES']['HERBARINPUT'] = array(
+$_CONFIG['DATABASES']['OPENUP'] = array(
     "host" => "localhost",
-    "db"   => "herbarinput",
+    "db"   => "openup",
     "user" => "user",
     "pass" => "password"
 );
-$_CONFIG['displayErrorDetails'] = false;
-$_CONFIG['JACQ_INPUT_SERVICES'] = "http://url-to-input-service/";
-$_CONFIG['APIKEY'] = "api-key";
-
-$_CONFIG['classifications_license'] = 'CC-BY-SA';
+// URL to JACQ commonNames service
+$_CONFIG['JACQ_NAMES_SERVICE'] = 'http://url-to-input-service/';
