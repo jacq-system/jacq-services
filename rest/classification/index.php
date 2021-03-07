@@ -90,24 +90,36 @@ $container['phpErrorHandler'] = function ($container) {
  *******************/
 /**
  * @OA\Get(
- *  path="/references/{referenceType}",
- *  summary="Fetch a list of all references (which have a classification attached)",
+ *  path="/references/{referenceType}[/{referenceID}]",
+ *  summary="Fetch a list of all references (which have a classification attached) or a single reference",
  *  @OA\Parameter(
  *      name="referenceType",
  *      in="path",
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
+ *      example="periodical",
  *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="referenceID",
+ *      in="path",
+ *      description="ID of reference",
+ *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/references/{referenceType}', function (Request $request, Response $response, array $args)
+$app->get('/references/{referenceType}[/{referenceID}]', function (Request $request, Response $response, array $args)
 {
-//    $this->logger->addInfo("called references ");
+//    $this->logger->addInfo("called references " . var_export($args, true));
 
     $mapper = new ClassificationMapper($this->db);
-    $references = $mapper->getReferences(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)));
+    if (!empty($args['referenceID'])) {
+        $references = $mapper->getReferences(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)),
+                                             intval($args['referenceID']));
+    } else {
+        $references = $mapper->getReferences(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)));
+    }
     $jsonResponse = $response->withJson($references);
     return $jsonResponse;
 });
@@ -121,12 +133,14 @@ $app->get('/references/{referenceType}', function (Request $request, Response $r
  *      in="path",
  *      description="ID of name to look for",
  *      required=true,
+ *      example="46163",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="excludeReferenceId",
  *      in="query",
  *      description="optional Reference-ID to exclude (to avoid returning the 'active' reference)",
+ *      example="31070",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -159,6 +173,7 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
  *      in="path",
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
+ *      example="citation",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Parameter(
@@ -166,12 +181,14 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
  *      in="path",
  *      description="ID of reference",
  *      required=true,
+ *      example="31070",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="taxonID",
  *      in="query",
  *      description="optional ID of taxon name",
+ *      example="233647",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -397,6 +414,10 @@ $app->get('/openapi', function ($request, $response, $args) {
     $swagger = scan(__DIR__);
     $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
+});
+
+$app->get('/description', function($request, $response, $args) {
+    return file_get_contents('description.html');
 });
 
 $app->get('/[{name}]', function (Request $request, Response $response, array $args)

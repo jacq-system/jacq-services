@@ -122,6 +122,10 @@ $app->get('/openapi', function ($request, $response, $args) {
     return $jsonResponse;
 });
 
+$app->get('/description', function($request, $response, $args) {
+    return file_get_contents('description.html');
+});
+
 $app->get('/[{name}]', function (Request $request, Response $response, array $args)
 {
     // Sample log message

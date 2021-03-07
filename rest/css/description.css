@@ -1,0 +1,24 @@
+table {
+    margin-left: 3em;
+}
+td {
+    padding-bottom: 1ex;
+}
+
+h2 {
+    border-top: thin solid black;
+}
+
+.type {
+    font-style: italic;
+    padding-right: 2em;
+    vertical-align: top;
+}
+
+.response {
+    font-family: monospace;
+}
+
+.response pre {
+    display: inline;
+}

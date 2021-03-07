@@ -6,9 +6,10 @@ class ClassificationMapper extends Mapper
  * Fetch a list of all references (which have a classification attached)
  *
  * @param string $referenceType Type of references to return (citation, person, service, specimen, periodical)
+ * @param int $referenceID optional ID of reference
  * @return array References information
  */
-public function getReferences ($referenceType)
+public function getReferences ($referenceType, $referenceID = 0)
 {
     $sql = "";
     switch($referenceType) {
@@ -19,27 +20,39 @@ public function getReferences ($referenceType)
         case 'specimen':
             break;
         case 'citation':
-            $sql = "SELECT l.titel AS `name`, l.citationID AS `id`
-                    FROM tbl_lit l
-                     LEFT JOIN tbl_tax_synonymy ts ON ts.source_citationID = l.citationID
-                     LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = ts.tax_syn_ID
-                    WHERE l.category LIKE '%classification%'
-                     AND ts.tax_syn_ID IS NOT NULL
-                     AND tc.classification_id IS NOT NULL
-                    GROUP BY ts.source_citationID
-                    ORDER BY `name`";
+            if ($referenceID) {
+                $sql = "SELECT titel AS `name`, citationID AS `id`
+                        FROM tbl_lit
+                        WHERE citationID = $referenceID ";
+            } else {
+                $sql = "SELECT l.titel AS `name`, l.citationID AS `id`
+                        FROM tbl_lit l
+                         LEFT JOIN tbl_tax_synonymy ts ON ts.source_citationID = l.citationID
+                         LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = ts.tax_syn_ID
+                        WHERE l.category LIKE '%classification%'
+                         AND ts.tax_syn_ID IS NOT NULL
+                         AND tc.classification_id IS NOT NULL
+                        GROUP BY ts.source_citationID
+                        ORDER BY `name`";
+            }
             break;
         case 'periodical':
-            $sql = "SELECT lp.periodical AS `name`, l.periodicalID AS `id`
-                    FROM tbl_lit_periodicals lp
-                     LEFT JOIN tbl_lit l ON l.periodicalID = lp.periodicalID
-                     LEFT JOIN tbl_tax_synonymy ts ON ts.source_citationID = l.citationID
-                     LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = ts.tax_syn_ID
-                    WHERE l.category LIKE '%classification%'
-                     AND ts.tax_syn_ID IS NOT NULL
-                     AND tc.classification_id IS NOT NULL
-                    GROUP BY l.periodicalID
-                    ORDER BY `name`";
+            if ($referenceID) {
+                $sql = "SELECT periodical AS `name`, periodicalID AS `id`
+                        FROM tbl_lit_periodicals
+                        WHERE periodicalID = $referenceID";
+            } else {
+                $sql = "SELECT lp.periodical AS `name`, l.periodicalID AS `id`
+                        FROM tbl_lit_periodicals lp
+                         LEFT JOIN tbl_lit l ON l.periodicalID = lp.periodicalID
+                         LEFT JOIN tbl_tax_synonymy ts ON ts.source_citationID = l.citationID
+                         LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = ts.tax_syn_ID
+                        WHERE l.category LIKE '%classification%'
+                         AND ts.tax_syn_ID IS NOT NULL
+                         AND tc.classification_id IS NOT NULL
+                        GROUP BY l.periodicalID
+                        ORDER BY `name`";
+            }
             break;
         default:
     }
@@ -79,7 +92,7 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0, $insertS
             foreach ($dbRows as $dbRow) {
                 $results[] = array(
                     "taxonID"          => 0,
-                    "referenceId"      => $dbRow['referenceID'],
+                    "referenceId"      => intval($dbRow['referenceID']),
                     "referenceName"    => $dbRow['referenceName'],
                     "referenceType"    => "citation",
                     "hasChildren"      => true,
@@ -129,7 +142,7 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0, $insertS
 
             foreach($dbRows as $dbRow) {
                 $results[] = array(
-                    "taxonID"          => $dbRow['taxonID'],
+                    "taxonID"          => intval($dbRow['taxonID']),
                     "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $dbRow['taxonID']),
                     "referenceId"      => $referenceID,
                     "referenceName"    => $dbRow['scientificName'],
@@ -140,10 +153,10 @@ public function getChildren($referenceType, $referenceID, $taxonID = 0, $insertS
                     "insertedCitation" => false,
                     "referenceInfo"    => array(
                         "number"         => $dbRow['number'],
-                        "order"          => $dbRow['order'],
+                        "order"          => intval($dbRow['order']),
                         "rank_abbr"      => $dbRow['rank_abbr'],
-                        "rank_hierarchy" => $dbRow['rank_hierarchy'],
-                        "tax_syn_ID"     => $dbRow['tax_syn_ID'],
+                        "rank_hierarchy" => intval($dbRow['rank_hierarchy']),
+                        "tax_syn_ID"     => intval($dbRow['tax_syn_ID']),
                     ),
                 );
                 $insertedCitations = $this->getInsertedCitation($insertSeries, $referenceID, $dbRow['taxonID']);
@@ -279,7 +292,7 @@ public function getSynonyms($referenceType, $referenceID, $taxonID, $insertSerie
                     $basionymResult["referenceInfo"]["cited"] = true;
                 } else {
                     $results[] = array(
-                        "taxonID"          => $dbRow['taxonID'],
+                        "taxonID"          => intval($dbRow['taxonID']),
                         "uuid"             => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $dbRow['taxonID']),
                         "referenceName"    => $dbRow['scientificName'],
                         "referenceId"      => $referenceID,
@@ -402,7 +415,7 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0, $insertSeri
 
             $results[] = array(
                 "referenceName" => $dbRow['referenceName'],
-                "referenceId"   => $dbRow['referenceId'],
+                "referenceId"   => intval($dbRow['referenceId']),
                 "referenceType" => "citation",
                 "taxonID"       => $taxonID,
                 "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),
@@ -448,7 +461,7 @@ public function getNameReferences($taxonID, $excludeReferenceId = 0, $insertSeri
         if ($result->num_rows > 0) {
             $results[] = array(
                 "referenceName" => '= ' . $dbSyn['referenceName'],  //  mark the reference Name as synonym
-                "referenceId"   => $dbSyn['referenceId'],
+                "referenceId"   => intval($dbSyn['referenceId']),
                 "referenceType" => "citation",
                 "taxonID"       => $taxonID,
                 "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),
@@ -500,7 +513,7 @@ public function getInsertedCitation($insertSeries, $referenceID, $taxonID)
 
             $results[] = array(
                 'referenceName' => $referenceName['referenceName'],
-                'referenceId'   => $row['citationID'],
+                'referenceId'   => intval($row['citationID']),
                 "referenceType" => "citation",
                 "taxonID"       => $taxonID,
                 "uuid"          => array('href' => $this->getParentUrl() . 'JACQscinames/uuid/' . $taxonID),

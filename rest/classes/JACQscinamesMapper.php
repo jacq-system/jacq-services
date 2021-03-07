@@ -23,16 +23,21 @@ public function __construct (mysqli $db, $settings)
  */
 public function getUuid ($taxonID)
 {
-    $curl = curl_init($this->settings['jacq_input_services'] . "tags/uuid/scientific_name/$taxonID");
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array('APIKEY: ' . $this->settings['apikey']));
-    $curl_response = curl_exec($curl);
-    if ($curl_response === false) {
-        $result = array('uuid' => '', 'url' => '');
+    $result = $this->db->query("SELECT taxonID FROM tbl_tax_species WHERE taxonID = $taxonID"); // check existence of taxon-ID before asking the internal service
+    if ($result->num_rows > 0) {
+        $curl = curl_init($this->settings['jacq_input_services'] . "tags/uuid/scientific_name/$taxonID");
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('APIKEY: ' . $this->settings['apikey']));
+        $curl_response = curl_exec($curl);
+        if ($curl_response === false) {
+            $result = array('uuid' => '', 'url' => '');
+        } else {
+            $result = json_decode($curl_response, true);
+        }
+        curl_close($curl);
     } else {
-        $result = json_decode($curl_response, true);
+        $result = array('uuid' => '', 'url' => '');
     }
-    curl_close($curl);
 
     return $result;
 }
@@ -54,6 +59,25 @@ public function getScientificName ($taxonID)
     }
 
     return $scientificName;
+}
+
+/**
+ * get taxonID from database
+ *
+ * @param string $uuid uuid of taxon (uuid_minter_type_id = 1)
+ * @return int taxonID (or null if none found)
+ */
+public function getTaxonID ($uuid)
+{
+    $row = $this->db->query("SELECT `uuid_minter_type_id`, `internal_id`
+                             FROM `jacq_input`.`srvc_uuid_minter`
+                             WHERE `uuid` = '" . $this->db->real_escape_string($uuid) . "'")
+                    ->fetch_assoc();
+    if ($row && $row['uuid_minter_type_id'] == 1) {
+        return $row['internal_id'];
+    } else {
+        return null;
+    }
 }
 
 }
