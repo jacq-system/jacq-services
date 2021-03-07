@@ -69,15 +69,28 @@ public function getScientificName ($taxonID)
  */
 public function getTaxonID ($uuid)
 {
-    $row = $this->db->query("SELECT `uuid_minter_type_id`, `internal_id`
-                             FROM `jacq_input`.`srvc_uuid_minter`
-                             WHERE `uuid` = '" . $this->db->real_escape_string($uuid) . "'")
-                    ->fetch_assoc();
-    if ($row && $row['uuid_minter_type_id'] == 1) {
-        return $row['internal_id'];
-    } else {
+    $curl = curl_init("https://resolve.jacq.org/resolve.php?uuid=$uuid&type=internal_id");
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    $curl_response = curl_exec($curl);
+    if ($curl_response === false) {
+//        $info = curl_getinfo($curl);
+        curl_close($curl);
         return null;
     }
+    curl_close($curl);
+    return $curl_response;
+//    $curl = curl_init($this->settings['jacq_input_services'] . "tags/ids/$uuid");
+//    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+//    curl_setopt($curl, CURLOPT_HTTPHEADER, array('APIKEY: ' . $this->settings['apikey']));
+//    $curl_response = curl_exec($curl);
+//    if ($curl_response === false) {
+////        $info = curl_getinfo($curl);
+//        curl_close($curl);
+//        return null;
+//    }
+//    curl_close($curl);
+//    $decoded = json_decode($curl_response, true);
+//    return $decoded['internal_id'];
 }
 
 }
