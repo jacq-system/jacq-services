@@ -127,7 +127,7 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
  *      required=true,
  *      @OA\Schema(type="string")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, array $args)
@@ -151,7 +151,7 @@ $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, a
 /**
  * @OA\Get(
  *  path="/multi",
- *  summary="Get all entries with more than one stable identifier per specimen-ID
+ *  summary="Get all entries with more than one stable identifier per specimen-ID",
  *  @OA\Parameter(
  *      name="page",
  *      in="query",
