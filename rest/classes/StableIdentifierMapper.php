@@ -7,8 +7,13 @@ class StableIdentifierMapper extends Mapper
  */
 public function getSpecimenID($sid)
 {
-    return $this->db->query("SELECT specimen_ID FROM tbl_specimens_stblid WHERE stableIdentifier = '" . $this->db->escape_string($sid) . "'")
-                    ->fetch_assoc()['specimen_ID'];
+    $row = $this->db->query("SELECT specimen_ID FROM tbl_specimens_stblid WHERE stableIdentifier = '" . $this->db->escape_string($sid) . "'")
+                    ->fetch_assoc();
+    if ($row) {
+        return $row['specimen_ID'];
+    } else {
+        return 0;
+    }
 }
 
 /**
