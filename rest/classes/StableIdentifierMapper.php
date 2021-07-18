@@ -7,6 +7,10 @@ class StableIdentifierMapper extends Mapper
  */
 public function getSpecimenID($sid)
 {
+    // sometimes double slashes get lost, so "https://" mutates to "https:/". Probably slim-related error
+    $sid = str_replace(':/', '://', $sid);
+    $sid = str_replace(':///', '://', $sid);
+
     $row = $this->db->query("SELECT specimen_ID FROM tbl_specimens_stblid WHERE stableIdentifier = '" . $this->db->escape_string($sid) . "'")
                     ->fetch_assoc();
     if ($row) {
