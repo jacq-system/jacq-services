@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JACQ webservices</title>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
+    <link rel="stylesheet" type="text/css" href="../css/description.css">
+  </head>
+  <body>
+    <h3>JACQ Webservices</h3>
+    <span class="rectangleLink"><a href="../JACQscinames/description.html">JACQ scinames</a></span>
+    <span class="rectangleLink"><a href="../autocomplete/description.html">autocomplete</a></span>
+    <span class="rectangleLink"><a href="../classification/description.html">classification</a></span>
+    <span class="rectangle">stable Identifier</span>
+
+    <h1>JACQ stable Identifier Webservice</h1>
+    <h2>sid/{specimenID}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get specimen-id, valid stable identifier and all stable identifiers of a given specimen-id</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "specimenID":             ID of specimen</pre><br>
+          <pre> "stableIdentifierLatest": latest stable identifier</pre><br>
+          <pre>     {</pre><br>
+          <pre>      "stableIdentifier":  stable identifier</pre><br>
+          <pre>      "timestamp":         and its timestamp</pre><br>
+          <pre>     }</pre><br>
+          <pre> "stableIdentifierList":   list of all found stable identifiers, ordered by timestamp</pre><br>
+          <pre>     [</pre><br>
+          <pre>      {</pre><br>
+          <pre>       "stableIdentifier": stable identifier</pre><br>
+          <pre>       "stableIdentifier": and its timestamp</pre><br>
+          <pre>      },&hellip;</pre><br>
+          <pre>     ]</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="sid/6830" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/sid/6830</a><br>
+            look for specimen ID and stable identifiers of specimen-ID 6830
+        </td>
+      </tr>
+    </table>
+
+    <h2>resolve/{sid}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get specimen-id, valid stable identifier and all stable identifiers of a given stable identifier</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "specimenID":             ID of specimen</pre><br>
+          <pre> "stableIdentifierLatest": latest stable identifier</pre><br>
+          <pre>     {</pre><br>
+          <pre>      "stableIdentifier":  stable identifier</pre><br>
+          <pre>      "timestamp":         and its timestamp</pre><br>
+          <pre>     }</pre><br>
+          <pre> "stableIdentifierList":   list of all found stable identifiers, ordered by timestamp</pre><br>
+          <pre>     [</pre><br>
+          <pre>      {</pre><br>
+          <pre>       "stableIdentifier": stable identifier</pre><br>
+          <pre>       "stableIdentifier": and its timestamp</pre><br>
+          <pre>      },&hellip;</pre><br>
+          <pre>     ]</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="resolve/https://wu.jacq.org/WU-0000264" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/resolve/https://wu.jacq.org/WU-0000264</a><br>
+            look for specimen ID and stable identifiers of stable identifier https://wu.jacq.org/WU-0000264
+        </td>
+      </tr>
+    </table>
+
+    <h2>multi</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get all entries with more than one stable identifier per specimen-ID</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          <pre> {</pre><br>
+          <pre>  "page":         page displayed</pre><br>
+          <pre>  "previousPage": link to previous page</pre><br>
+          <pre>  "nextPage":     link to next page</pre><br>
+          <pre>  "firstPage":    link to first page</pre><br>
+          <pre>  "lastPage":     link to last page</pre><br>
+          <pre>  "total":        total number of records found</pre><br>
+          <pre>  "result":       List of found entries</pre><br>
+          <pre>      [</pre><br>
+          <pre>       {</pre><br>
+          <pre>        "specimenID":             ID of specimen</pre><br>
+          <pre>        "numberOfEntries":        # of records found for this ID</pre><br>
+          <pre>        "stableIdentifierList":   List of stable identifiers for this ID</pre><br>
+          <pre>            [</pre><br>
+          <pre>             {</pre><br>
+          <pre>              "stableIdentifier": stable identifier</pre><br>
+          <pre>              "stableIdentifier": and its timestamp</pre><br>
+          <pre>             },&hellip;</pre><br>
+          <pre>            ]</pre><br>
+          <pre>       },&hellip;</pre><br>
+          <pre>      ]</pre><br>
+          <pre> },&hellip;</pre><br>
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="multi" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/multi</a><br>
+            get the first 50 entries of specimen-IDs with more than one stable identifier
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="multi?page2&entriesPerPage=100" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/multi?page2&entriesPerPage=100</a><br>
+            get the third 100 entries of specimen-IDs with more than one stable identifier
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

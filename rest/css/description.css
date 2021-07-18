@@ -22,3 +22,17 @@ h2 {
 .response pre {
     display: inline;
 }
+
+span.rectangleLink {
+    border: thin solid black;
+    padding: 4px;
+    margin-right: 1em;
+    background-color: aquamarine;
+}
+
+span.rectangle {
+    border: thin solid black;
+    padding: 4px;
+    margin-right: 1em;
+    background-color: gold;
+}
