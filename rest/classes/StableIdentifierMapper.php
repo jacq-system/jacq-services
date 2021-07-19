@@ -67,6 +67,7 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
                   'nextPage'     => $this->getBaseUrl() . 'multi?page=' . (($page < $lastPage) ? ($page + 1) : $lastPage) . '&entriesPerPage=' . $entriesPerPage,
                   'firstPage'    => $this->getBaseUrl() . 'multi?page=0&entriesPerPage=' . $entriesPerPage,
                   'lastPage'     => $this->getBaseUrl() . 'multi?page=' . $lastPage . '&entriesPerPage=' . $entriesPerPage,
+                  'totalPages'   => $lastPage + 1,
                   'total'        => $result->num_rows,
                   );
 
