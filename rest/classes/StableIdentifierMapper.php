@@ -4,14 +4,16 @@ class StableIdentifierMapper extends Mapper
 
 /**
  * get specimen-id of a given stable identifier
+ *
+ * @param string $sid stable identifier to look for
+ * @return int specimen-ID of stable identifier or 0 if nothing found
  */
 public function getSpecimenID($sid)
 {
-    // sometimes double slashes get lost, so "https://" mutates to "https:/". Probably slim-related error
-    $sid = str_replace(':/', '://', $sid);
-    $sid = str_replace(':///', '://', $sid);
+    // sometimes double slashes get lost, so "https://" mutates to "https:/". Probably slim-related bug
+    $sidCorr = str_replace(':///', '://', str_replace(':/', '://', $sid));
 
-    $row = $this->db->query("SELECT specimen_ID FROM tbl_specimens_stblid WHERE stableIdentifier = '" . $this->db->escape_string($sid) . "'")
+    $row = $this->db->query("SELECT specimen_ID FROM tbl_specimens_stblid WHERE stableIdentifier = '" . $this->db->escape_string($sidCorr) . "'")
                     ->fetch_assoc();
     if ($row) {
         return $row['specimen_ID'];
@@ -22,6 +24,9 @@ public function getSpecimenID($sid)
 
 /**
  * get all stable identifiers and their respective timestamps of a given specimen-id
+ *
+ * @param int $specimenID ID of specimen
+ * @return array list of all stable identifiers
  */
 public function getAllSid($specimenID)
 {
@@ -59,7 +64,7 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
     }
     $data = array('page'         => $page + 1,
                   'previousPage' => $this->getBaseUrl() . 'multi?page=' . (($page > 0) ? ($page - 1) : 0) . '&entriesPerPage=' . $entriesPerPage,
-                  'nextPage'     => $this->getBaseUrl() . 'multi?page=' . (($page < $lastPage) ? ($page + 1) : $lastpage) . '&entriesPerPage=' . $entriesPerPage,
+                  'nextPage'     => $this->getBaseUrl() . 'multi?page=' . (($page < $lastPage) ? ($page + 1) : $lastPage) . '&entriesPerPage=' . $entriesPerPage,
                   'firstPage'    => $this->getBaseUrl() . 'multi?page=0&entriesPerPage=' . $entriesPerPage,
                   'lastPage'     => $this->getBaseUrl() . 'multi?page=' . $lastPage . '&entriesPerPage=' . $entriesPerPage,
                   'total'        => $result->num_rows,
