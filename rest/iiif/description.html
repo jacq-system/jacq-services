@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JACQ webservices</title>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
+    <link rel="stylesheet" type="text/css" href="../css/description.css">
+  </head>
+  <body>
+    <h3>JACQ Webservices</h3>
+    <span class="rectangleLink"><a href="../JACQscinames/description.html">JACQ scinames</a></span>
+    <span class="rectangleLink"><a href="../autocomplete/description.html">autocomplete</a></span>
+    <span class="rectangleLink"><a href="../classification/description.html">classification</a></span>
+    <span class="rectangleLink"><a href="../stableIdentifier/description.html">stable Identifier</a></span>
+    <span class="rectangle">iiif</span>
+
+    <h1>JACQ IIIF Webservice</h1>
+    <h2>manifestUri/{specimenID}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>get the manifest URI for a given specimen-ID</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "uri": uri of the manifest</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="manifestUri/1739342" target="_blank">https://services.jacq.org/jacq-services/rest/iiif/manifestUri/1739342</a><br>
+            look for manifest-URI of specimen-ID 1739342
+        </td>
+      </tr>
+    </table>
+
+    <h2>manifest/{specimenID}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>act as a proxy and get the manifest for a given specimen-ID</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          manifest
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="manifest/1739342" target="_blank">https://services.jacq.org/jacq-services/rest/iiif/manifest/1739342</a><br>
+            get the manifest for specimen-ID 1739342
+        </td>
+      </tr>
+    </table>
+
+  </body>
+</html>

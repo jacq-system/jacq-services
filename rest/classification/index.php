@@ -85,6 +85,19 @@ $container['phpErrorHandler'] = function ($container) {
 
 
 
+/***********************
+ * Register middleware *
+ ***********************/
+$app->add(function (Request $request, Response $response, $next)
+{
+    $newResponse = $next($request, $response);
+    return $newResponse
+            ->withHeader('Access-Control-Allow-Origin', '*')
+            ->withHeader('Access-Control-Allow-Methods', 'GET');
+});
+
+
+
 /*******************
  * Register routes *
  *******************/
@@ -420,14 +433,15 @@ $app->get('/description', function($request, $response, $args) {
     return file_get_contents('description.html');
 });
 
-$app->get('/[{name}]', function (Request $request, Response $response, array $args)
+// Catch-all route to serve a 404 Not Found page if none of the routes match
+// this route has to be defined as last route
+$app->get('/{routes:.+}', function (Request $request, Response $response)
 {
     // catch-all log message
-    $this->logger->addInfo("catch-all '/' route");
+    $this->logger->addInfo("catch-all route for /" . $request->getUri()->getPath());
 
-    $name = array('catch-all: ' => $args['name']);
-    $jsonResponse = $response->withJson($name);
-    return $jsonResponse;
+    $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
+    return $handler($request, $response);
 });
 
 
