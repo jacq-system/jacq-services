@@ -23,7 +23,7 @@ public function getManifestUri($specimenID)
  * act as a proxy and get the iiif manifest of a given specimen-ID from the backend
  *
  * @param int $specimenID ID of specimen
- * @return array received manifest
+ * @return array received manifest or false if no backend is defined
  */
 public function getManifest($specimenID)
 {
@@ -33,20 +33,24 @@ public function getManifest($specimenID)
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
                                   WHERE specimen_ID = '" . intval($specimenID) . "'")
                          ->fetch_assoc();
-    $manifestBackend = $this->makeURI($specimen, $this->parser($specimen['manifest_backend']));
+    if (!$specimen['manifest_backend']) {
+        return false;
+    } else {
+        $manifestBackend = $this->makeURI($specimen, $this->parser($specimen['manifest_backend']));
 
-    $result = array();
-    if ($manifestBackend) {
-        $curl = curl_init($manifestBackend);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        $curl_response = curl_exec($curl);
-        if ($curl_response !== false) {
-            $result = json_decode($curl_response, true);
+        $result = array();
+        if ($manifestBackend) {
+            $curl = curl_init($manifestBackend);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            $curl_response = curl_exec($curl);
+            if ($curl_response !== false) {
+                $result = json_decode($curl_response, true);
+            }
+            curl_close($curl);
         }
-        curl_close($curl);
-    }
 
-    return $result;
+        return $result;
+    }
 }
 
 
@@ -110,19 +114,22 @@ private function makeURI ($specimen, $parts)
                     }
                     break;
                 case 'fromDB':
-                    if ($subtoken == 'stblid_manifest') {
+                    // first subtoken must be the table name in db "herbar_pictures", second subtoken must be the column name to use for the result.
+                    // where-clause is always the stable identifier and its column must be named "stableIdentifier".
+                    if ($subtoken && !empty($tokenParts[2])) {
                         $row_sid = $this->db->query("SELECT stableIdentifier
                                                      FROM tbl_specimens_stblid
                                                      WHERE specimen_ID = '" . $specimen['specimen_ID'] . "'
                                                      ORDER BY timestamp DESC
                                                      LIMIT 1")
                                             ->fetch_assoc();
-                        $row = $this->db->query("SELECT manifest
-                                                 FROM herbar_pictures.stblid_manifest
+                        // SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(manifest, '/', -2), '/', 1) AS derivate_ID FROM `stblid_manifest` WHERE 1
+                        $row = $this->db->query("SELECT " . $tokenParts[2] . "
+                                                 FROM herbar_pictures.{$subtoken}
                                                  WHERE stableIdentifier LIKE '" . $row_sid['stableIdentifier'] . "'
                                                  LIMIT 1")
                                         ->fetch_assoc();
-                        $uri .= $row['manifest'];
+                        $uri .= $row[$tokenParts[2]];
                     }
                     break;
             }

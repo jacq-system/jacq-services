@@ -145,10 +145,14 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
     $mapper = new IiifMapper($this->db);
     $specimenID = intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT));
 
-    $data = $mapper->getManifest($specimenID);
-
-    $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
+    $manifest = $mapper->getManifest($specimenID);
+    if ($manifest === false) {
+        $manifestUri = $mapper->getManifestUri($specimenID);
+        return $response->withRedirect($manifestUri['uri'], 303);
+    } else {
+        $jsonResponse = $response->withJson($manifest);
+        return $jsonResponse;
+    }
 });
 
 /**
