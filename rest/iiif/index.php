@@ -145,7 +145,7 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
     $mapper = new IiifMapper($this->db);
     $specimenID = intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT));
 
-    $manifest = $mapper->getManifest($specimenID);
+    $manifest = $mapper->getManifest($specimenID, (string) $request->getUri());
     if ($manifest === false) {
         $manifestUri = $mapper->getManifestUri($specimenID);
         return $response->withRedirect($manifestUri['uri'], 303);

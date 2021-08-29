@@ -15,6 +15,7 @@
     <span class="rectangle">iiif</span>
 
     <h1>JACQ IIIF Webservice</h1>
+    <a href="configuration.html" target="_blank">configuration</a>
     <h2>manifestUri/{specimenID}</h2>
     <table>
       <tr>
@@ -42,7 +43,7 @@
     <table>
       <tr>
         <td class="type">summary</td>
-        <td>act as a proxy and get the manifest for a given specimen-ID</td>
+        <td>act as a proxy and get the manifest for a given specimen-ID. If no backend is given, the webservice returns HTTP 303 with the target-uri.</td>
       </tr><tr>
         <td class="type">API-description</td>
         <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>

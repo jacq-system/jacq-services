@@ -25,7 +25,7 @@ public function getManifestUri($specimenID)
  * @param int $specimenID ID of specimen
  * @return array received manifest or false if no backend is defined
  */
-public function getManifest($specimenID)
+public function getManifest($specimenID, $currentUri)
 {
     $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_backend
                                   FROM tbl_specimens s
@@ -45,6 +45,11 @@ public function getManifest($specimenID)
             $curl_response = curl_exec($curl);
             if ($curl_response !== false) {
                 $result = json_decode($curl_response, true);
+
+                $result['@id'] = $currentUri;
+                $addtlData = $this->getAddtlData($specimen['specimen_ID']);
+                $result['description'] = $addtlData['description'];
+                $result['metadata'] = $addtlData['metadata'];
             }
             curl_close($curl);
         }
@@ -139,6 +144,40 @@ private function makeURI ($specimen, $parts)
     }
 
     return $uri;
+}
+
+private function getAddtlData($specimenID)
+{
+    $row_sid = $this->db->query("SELECT stableIdentifier
+                                 FROM tbl_specimens_stblid
+                                 WHERE specimen_ID = $specimenID
+                                 ORDER BY timestamp DESC
+                                 LIMIT 1")
+                        ->fetch_assoc();
+    $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tg.genus, te.epithet, s.observation
+                             FROM tbl_specimens s
+                              LEFT JOIN tbl_collector c ON s.SammlerID = c.SammlerID
+                              LEFT JOIN tbl_tax_species ts ON s.taxonID = ts.taxonID
+                              LEFT JOIN tbl_tax_rank ttr ON ts.tax_rankID = ttr.tax_rankID
+                              LEFT JOIN tbl_management_collections mc ON s.collectionID = mc.collectionID
+                              LEFT JOIN tbl_tax_epithets te  ON te.epithetID  = ts.speciesID
+                              LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID
+                              LEFT JOIN tbl_tax_families tf ON tf.familyID = tg.familyID
+                              LEFT JOIN tbl_geo_nation gn ON gn.nationID = s.NationID
+                             WHERE s.specimen_ID = $specimenID")
+                        ->fetch_assoc();
+
+    $meta = array();
+    $meta[] = array('label' => "dwc:materialSampleID",
+                    'value' => $row_sid['stableIdentifier']);
+    $meta[] = array('label' => "dwc:basisOfRecord",
+                    'value' => (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen"));
+    $meta[] = array('label' => "dwc:scientificName",
+                    'value' => $row['sciName']);
+
+
+    return array('description' => "A " . (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen") . " of " . $row['sciName'],
+                 'metadata'    => $meta);
 }
 
 }
