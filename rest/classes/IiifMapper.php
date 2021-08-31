@@ -23,6 +23,7 @@ public function getManifestUri($specimenID)
  * act as a proxy and get the iiif manifest of a given specimen-ID from the backend
  *
  * @param int $specimenID ID of specimen
+ * @param string $currentUri originally called uri
  * @return array received manifest or false if no backend is defined
  */
 public function getManifest($specimenID, $currentUri)
@@ -46,8 +47,8 @@ public function getManifest($specimenID, $currentUri)
             if ($curl_response !== false) {
                 $result = json_decode($curl_response, true);
 
-                $result['@id'] = $currentUri;
-                $addtlData = $this->getAddtlData($specimen['specimen_ID']);
+                $result['@id'] = $currentUri;  // to point at ourselves
+                $addtlData = $this->getAddtlData($specimen['specimen_ID'], (isset($result['metadata'])) ? $result['metadata'] : array());
                 $result['description'] = $addtlData['description'];
                 $result['metadata'] = $addtlData['metadata'];
             }
@@ -146,7 +147,7 @@ private function makeURI ($specimen, $parts)
     return $uri;
 }
 
-private function getAddtlData($specimenID)
+private function getAddtlData($specimenID, $metadata)
 {
     $row_sid = $this->db->query("SELECT stableIdentifier
                                  FROM tbl_specimens_stblid
@@ -167,17 +168,23 @@ private function getAddtlData($specimenID)
                              WHERE s.specimen_ID = $specimenID")
                         ->fetch_assoc();
 
-    $meta = array();
-    $meta[] = array('label' => "dwc:materialSampleID",
-                    'value' => $row_sid['stableIdentifier']);
-    $meta[] = array('label' => "dwc:basisOfRecord",
-                    'value' => (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen"));
-    $meta[] = array('label' => "dwc:scientificName",
-                    'value' => $row['sciName']);
+    // sort existing metadata (if any) into array to prevent double entries
+    foreach ($metadata as $line) {
+        $meta[$line['label']] = $line['value'];
+    }
 
+    $meta['dwc:materialSampleID'] = $row_sid['stableIdentifier'];
+    $meta['dwc:basisOfRecord']    = (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen");
+    $meta['dwc:scientificName']   = $row['sciName'];
 
-    return array('description' => "A " . (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen") . " of " . $row['sciName'],
-                 'metadata'    => $meta);
+    $result = array();
+    foreach ($meta as $label => $value) {
+        $result[] = array('label' => $label, 'value' => $value);
+
+    }
+
+    return array('description' => "A " . $meta['dwc:basisOfRecord'] . " of " . $row['sciName'],
+                 'metadata'    => $result);
 }
 
 }
