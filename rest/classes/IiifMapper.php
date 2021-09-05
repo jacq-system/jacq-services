@@ -46,11 +46,12 @@ public function getManifest($specimenID, $currentUri)
             $curl_response = curl_exec($curl);
             if ($curl_response !== false) {
                 $result = json_decode($curl_response, true);
-
-                $result['@id'] = $currentUri;  // to point at ourselves
                 $addtlData = $this->getAddtlData($specimen['specimen_ID'], (isset($result['metadata'])) ? $result['metadata'] : array());
+
+                $result['@id']         = $currentUri;  // to point at ourselves
                 $result['description'] = $addtlData['description'];
-                $result['metadata'] = $addtlData['metadata'];
+                $result['label']       = $addtlData['label'];
+                $result['metadata']    = $addtlData['metadata'];
             }
             curl_close($curl);
         }
@@ -155,16 +156,18 @@ private function getAddtlData($specimenID, $metadata)
                                  ORDER BY timestamp DESC
                                  LIMIT 1")
                         ->fetch_assoc();
-    $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tg.genus, te.epithet, s.observation
+    $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tg.genus, te.epithet, s.observation, s.Datum, s.Datum2,
+                              c.Sammler, c2.Sammler_2
                              FROM tbl_specimens s
-                              LEFT JOIN tbl_collector c ON s.SammlerID = c.SammlerID
-                              LEFT JOIN tbl_tax_species ts ON s.taxonID = ts.taxonID
-                              LEFT JOIN tbl_tax_rank ttr ON ts.tax_rankID = ttr.tax_rankID
-                              LEFT JOIN tbl_management_collections mc ON s.collectionID = mc.collectionID
-                              LEFT JOIN tbl_tax_epithets te  ON te.epithetID  = ts.speciesID
-                              LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID
-                              LEFT JOIN tbl_tax_families tf ON tf.familyID = tg.familyID
-                              LEFT JOIN tbl_geo_nation gn ON gn.nationID = s.NationID
+                              LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
+                              LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID
+                              LEFT JOIN tbl_tax_species ts            ON ts.taxonID      = s.taxonID
+                              LEFT JOIN tbl_tax_rank ttr              ON ttr.tax_rankID  = ts.tax_rankID
+                              LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
+                              LEFT JOIN tbl_tax_epithets te           ON te.epithetID    = ts.speciesID
+                              LEFT JOIN tbl_tax_genera tg             ON tg.genID        = ts.genID
+                              LEFT JOIN tbl_tax_families tf           ON tf.familyID     = tg.familyID
+                              LEFT JOIN tbl_geo_nation gn             ON gn.nationID     = s.NationID
                              WHERE s.specimen_ID = $specimenID")
                         ->fetch_assoc();
 
@@ -173,8 +176,44 @@ private function getAddtlData($specimenID, $metadata)
         $meta[$line['label']] = $line['value'];
     }
 
+    $basisOfRecord = (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen");
+
+    /**
+     * CollectorTeam
+     */
+    $CollectorTeam = $row['Sammler'];
+    if (strstr($row['Sammler_2'], "et al.") || strstr($row['Sammler_2'], "alii")) {
+        $CollectorTeam .= " et al.";
+    } elseif ($row['Sammler_2']) {
+        $parts = explode(',', $row['Sammler_2']);           // some people forget the final "&"
+        if (count($parts) > 2) {                            // so we have to use an alternative way
+            $CollectorTeam .= ", " . $row['Sammler_2'];
+        } else {
+            $CollectorTeam .= " & " . $row['Sammler_2'];
+        }
+    }
+
+    if (trim($row['Datum']) == "s.d.") {
+        $created = '';
+    } else {
+        $created = trim($row['Datum']);
+        if ($created) {
+            if (trim($row['Datum2'])) {
+                $created .= " - " . trim($row['Datum2']);
+            }
+        } else {
+            $created = trim($row['Datum2']);
+        }
+    }
+
+    $meta['dc:title']       = $row['sciName'];
+    $meta['dc:description'] = "A {$basisOfRecord} of " . $row['sciName'] . " collected by {$CollectorTeam}";
+    $meta['dc:creator']     = $CollectorTeam;
+    $meta['dc:created']     = $created;
+    $meta['dc:type']        = $basisOfRecord;
+
     $meta['dwc:materialSampleID'] = $row_sid['stableIdentifier'];
-    $meta['dwc:basisOfRecord']    = (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen");
+    $meta['dwc:basisOfRecord']    = $basisOfRecord;
     $meta['dwc:scientificName']   = $row['sciName'];
 
     $result = array();
@@ -183,7 +222,8 @@ private function getAddtlData($specimenID, $metadata)
 
     }
 
-    return array('description' => "A " . $meta['dwc:basisOfRecord'] . " of " . $row['sciName'],
+    return array('description' => $meta['dc:description'],
+                 'label'       => $row['sciName'],
                  'metadata'    => $result);
 }
 
