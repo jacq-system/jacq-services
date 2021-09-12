@@ -46,12 +46,14 @@ public function getManifest($specimenID, $currentUri)
             $curl_response = curl_exec($curl);
             if ($curl_response !== false) {
                 $result = json_decode($curl_response, true);
-                $addtlData = $this->getAddtlData($specimen['specimen_ID'], (isset($result['metadata'])) ? $result['metadata'] : array());
+                $manifestMetadata = new IiifManifestMetadataMapper($this->db, $specimen['specimen_ID'], (isset($result['metadata'])) ? $result['metadata'] : array());
 
                 $result['@id']         = $currentUri;  // to point at ourselves
-                $result['description'] = $addtlData['description'];
-                $result['label']       = $addtlData['label'];
-                $result['metadata']    = $addtlData['metadata'];
+                $result['description'] = $manifestMetadata->getDescription();
+                $result['label']       = $manifestMetadata->getLabel();
+                $result['attribution'] = $manifestMetadata->getAttribution();
+                $result['logo']        = $manifestMetadata->getLogo();
+                $result['metadata']    = $manifestMetadata->getMetadataWithValue();
             }
             curl_close($curl);
         }
@@ -146,85 +148,6 @@ private function makeURI ($specimen, $parts)
     }
 
     return $uri;
-}
-
-private function getAddtlData($specimenID, $metadata)
-{
-    $row_sid = $this->db->query("SELECT stableIdentifier
-                                 FROM tbl_specimens_stblid
-                                 WHERE specimen_ID = $specimenID
-                                 ORDER BY timestamp DESC
-                                 LIMIT 1")
-                        ->fetch_assoc();
-    $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tg.genus, te.epithet, s.observation, s.Datum, s.Datum2,
-                              c.Sammler, c2.Sammler_2
-                             FROM tbl_specimens s
-                              LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
-                              LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID
-                              LEFT JOIN tbl_tax_species ts            ON ts.taxonID      = s.taxonID
-                              LEFT JOIN tbl_tax_rank ttr              ON ttr.tax_rankID  = ts.tax_rankID
-                              LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
-                              LEFT JOIN tbl_tax_epithets te           ON te.epithetID    = ts.speciesID
-                              LEFT JOIN tbl_tax_genera tg             ON tg.genID        = ts.genID
-                              LEFT JOIN tbl_tax_families tf           ON tf.familyID     = tg.familyID
-                              LEFT JOIN tbl_geo_nation gn             ON gn.nationID     = s.NationID
-                             WHERE s.specimen_ID = $specimenID")
-                        ->fetch_assoc();
-
-    // sort existing metadata (if any) into array to prevent double entries
-    foreach ($metadata as $line) {
-        $meta[$line['label']] = $line['value'];
-    }
-
-    $basisOfRecord = (($row['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen");
-
-    /**
-     * CollectorTeam
-     */
-    $CollectorTeam = $row['Sammler'];
-    if (strstr($row['Sammler_2'], "et al.") || strstr($row['Sammler_2'], "alii")) {
-        $CollectorTeam .= " et al.";
-    } elseif ($row['Sammler_2']) {
-        $parts = explode(',', $row['Sammler_2']);           // some people forget the final "&"
-        if (count($parts) > 2) {                            // so we have to use an alternative way
-            $CollectorTeam .= ", " . $row['Sammler_2'];
-        } else {
-            $CollectorTeam .= " & " . $row['Sammler_2'];
-        }
-    }
-
-    if (trim($row['Datum']) == "s.d.") {
-        $created = '';
-    } else {
-        $created = trim($row['Datum']);
-        if ($created) {
-            if (trim($row['Datum2'])) {
-                $created .= " - " . trim($row['Datum2']);
-            }
-        } else {
-            $created = trim($row['Datum2']);
-        }
-    }
-
-    $meta['dc:title']       = $row['sciName'];
-    $meta['dc:description'] = "A {$basisOfRecord} of " . $row['sciName'] . " collected by {$CollectorTeam}";
-    $meta['dc:creator']     = $CollectorTeam;
-    $meta['dc:created']     = $created;
-    $meta['dc:type']        = $basisOfRecord;
-
-    $meta['dwc:materialSampleID'] = $row_sid['stableIdentifier'];
-    $meta['dwc:basisOfRecord']    = $basisOfRecord;
-    $meta['dwc:scientificName']   = $row['sciName'];
-
-    $result = array();
-    foreach ($meta as $label => $value) {
-        $result[] = array('label' => $label, 'value' => $value);
-
-    }
-
-    return array('description' => $meta['dc:description'],
-                 'label'       => $row['sciName'],
-                 'metadata'    => $result);
 }
 
 }
