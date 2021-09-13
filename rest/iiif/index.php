@@ -163,13 +163,13 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
  *     @OA\Response(response="200", description="OpenAPI Description File"),
  * )
  */
-$app->get('/openapi', function ($request, $response, $args) {
+$app->get('/openapi', function (Request $request, Response $response) {
     $swagger = scan(__DIR__);
     $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 
-$app->get('/description', function($request, $response, $args) {
+$app->get('/description', function(Request $request, Response $response) {
     return file_get_contents('description.html');
 });
 
