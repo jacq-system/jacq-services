@@ -46,14 +46,14 @@ public function getManifest($specimenID, $currentUri)
             $curl_response = curl_exec($curl);
             if ($curl_response !== false) {
                 $result = json_decode($curl_response, true);
-                $manifestMetadata = new IiifManifestMetadataMapper($this->db, $specimen['specimen_ID'], (isset($result['metadata'])) ? $result['metadata'] : array());
+                $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
 
                 $result['@id']         = $currentUri;  // to point at ourselves
-                $result['description'] = $manifestMetadata->getDescription();
-                $result['label']       = $manifestMetadata->getLabel();
-                $result['attribution'] = $manifestMetadata->getAttribution();
-                $result['logo']        = $manifestMetadata->getLogo();
-                $result['metadata']    = $manifestMetadata->getMetadataWithValue();
+                $result['description'] = $specimen->getDescription();
+                $result['label']       = $specimen->getLabel();
+                $result['attribution'] = $specimen->getAttribution();
+                $result['logo']        = array('@id' => $specimen->getLogoURI());
+                $result['metadata']    = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
             }
             curl_close($curl);
         }
@@ -148,6 +148,64 @@ private function makeURI ($specimen, $parts)
     }
 
     return $uri;
+}
+
+/**
+ * get array of metadata for a given specimen
+ *
+ * @param SpecimenMapper $specimen specimen to get metadata from
+ * @param array $metadata already existing metadata in manifest (optional)
+ * @return array metadata
+ */
+private function getMetadata(SpecimenMapper $specimen, $metadata = array())
+{
+    $meta = $metadata;
+
+    $dcData = $specimen->getDC();
+    foreach ($dcData as $label => $value) {
+        $meta[] = array('label' => $label,
+                        'value' => $value);
+    }
+
+    $dwcData = $specimen->getDWC();
+    foreach ($dwcData as $label => $value) {
+        $meta[] = array('label' => $label,
+                        'value' => $value);
+    }
+
+    $specimenProperties = $specimen->getProperties();
+
+    $meta[] = array('label' => 'CETAF_ID',          'value' => $specimenProperties['stableIdentifier']);
+    $meta[] = array('label' => 'dwciri:recordedBy', 'value' => $specimenProperties['WIKIDATA_ID']);
+    if (!empty($specimenProperties['HUH_ID'])) {
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['HUH_ID']);
+    }
+    if (!empty($specimenProperties['VIAF_ID'])) {
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['VIAF_ID']);
+    }
+
+    return $meta;
+}
+
+/**
+ * get array of metadata for a given specimen, where values are not empty
+ *
+ * @param SpecimenMapper $specimen specimen to get metadata from
+ * @param array $metadata already existing metadata in manifest (optional)
+ * @return array metadata
+ */
+private function getMetadataWithValues(SpecimenMapper $specimen, $metadata = array())
+{
+    $meta = $this->getMetadata($specimen, $metadata);
+    $result = array();
+    foreach ($meta as $key => $row) {
+        if (!empty($row['value'])) {
+            $result[] = $row;
+        }
+    }
+    return $result;
+
+
 }
 
 }
