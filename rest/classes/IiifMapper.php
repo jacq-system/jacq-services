@@ -198,14 +198,12 @@ private function getMetadataWithValues(SpecimenMapper $specimen, $metadata = arr
 {
     $meta = $this->getMetadata($specimen, $metadata);
     $result = array();
-    foreach ($meta as $key => $row) {
+    foreach ($meta as $row) {
         if (!empty($row['value'])) {
             $result[] = $row;
         }
     }
     return $result;
-
-
 }
 
 }
