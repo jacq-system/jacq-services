@@ -180,7 +180,7 @@ public function getLogoURI()
 }
 
 /**
- * get the DC-Data of this specimen
+ * get the properties of this specimen with Dublin Core Names (dc:...)
  *
  * @return array dc-data
  */
@@ -196,7 +196,7 @@ public function getDC()
 }
 
 /**
- * get the DWC-Data of this specimen
+ * get the properties of this specimen with Darwin Core Names (dwc:...)
  *
  * @return array dwc-data
  */
@@ -218,6 +218,21 @@ public function getDWC()
                  'dwc:recordNumber'            => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimen_ID']),
                  'dwc:recordedBy'              => $this->properties['collectorTeam'],
                  'dwc:fieldNumber'             => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
+}
+
+/**
+ * get the properties of this specimen with JACQ Names (jacq:...)
+ *
+ * @return array jacq-data
+ */
+public function getJACQ()
+{
+    $result = array();
+    foreach ($this->properties as $key => $value) {
+        $result["jacq:{$key}"] = $value;
+    }
+
+    return $result;
 }
 
 
