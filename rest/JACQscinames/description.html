@@ -67,6 +67,32 @@
       </tr>
     </table>
 
+    <h2>search/{term}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>do a fulltext search for scientific names and also get their taxonIDs; all parts of the search term are mandatory for the search</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          [<br>
+          <pre> {</pre><br>
+          <pre>  "taxonID":        ID of scientific name</pre><br>
+          <pre>  "scientificName": scientific name</pre><br>
+          <pre> },&hellip;</pre><br>
+          ]
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="search/prunus aviu* martens" target="_blank">https://services.jacq.org/jacq-services/rest/JACQscinames/search/prunus aviu* martens</a><br>
+            look for all scientific names which have "prunus" and "martens" in it and something beginning with "aviu"
+        </td>
+      </tr>
+    </table>
+
     <h2>resolve/{uuid}</h2>
     <table>
       <tr>
