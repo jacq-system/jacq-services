@@ -120,14 +120,14 @@ $app->get('/uuid/{taxonID}', function (Request $request, Response $response, arr
  * @OA\Get(
  *  path="/name/{taxonID}",
  *  summary="Get scientific name, uuid and uuid-url of a given taxonID",
-  *  @OA\Parameter(
+ *  @OA\Parameter(
  *      name="taxonID",
  *      in="path",
  *      description="ID of taxon name",
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/name/{taxonID}', function (Request $request, Response $response, array $args)
@@ -146,16 +146,42 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
 
 /**
  * @OA\Get(
+ *  path="/search/{term}",
+ *  summary="search for scientific names; get taxonIDs and scientific names of search result",
+ *  @OA\Parameter(
+ *      name="term",
+ *      in="path",
+ *      description="search term",
+ *      required=true,
+ *      example="prunus aviu*",
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/search/{term}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called search ");
+
+    $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
+                                                      'apikey' => $this->get('settings')['APIKEY']));
+    $data = $mapper->searchScientificName(trim(filter_var($args['term'], FILTER_SANITIZE_STRING)));
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+});
+
+/**
+ * @OA\Get(
  *  path="/resolve/{uuid}",
  *  summary="Get scientific name, uuid-url and taxon-ID of a given uuid",
-  *  @OA\Parameter(
+ *  @OA\Parameter(
  *      name="uuid",
  *      in="path",
  *      description="uuid of taxon name",
  *      required=true,
  *      @OA\Schema(type="string")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/resolve/{uuid}', function (Request $request, Response $response, array $args)

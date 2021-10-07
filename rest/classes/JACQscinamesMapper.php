@@ -62,6 +62,25 @@ public function getScientificName ($taxonID)
 }
 
 /**
+ * do a fulltext search in the scientific names (all parts of the term are mandatory, so a "+" is automatically inserted before each part)
+ *
+ * @param string $term search term
+ * @return array results of search (taxonID and scientificName)
+ */
+public function searchScientificName ($term)
+{
+/*
+INSERT INTO tbl_tax_sciname SELECT taxonID, herbar_view.GetScientificName(taxonID, 0) FROM tbl_tax_species
+SELECT * FROM `tbl_tax_sciname` WHERE MATCH(scientificName) against('+prunus +avium' IN BOOLEAN MODE)
+*/
+    $parts = explode(" ", $term);
+    $rows = $this->db->query("SELECT taxonID, scientificName
+                              FROM `tbl_tax_sciname`
+                              WHERE MATCH(scientificName) against('" . $this->db->real_escape_string('+' . implode(" +", $parts)) . "' IN BOOLEAN MODE)")->fetch_all(MYSQLI_ASSOC);
+    return $rows;
+}
+
+/**
  * get taxonID from database
  *
  * @param string $uuid uuid of taxon (uuid_minter_type_id = 1)
