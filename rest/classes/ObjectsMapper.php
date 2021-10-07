@@ -7,9 +7,9 @@ public function getSpecimenData($specimenID)
     $specimen = new SpecimenMapper($this->db, intval($specimenID));
 
 //    return array_merge($specimen->getDC(), $specimen->getDWC(), $specimen->getJACQ());
-    return array("DC"   => $specimen->getDC(),
-                 "DWC"  => $specimen->getDWC(),
-                 "JACQ" => $specimen->getJACQ());
+    return array("dc"   => $specimen->getDC(),
+                 "dwc"  => $specimen->getDWC(),
+                 "jacq" => $specimen->getJACQ());
 }
 
 public function getSpecimenDataWithValues($specimenID)
@@ -26,7 +26,14 @@ public function getSpecimenDataWithValues($specimenID)
     return $result;
 }
 
-
+public function getSpecimensFromList($list)
+{
+    $result = array();
+    foreach ($list as $item) {
+        $result[] = $this->getSpecimenDataWithValues(intval($item));
+    }
+    return $result;
+}
 
 
 

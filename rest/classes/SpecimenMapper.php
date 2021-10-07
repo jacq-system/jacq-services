@@ -97,7 +97,8 @@ public function __construct(mysqli $db, $specimenID)
         /**
          * everything else
          */
-        $this->properties['sciName']                 = $row['sciName'];
+        $this->properties['specimenID']              = $this->specimenID;
+        $this->properties['scientificName']          = $row['sciName'];
         $this->properties['family']                  = $row['family'];
         $this->properties['genus']                   = $row['genus'];
         $this->properties['epithet']                 = $row['epithet'];
@@ -146,7 +147,7 @@ public function getSpecimenID()
 public function getDescription()
 {
     return "A " . (($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen")
-         . " of " . $this->properties['sciName'] . " collected by {$this->properties['collectorTeam']}";
+         . " of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}";
 }
 
 /**
@@ -156,7 +157,7 @@ public function getDescription()
  */
 public function getLabel()
 {
-    return $this->properties['sciName'];
+    return $this->properties['scientificName'];
 }
 
 /**
@@ -188,8 +189,8 @@ public function getDC()
 {
     $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
 
-    return array('dc:title'       => $this->properties['sciName'],
-                 'dc:description' => "A {$basisOfRecord} of " . $this->properties['sciName'] . " collected by {$this->properties['collectorTeam']}",
+    return array('dc:title'       => $this->properties['scientificName'],
+                 'dc:description' => "A {$basisOfRecord} of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}",
                  'dc:creator'     => $this->properties['collectorTeam'],
                  'dc:created'     => $this->properties['created'],
                  'dc:type'        => $basisOfRecord);
@@ -206,7 +207,7 @@ public function getDWC()
                  'dwc:basisOfRecord'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
                  'dwc:collectionCode'          => $this->properties['OwnerOrganizationAbbrev'],
                  'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimen_ID']),
-                 'dwc:scientificName'          => $this->properties['sciName'],
+                 'dwc:scientificName'          => $this->properties['scientificName'],
                  'dwc:previousIdentifications' => $this->properties['taxon_alt'],
                  'dwc:family'                  => $this->properties['family'],
                  'dwc:genus'                   => $this->properties['genus'],

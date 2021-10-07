@@ -97,6 +97,19 @@ $app->add(function (Request $request, Response $response, $next)
 /*******************
  * Register routes *
  *******************/
+$app->post('/specimens/fromList/', function (Request $request, Response $response)
+{
+//    $this->logger->addInfo("called specimensFromList ");
+
+    $mapper = new ObjectsMapper($this->db);
+
+    $data = $mapper->getSpecimensFromList($request->getParsedBody());
+
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+
+});
+
 /**
  * @OA\Get(
  *  path="/specimens/{specimenID}",
