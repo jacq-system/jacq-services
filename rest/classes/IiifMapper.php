@@ -53,6 +53,15 @@ public function getManifest($specimenID, $currentUri)
                 $result['label']       = $specimen->getLabel();
                 $result['attribution'] = $specimen->getAttribution();
                 $result['logo']        = array('@id' => $specimen->getLogoURI());
+                $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
+                                               'label'   => 'RDF',
+                                               'format'  => 'application/rdf+xml',
+                                               'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
+                if (empty($result['seeAlso'])) {
+                    $result['seeAlso']   = array($rdfLink);
+                } else {
+                    $result['seeAlso'][] = $rdfLink;
+                }
                 $result['metadata']    = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
             }
             curl_close($curl);
@@ -182,6 +191,9 @@ private function getMetadata(SpecimenMapper $specimen, $metadata = array())
     }
     if (!empty($specimenProperties['VIAF_ID'])) {
         $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['VIAF_ID']);
+    }
+    if (!empty($specimenProperties['ORCID'])) {
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['ORCID']);
     }
 
     return $meta;

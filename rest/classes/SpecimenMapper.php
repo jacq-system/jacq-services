@@ -45,7 +45,7 @@ public function __construct(mysqli $db, $specimenID)
      */
     $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tf.family, tg.genus, te.epithet,
                               s.HerbNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
-                              c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c2.Sammler_2,
+                              c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
                               md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI,
                               gn.nation_engl, gn.iso_alpha_3_code
                              FROM tbl_specimens s
@@ -111,6 +111,7 @@ public function __construct(mysqli $db, $specimenID)
         $this->properties['WIKIDATA_ID']             = $row['WIKIDATA_ID'];
         $this->properties['HUH_ID']                  = $row['HUH_ID'];
         $this->properties['VIAF_ID']                 = $row['VIAF_ID'];
+        $this->properties['ORCID']                   = $row['ORCID'];
         $this->properties['OwnerOrganizationAbbrev'] = $row['OwnerOrganizationAbbrev'];
         $this->properties['OwnerLogoURI']            = $row['OwnerLogoURI'];
         $this->properties['LicenseURI']              = $row['LicenseURI'];
@@ -178,6 +179,16 @@ public function getAttribution()
 public function getLogoURI()
 {
     return $this->properties['OwnerLogoURI'];
+}
+
+/**
+ * get the stable identifier of this specimen
+ *
+ * @return string stable identifier
+ */
+public function getStableIdentifier()
+{
+    return $this->properties['stableIdentifier'];
 }
 
 /**
