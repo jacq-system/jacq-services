@@ -33,6 +33,9 @@ $settings = [
             'path' => __DIR__ . '/../logs/objects.log',
             'level' => \Monolog\Logger::DEBUG,
         ],
+
+        'jacq_input_services' => $_CONFIG['JACQ_INPUT_SERVICES'],
+        'APIKEY' => $_CONFIG['APIKEY'],
     ],
 ];
 
@@ -97,13 +100,36 @@ $app->add(function (Request $request, Response $response, $next)
 /*******************
  * Register routes *
  *******************/
-$app->post('/specimens/fromList/', function (Request $request, Response $response)
+$app->post('/specimens/fromList', function (Request $request, Response $response)
 {
-//    $this->logger->addInfo("called specimensFromList ");
+//    $this->logger->addInfo("called specimens/fromList ");
 
     $mapper = new ObjectsMapper($this->db);
 
     $data = $mapper->getSpecimensFromList($request->getParsedBody());
+
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+
+});
+
+$app->get('/specimens/search', function (Request $request, Response $response)
+{
+//    $this->logger->addInfo("called specimens/search ");
+
+    $mapper = new ObjectsMapper($this->db);
+
+    $params = $request->getQueryParams();
+    $taxonIDList = array();
+    if (!empty($params['term'])) {
+        $mapperSciNames = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
+                                                                  'apikey' => $this->get('settings')['APIKEY']));
+        $scinamesList = $mapperSciNames->searchScientificName(trim(filter_var($params['term'], FILTER_SANITIZE_STRING)));
+        foreach ($scinamesList as $item) {
+            $taxonIDList[] = $item['taxonID'];
+        }
+    }
+    $data = $mapper->searchSpecimensList($params, $taxonIDList);
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
@@ -130,7 +156,7 @@ $app->get('/specimens/{specimenID}', function (Request $request, Response $respo
 
     $mapper = new ObjectsMapper($this->db);
 
-    $data = $mapper->getSpecimenDataWithValues(intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
+    $data = $mapper->getSpecimenData(intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;

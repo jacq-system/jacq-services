@@ -24,21 +24,19 @@ public function __construct(mysqli $db, $specimenID)
     if (intval($specimenID) == 0) {
         return;  // nothing to look for, so just stop
     }
+    $this->specimenID = intval($specimenID);
 
     /**
      * first get the stable identifier
      */
     $row_sid = $this->db->query("SELECT specimen_ID, stableIdentifier
                                  FROM tbl_specimens_stblid
-                                 WHERE specimen_ID = " . intval($specimenID) . "
+                                 WHERE specimen_ID = " . $this->specimenID . "
                                  ORDER BY timestamp DESC
                                  LIMIT 1")
                         ->fetch_assoc();
 
-    if (!empty($row_sid)) {
-        $this->properties['stableIdentifier'] = $row_sid['stableIdentifier'];
-        $this->specimenID                     = $row_sid['specimen_ID'];
-    }
+    $this->properties['stableIdentifier'] = (!empty($row_sid)) ?$row_sid['stableIdentifier'] : '';
 
     /**
      * then get all other properties of the specimen
@@ -47,6 +45,7 @@ public function __construct(mysqli $db, $specimenID)
                               s.HerbNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
                               c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
                               md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI,
+                              ss.series,
                               gn.nation_engl, gn.iso_alpha_3_code
                              FROM tbl_specimens s
                               LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
@@ -55,6 +54,7 @@ public function __construct(mysqli $db, $specimenID)
                               LEFT JOIN tbl_tax_rank ttr              ON ttr.tax_rankID  = ts.tax_rankID
                               LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
                               LEFT JOIN metadata md                   ON md.MetadataID   = mc.source_id
+                              LEFT JOIN tbl_specimens_series ss       ON ss.seriesID     = s.seriesID
                               LEFT JOIN tbl_tax_epithets te           ON te.epithetID    = ts.speciesID
                               LEFT JOIN tbl_tax_genera tg             ON tg.genID        = ts.genID
                               LEFT JOIN tbl_tax_families tf           ON tf.familyID     = tg.familyID
@@ -107,6 +107,7 @@ public function __construct(mysqli $db, $specimenID)
         $this->properties['taxon_alt']               = $row['taxon_alt'];
         $this->properties['Fundort']                 = $row['Fundort'];
         $this->properties['Nummer']                  = $row['Nummer'];
+        $this->properties['series']                  = $row['series'];
         $this->properties['alt_number']              = $row['alt_number'];
         $this->properties['WIKIDATA_ID']             = $row['WIKIDATA_ID'];
         $this->properties['HUH_ID']                  = $row['HUH_ID'];
@@ -217,7 +218,7 @@ public function getDWC()
     return array('dwc:materialSampleID'        => $this->properties['stableIdentifier'],
                  'dwc:basisOfRecord'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
                  'dwc:collectionCode'          => $this->properties['OwnerOrganizationAbbrev'],
-                 'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimen_ID']),
+                 'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimenID']),
                  'dwc:scientificName'          => $this->properties['scientificName'],
                  'dwc:previousIdentifications' => $this->properties['taxon_alt'],
                  'dwc:family'                  => $this->properties['family'],
@@ -227,7 +228,7 @@ public function getDWC()
                  'dwc:countryCode'             => $this->properties['iso_alpha_3_code'],
                  'dwc:locality'                => $this->properties['Fundort'],
                  'dwc:eventDate'               => $this->properties['created'],
-                 'dwc:recordNumber'            => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimen_ID']),
+                 'dwc:recordNumber'            => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimenID']),
                  'dwc:recordedBy'              => $this->properties['collectorTeam'],
                  'dwc:fieldNumber'             => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
 }
