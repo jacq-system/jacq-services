@@ -5,6 +5,20 @@
     <meta charset="UTF-8">
     <link rel="shortcut icon" href="JACQ_LOGO.png"/>
     <link rel="stylesheet" type="text/css" href="../css/description.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      function postFromList() {
+          $.ajax("specimens/fromList", {
+            data: JSON.stringify([1739342,435533,10000]),
+            method: "POST",
+            contentType: "application/json",
+            success: function(data) {
+                var w = window.open();
+                w.document.write('<pre>' + JSON.stringify(data, null, 2) + '</pre>');
+            }
+          });
+      }
+    </script>
   </head>
   <body>
     <h3>JACQ Webservices</h3>
@@ -16,7 +30,7 @@
     <span class="rectangle">objects</span>
 
     <h1>JACQ Objects Webservice</h1>
-    <h2>specimens/{specimenID}</h2>
+    <h2>GET specimens/{specimenID}</h2>
     <table>
       <tr>
         <td class="type">summary</td>
@@ -43,6 +57,120 @@
         <td class="type">Example</td>
         <td><a href="specimens/1739342" target="_blank">https://services.jacq.org/jacq-services/rest/objetcs/specimens/1739342</a><br>
             get all properties of specimen-ID 1739342
+        </td>
+      </tr>
+    </table>
+
+    <h2>POST specimens/fromList</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>post a list of specimen-IDs to get a list of the properties of each specimen</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          [<br>
+          <pre> {</pre><br>
+          <pre>  "dc":   {</pre><br>
+          <pre>           "dc:&hellip;":   Dublin Core Items</pre><br>
+          <pre>          }</pre><br>
+          <pre>  "dwc":  {</pre><br>
+          <pre>           "dwc:&hellip;":  Darwin Core Items</pre><br>
+          <pre>          }</pre><br>
+          <pre>  "jacq": {</pre><br>
+          <pre>           "jacq:&hellip;": JACQ Items</pre><br>
+          <pre>          }</pre><br>
+          <pre> },&hellip;</pre><br>
+          ]
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="#" onclick="postFromList(); return false;">https://services.jacq.org/jacq-services/rest/objetcs/specimens/1739342</a><br>
+            get all properties of specimen-ID 1739342
+        </td>
+      </tr>
+    </table>
+
+    <h2>GET specimens/search</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>search for all specimens which fit given criteria</td>
+      </tr><tr>
+        <td class="type">Parameters</td>
+        <td>
+          <table style="margin-left: 0px">
+            <tr>
+              <td>p</td>
+              <td>page to display. <i>default: display the first page</i></td>
+            </tr><tr>
+              <td>epp</td>
+              <td>records per page. <i>default: 50</i> (maximum: 100)</td>
+            </tr><tr>
+              <td>list</td>
+              <td>0 means return all, 1 means return just a list of specimen-IDs. <i>default: 1</i></td>
+            </tr><tr>
+              <td style="padding-right: 2em">term</td>
+              <td>taxon term to include in the search. Use * as a wildcard. <i>default: empty</i></td>
+            </tr><tr>
+              <td>sc</td>
+              <td>source code to include in the search. Case insensitive. <i>default: empty</i></td>
+            </tr><tr>
+              <td>coll</td>
+              <td>collector(s) to include in the search. Case insensitive. <i>default: empty</i></td>
+            </tr><tr>
+              <td style="vertical-align: top">sort</td>
+              <td>sort order of the result. "-" as first character changes sorting to DESC. <i>default: sciname,herbnr</i><br>
+                Possible values are:
+                <ul style="margin: 0px">
+                  <li>sciname - scientific name</li>
+                  <li>herbnr - herbarium number</li>
+                  <li>coll - collectors</li>
+                  <li>ser - series</li>
+                  <li>num - collectors number</li>
+                </ul>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          <pre> {</pre><br>
+          <pre>  "total":        total number of records found</pre><br>
+          <pre>  "itemsPerPage": records per page</pre><br>
+          <pre>  "page":         page displayed</pre><br>
+          <pre>  "previousPage": link to previous page</pre><br>
+          <pre>  "nextPage":     link to next page</pre><br>
+          <pre>  "firstPage":    link to first page</pre><br>
+          <pre>  "lastPage":     link to last page</pre><br>
+          <pre>  "totalPages":   total number of pages</pre><br>
+          <pre>  "result":       List of found entries</pre><br>
+          <pre>      [</pre><br>
+          <pre>       {</pre><br>
+          <pre>        "dc":   {</pre><br>
+          <pre>                 "dc:&hellip;":   Dublin Core Items</pre><br>
+          <pre>                }</pre><br>
+          <pre>        "dwc":  {</pre><br>
+          <pre>                 "dwc:&hellip;":  Darwin Core Items</pre><br>
+          <pre>                }</pre><br>
+          <pre>        "jacq": {</pre><br>
+          <pre>                 "jacq:&hellip;": JACQ Items</pre><br>
+          <pre>                }</pre><br>
+          <pre>       },&hellip;</pre><br>
+          <pre>      ]</pre><br>
+          <pre> }</pre>
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="specimens/search?list=0&term=prunus av*&sc=wu" target="_blank">https://services.jacq.org/jacq-services/rest/objetcs/specimens/search?list=0&term=prunus av*&sc=wu</a><br>
+            search for all specimens with taxon "prunus av*" of source wu
         </td>
       </tr>
     </table>
