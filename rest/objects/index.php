@@ -113,6 +113,62 @@ $app->post('/specimens/fromList', function (Request $request, Response $response
 
 });
 
+/**
+ * @OA\Get(
+ *  path="/specimens/search",
+ *  summary="search for all specimens which fit given criteria",
+  *  @OA\Parameter(
+ *      name="p",
+ *      in="query",
+ *      description="optional number of page to display, starts with 0 (first page), defaults to 0",
+ *      example="2",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="rpp",
+ *      in="query",
+ *      description="optional number of records per page to display (<= 100), defaults to 50",
+ *      example="20",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="list",
+ *      in="query",
+ *      description="optional switch if all specimen data should be returned (=0) or just a list of specimen-IDs (=1), defaults to 1",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="term",
+ *      in="query",
+ *      description="optional search term for scientific names, use * as a wildcard",
+ *      example="prunus av*",
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="sc",
+ *      in="query",
+ *      description="optional search term for source codes, case insensitive",
+ *      example="wu",
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="coll",
+ *      in="query",
+ *      description="optional search term for collector(s), case insensitive",
+ *      example="rainer",
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="sort",
+ *      in="query",
+ *      description="optional sorting of results, seperated by commas, possible items are sciname (scientific name), coll (collector(s)), ser (series), num (collectors number), herbnr (herbarium number), defaults to sciname,herbnr",
+ *      example="coll,num",
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
 $app->get('/specimens/search', function (Request $request, Response $response)
 {
 //    $this->logger->addInfo("called specimens/search ");
@@ -147,7 +203,7 @@ $app->get('/specimens/search', function (Request $request, Response $response)
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/specimens/{specimenID}', function (Request $request, Response $response, array $args)

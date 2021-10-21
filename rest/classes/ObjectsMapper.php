@@ -58,8 +58,8 @@ public function getSpecimensFromList($list)
  * possible taxon-IDs have to be given as a list, as the search service for taxons need a special key and only the main rest-function has this key
  * params are all optional
  *      p (page to display, default first page),
- *      epp (entries per page, default 50),
- *      list (return just a list of specimen-IDs, default empty),
+ *      rpp (records per page, default 50),
+ *      list (return just a list of specimen-IDs, default 1),
  *      term (search for taxon, default none),
  *      sc (source code, default none)
  *      coll (collector, default none)
@@ -73,7 +73,7 @@ public function searchSpecimensList($params, $taxonIDList = array())
 {
     // check if all allowed parameters are in order and set default values if any are missing
     $allowedParams = array('p'    => 0,                 // page, default: display first page
-                           'epp'  => 50,                // entries per page, default: 50 entries per page
+                           'rpp'  => 50,                // records per page, default: 50
                            'list' => 1,                 // return just a list of specimen-IDs?, default: yes
                            'term' => '',                // search for scientific name (joker = *)
                            'sc'   => '',                // search for a source-code
@@ -84,13 +84,13 @@ public function searchSpecimensList($params, $taxonIDList = array())
         $filteredParam[$key] = (isset($params[$key])) ? trim(filter_var($params[$key], FILTER_SANITIZE_STRING)) : $default;
     }
     $filteredParam['p'] = intval($filteredParam['p']);
-    $filteredParam['epp'] = intval($filteredParam['epp']);
+    $filteredParam['rpp'] = intval($filteredParam['rpp']);
 
     // check if entries per page and page number are within allowed limits
-    if ($filteredParam['epp'] <= 10) {
-        $filteredParam['epp'] = 10;
-    } else if ($filteredParam['epp'] > 100) {
-        $filteredParam['epp'] = 100;
+    if ($filteredParam['rpp'] < 1) {
+        $filteredParam['rpp'] = 1;
+    } else if ($filteredParam['rpp'] > 100) {
+        $filteredParam['rpp'] = 100;
     }
     if ($filteredParam['p'] < 0) {
         $filteredParam['p'] = 0;
@@ -168,14 +168,14 @@ public function searchSpecimensList($params, $taxonIDList = array())
         }
     }
     // do the actual query
-    $list = $this->db->query($sql . $constraint . $order . " LIMIT " . ($filteredParam['epp'] * $filteredParam['p']) . "," . $filteredParam['epp'])
+    $list = $this->db->query($sql . $constraint . $order . " LIMIT " . ($filteredParam['rpp'] * $filteredParam['p']) . "," . $filteredParam['rpp'])
                      ->fetch_all(MYSQLI_ASSOC);
 
     // and get the total number of rows
     $nrRows = intval($this->db->query("SELECT FOUND_ROWS()")->fetch_row()[0]);
 
     // get the number of pages and check the active page again
-    $lastPage = floor(($nrRows - 1) / $filteredParam['epp']);
+    $lastPage = floor(($nrRows - 1) / $filteredParam['rpp']);
     if ($filteredParam['p'] > $lastPage) {   // if the page number was wrongly set to a too large value
         $filteredParam['p'] = $lastPage + 1; // reset it to the page after the last page
     }
@@ -186,7 +186,7 @@ public function searchSpecimensList($params, $taxonIDList = array())
     $newparams = '&' . http_build_query($filteredParam, '', '&', PHP_QUERY_RFC3986);
     $url = $this->getBaseUrl() . 'specimens/search';
     $data = array('total'        => $nrRows,
-                  'itemsPerPage' => $filteredParam['epp'],
+                  'itemsPerPage' => $filteredParam['rpp'],
                   'page'         => $p + 1,
                   'previousPage' => $url . '?p=' . (($p > 0) ? ($p - 1) : 0) . $newparams,
                   'nextPage'     => $url . '?p=' . (($p < $lastPage) ? ($p + 1) : $lastPage) . $newparams,

@@ -151,7 +151,7 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
  *  @OA\Parameter(
  *      name="term",
  *      in="path",
- *      description="search term",
+ *      description="search term, use * as wildcard",
  *      required=true,
  *      example="prunus aviu*",
  *      @OA\Schema(type="string")

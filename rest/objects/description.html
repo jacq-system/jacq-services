@@ -100,27 +100,18 @@
         <td class="type">summary</td>
         <td>search for all specimens which fit given criteria</td>
       </tr><tr>
-        <td class="type">Parameters</td>
+        <td class="type">possible<br>Parameters</td>
         <td>
-          <table style="margin-left: 0px">
+          <table class="subtable">
             <tr>
               <td>p</td>
               <td>page to display. <i>default: display the first page</i></td>
             </tr><tr>
-              <td>epp</td>
+              <td>rpp</td>
               <td>records per page. <i>default: 50</i> (maximum: 100)</td>
             </tr><tr>
               <td>list</td>
               <td>0 means return all, 1 means return just a list of specimen-IDs. <i>default: 1</i></td>
-            </tr><tr>
-              <td style="padding-right: 2em">term</td>
-              <td>taxon term to include in the search. Use * as a wildcard. <i>default: empty</i></td>
-            </tr><tr>
-              <td>sc</td>
-              <td>source code to include in the search. Case insensitive. <i>default: empty</i></td>
-            </tr><tr>
-              <td>coll</td>
-              <td>collector(s) to include in the search. Case insensitive. <i>default: empty</i></td>
             </tr><tr>
               <td style="vertical-align: top">sort</td>
               <td>sort order of the result. "-" as first character changes sorting to DESC. <i>default: sciname,herbnr</i><br>
@@ -133,6 +124,17 @@
                   <li>num - collectors number</li>
                 </ul>
               </td>
+            </tr><tr>
+              <td colspan="2"><b>possible search parameters:</b></td>
+            </tr><tr>
+              <td>term</td>
+              <td>search for taxon term. Use * as a wildcard.</td>
+            </tr><tr>
+              <td>sc</td>
+              <td>search for source code. Case insensitive.</td>
+            </tr><tr>
+              <td>coll</td>
+              <td>search for collector(s). Case insensitive.</td>
             </tr>
           </table>
         </td>
@@ -170,7 +172,7 @@
       </tr><tr>
         <td class="type">Example</td>
         <td><a href="specimens/search?list=0&term=prunus av*&sc=wu" target="_blank">https://services.jacq.org/jacq-services/rest/objetcs/specimens/search?list=0&term=prunus av*&sc=wu</a><br>
-            search for all specimens with taxon "prunus av*" of source wu
+            search for all specimens with taxon "prunus av*" of source wu, display the first page with 50 records per page
         </td>
       </tr>
     </table>

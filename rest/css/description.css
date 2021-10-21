@@ -9,6 +9,14 @@ h2 {
     border-top: thin solid black;
 }
 
+table.subtable {
+    margin-left: 0px;
+}
+table.subtable td {
+    padding-bottom: 0px;
+    padding-right: 1em;
+}
+
 .type {
     font-style: italic;
     padding-right: 2em;
