@@ -50,10 +50,43 @@ public function getUuid ($taxonID)
  */
 public function getScientificName ($taxonID)
 {
-    $this->db->query("CALL herbar_view._buildScientificNameComponents($taxonID, @scientificName, @author);");
-    $row = $this->db->query("SELECT @scientificName, @author")->fetch_assoc();
-    if ($row) {
-        $scientificName = $row['@scientificName'] . ' ' . $row['@author'];
+//    $this->db->query("CALL herbar_view._buildScientificNameComponents($taxonID, @scientificName, @author);");
+//    $row = $this->db->query("SELECT @scientificName, @author")->fetch_assoc();
+//    if ($row) {
+//        $scientificName = $row['@scientificName'] . ' ' . $row['@author'];
+//    } else {
+//        $scientificName = '';
+//    }
+    $result = $this->db->query("SELECT `herbar_view`.GetScientificName($taxonID, 0) AS sciname");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $scientificName = trim($row['sciname']);
+    } else {
+        $scientificName = '';
+    }
+
+    return $scientificName;
+}
+
+/**
+ * get scientific name without hybrids from database
+ *
+ * @param int $taxonID taxon-ID
+ * @return string scientific name
+ */
+public function getTaxonName ($taxonID)
+{
+//    $this->db->query("CALL herbar_view._buildScientificNameComponents($taxonID, @scientificName, @author);");
+//    $row = $this->db->query("SELECT @scientificName, @author")->fetch_assoc();
+//    if ($row) {
+//        $scientificName = $row['@scientificName'] . ' ' . $row['@author'];
+//    } else {
+//        $scientificName = '';
+//    }
+    $result = $this->db->query("SELECT `herbar_view`._buildScientificName($taxonID) AS sciname");
+    if ($result) {
+        $row = $result->fetch_assoc();
+        $scientificName = trim($row['sciname']);
     } else {
         $scientificName = '';
     }
@@ -70,11 +103,11 @@ public function getScientificName ($taxonID)
 public function searchScientificName ($term)
 {
 /*
-INSERT INTO tbl_tax_sciname SELECT taxonID, herbar_view.GetScientificName(taxonID, 0) FROM tbl_tax_species
+INSERT INTO tbl_tax_sciname SELECT taxonID, herbar_view.GetScientificName(taxonID, 0), herbar_view._buildScientificName(taxonID) FROM tbl_tax_species
 SELECT * FROM `tbl_tax_sciname` WHERE MATCH(scientificName) against('+prunus +avium' IN BOOLEAN MODE)
 */
     $parts = explode(" ", $term);
-    $rows = $this->db->query("SELECT taxonID, scientificName
+    $rows = $this->db->query("SELECT taxonID, scientificName, taxonName
                               FROM `tbl_tax_sciname`
                               WHERE MATCH(scientificName) against('" . $this->db->real_escape_string('+' . implode(" +", $parts)) . "' IN BOOLEAN MODE)")->fetch_all(MYSQLI_ASSOC);
     return $rows;

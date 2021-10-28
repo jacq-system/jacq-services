@@ -160,9 +160,16 @@ $app->post('/specimens/fromList', function (Request $request, Response $response
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Parameter(
+ *      name="type",
+ *      in="query",
+ *      description="optional switch to search for type records only, defaults to 0",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
  *      name="sort",
  *      in="query",
- *      description="optional sorting of results, seperated by commas, possible items are sciname (scientific name), coll (collector(s)), ser (series), num (collectors number), herbnr (herbarium number), defaults to sciname,herbnr",
+ *      description="optional sorting of results, seperated by commas, '-' as first character changes sorting to DESC, possible items are sciname (scientific name), coll (collector(s)), ser (series), num (collectors number), herbnr (herbarium number), defaults to sciname,herbnr",
  *      example="coll,num",
  *      @OA\Schema(type="string")
  *  ),

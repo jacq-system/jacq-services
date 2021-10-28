@@ -63,6 +63,7 @@ public function getSpecimensFromList($list)
  *      term (search for taxon, default none),
  *      sc (source code, default none)
  *      coll (collector, default none)
+ *      type (type records only, default 0)
  *      sort (sort order, default sciname, herbnr)
  *
  * @param array $params any parameters of the search
@@ -78,6 +79,7 @@ public function searchSpecimensList($params, $taxonIDList = array())
                            'term' => '',                // search for scientific name (joker = *)
                            'sc'   => '',                // search for a source-code
                            'coll' => '',                // search for a collector
+                           'type' => 0,                 // switch, search only for type records (default: no)
                            'sort' => 'sciname,herbnr'   // sorting of result, default: order scinames and herbnumbers
                           );
     foreach ($allowedParams as $key => $default) {
@@ -100,7 +102,7 @@ public function searchSpecimensList($params, $taxonIDList = array())
     $sql = "SELECT SQL_CALC_FOUND_ROWS s.specimen_ID AS specimenID
             FROM tbl_specimens s ";
     $joins = array();
-    $constraint = "WHERE 1 ";
+    $constraint = "WHERE s.accessible != '0' ";
     $order = "ORDER BY ";
 
     // what to search for
@@ -119,6 +121,10 @@ public function searchSpecimensList($params, $taxonIDList = array())
         $joins['c'] = true;
         $valueE = $this->db->real_escape_string($filteredParam['coll']);
         $constraint .= " AND (c.Sammler LIKE '$valueE%' OR c2.Sammler_2 LIKE '%$valueE%') ";
+    }
+    if (!empty($filteredParam['type'])) {
+        $joins['tst'] = true;
+        $constraint .= " AND tst.typusID IS NOT NULL ";
     }
 
     // order the result
@@ -158,12 +164,13 @@ public function searchSpecimensList($params, $taxonIDList = array())
     foreach ($joins as $join => $val) {
         if ($val) {
             switch ($join) {
-                case 'm':  $sql .= " LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
-                                     LEFT JOIN meta m                        ON m.source_ID     = mc.source_ID ";  break;
-                case 'c':  $sql .= " LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
-                                     LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID "; break;
-                case 'sn': $sql .= " LEFT JOIN tbl_tax_sciname sn            ON sn.taxonID      = s.taxonID ";     break;
-                case 'ss': $sql .= " LEFT JOIN tbl_specimens_series ss       ON ss.seriesID     = s.seriesID ";    break;
+                case 'tst': $sql .= " LEFT JOIN tbl_specimens_types tst       ON tst.specimenID  = s.specimen_ID "; break;
+                case 'm':   $sql .= " LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
+                                      LEFT JOIN meta m                        ON m.source_ID     = mc.source_ID ";  break;
+                case 'c':   $sql .= " LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
+                                      LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID "; break;
+                case 'sn':  $sql .= " LEFT JOIN tbl_tax_sciname sn            ON sn.taxonID      = s.taxonID ";     break;
+                case 'ss':  $sql .= " LEFT JOIN tbl_specimens_series ss       ON ss.seriesID     = s.seriesID ";    break;
             }
         }
     }

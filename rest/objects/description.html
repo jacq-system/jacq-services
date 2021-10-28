@@ -98,20 +98,23 @@
     <table>
       <tr>
         <td class="type">summary</td>
-        <td>search for all specimens which fit given criteria</td>
+        <td>search for all specimens which fit given criteria, return just a list of specimen-IDs or the whole specimen data</td>
       </tr><tr>
-        <td class="type">possible<br>Parameters</td>
+        <td class="type">search and sort<br>Parameters</td>
         <td>
           <table class="subtable">
             <tr>
-              <td>p</td>
-              <td>page to display. <i>default: display the first page</i></td>
+              <td>term</td>
+              <td>search for taxon term. Use * as a wildcard.</td>
             </tr><tr>
-              <td>rpp</td>
-              <td>records per page. <i>default: 50</i> (maximum: 100)</td>
+              <td>sc</td>
+              <td>search for source code. Case insensitive.</td>
             </tr><tr>
-              <td>list</td>
-              <td>0 means return all, 1 means return just a list of specimen-IDs. <i>default: 1</i></td>
+              <td>coll</td>
+              <td>search for collector(s). Case insensitive.</td>
+            </tr><tr>
+              <td>type</td>
+              <td>switch to search for type records only. Default: 0 (all records)</td>
             </tr><tr>
               <td style="vertical-align: top">sort</td>
               <td>sort order of the result. "-" as first character changes sorting to DESC. <i>default: sciname,herbnr</i><br>
@@ -124,17 +127,6 @@
                   <li>num - collectors number</li>
                 </ul>
               </td>
-            </tr><tr>
-              <td colspan="2"><b>possible search parameters:</b></td>
-            </tr><tr>
-              <td>term</td>
-              <td>search for taxon term. Use * as a wildcard.</td>
-            </tr><tr>
-              <td>sc</td>
-              <td>search for source code. Case insensitive.</td>
-            </tr><tr>
-              <td>coll</td>
-              <td>search for collector(s). Case insensitive.</td>
             </tr>
           </table>
         </td>

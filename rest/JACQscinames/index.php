@@ -112,6 +112,7 @@ $app->get('/uuid/{taxonID}', function (Request $request, Response $response, arr
     $data = $mapper->getUuid($taxonID);
     $data['taxonID'] = $taxonID;
     $data['scientificName'] = $mapper->getScientificName($taxonID);
+    $data['taxonName'] = $mapper->getTaxonName($taxonID);
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -140,6 +141,7 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
     $data = $mapper->getUuid($taxonID);
     $data['taxonID'] = $taxonID;
     $data['scientificName'] = $mapper->getScientificName($taxonID);
+    $data['taxonName'] = $mapper->getTaxonName($taxonID);
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -199,6 +201,7 @@ $app->get('/resolve/{uuid}', function (Request $request, Response $response, arr
         $buffer = $mapper->getUuid($data['taxonID']);
         $data['url'] = $buffer['url'];
         $data['scientificName'] = $mapper->getScientificName($data['taxonID']);
+        $data['taxonName'] = $mapper->getTaxonName($data['taxonID']);
     }
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
