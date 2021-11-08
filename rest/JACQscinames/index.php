@@ -192,17 +192,12 @@ $app->get('/resolve/{uuid}', function (Request $request, Response $response, arr
 
     $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                       'apikey' => $this->get('settings')['APIKEY']));
-    $uuid = filter_var($args['uuid'], FILTER_SANITIZE_STRING);
-    $data = array('uuid'           => $uuid,
-                  'url'            => '',
-                  'taxonID'        => intval($mapper->getTaxonID($uuid)),
-                  'scientificName' => '');
-    if ($data['taxonID']) {
-        $buffer = $mapper->getUuid($data['taxonID']);
-        $data['url'] = $buffer['url'];
-        $data['scientificName'] = $mapper->getScientificName($data['taxonID']);
-        $data['taxonName'] = $mapper->getTaxonName($data['taxonID']);
-    }
+    $taxonData = $mapper->getTaxonID(filter_var($args['uuid'], FILTER_SANITIZE_STRING));
+    $data = array('uuid'           => $taxonData['uuid'],
+                  'url'            => $taxonData['url'],
+                  'taxonID'        => $taxonData['taxonID'],
+                  'scientificName' => $mapper->getScientificName($taxonData['taxonID']),
+                  'taxonName'      => $mapper->getTaxonName($taxonData['taxonID']));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
