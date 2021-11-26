@@ -92,7 +92,7 @@ $app->add(function (Request $request, Response $response, $next)
     $newResponse = $next($request, $response);
     return $newResponse
             ->withHeader('Access-Control-Allow-Origin', '*')
-            ->withHeader('Access-Control-Allow-Methods', 'GET');
+            ->withHeader('Access-Control-Allow-Methods', 'GET,POST');
 });
 
 
