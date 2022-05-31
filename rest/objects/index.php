@@ -92,7 +92,7 @@ $app->add(function (Request $request, Response $response, $next)
     $newResponse = $next($request, $response);
     return $newResponse
             ->withHeader('Access-Control-Allow-Origin', '*')
-            ->withHeader('Access-Control-Allow-Methods', 'GET,POST');
+            ->withHeader('Access-Control-Allow-Methods', 'GET, POST');
 });
 
 
@@ -233,22 +233,24 @@ $app->get('/specimens/{specimenID}', function (Request $request, Response $respo
  *     @OA\Response(response="200", description="OpenAPI Description File"),
  * )
  */
-$app->get('/openapi', function (Request $request, Response $response) {
+$app->get('/openapi', function (Request $request, Response $response)
+{
     $swagger = scan(__DIR__);
     $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 
-$app->get('/description', function(Request $request, Response $response) {
+$app->get('/description', function(Request $request, Response $response)
+{
     return file_get_contents('description.html');
 });
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match
 // this route has to be defined as last route
-$app->get('/{routes:.+}', function (Request $request, Response $response)
+$app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function (Request $request, Response $response)
 {
     // catch-all log message
-    $this->logger->addInfo("catch-all route for /" . $request->getUri()->getPath());
+    $this->logger->addInfo("catch-all route for /" . $request->getUri()->getPath() . " with method " . $request->getMethod());
 
     $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
     return $handler($request, $response);
