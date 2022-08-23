@@ -184,16 +184,22 @@ private function getMetadata(SpecimenMapper $specimen, $metadata = array())
 
     $specimenProperties = $specimen->getProperties();
 
-    $meta[] = array('label' => 'CETAF_ID',          'value' => $specimenProperties['stableIdentifier']);
-    $meta[] = array('label' => 'dwciri:recordedBy', 'value' => $specimenProperties['WIKIDATA_ID']);
+    $meta[] = array('label' => 'CETAF_ID',          'value' => $this->formatAsLink($specimenProperties['stableIdentifier']));
+    $meta[] = array('label' => 'dwciri:recordedBy', 'value' => $this->formatAsLink($specimenProperties['WIKIDATA_ID']));
     if (!empty($specimenProperties['HUH_ID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['HUH_ID']);
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['HUH_ID']));
     }
     if (!empty($specimenProperties['VIAF_ID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['VIAF_ID']);
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['VIAF_ID']));
     }
     if (!empty($specimenProperties['ORCID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['ORCID']);
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['ORCID']));
+    }
+    if (!empty($specimenProperties['WIKIDATA_ID'])) {
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['WIKIDATA_ID']));
+        $pos = strrpos($specimenProperties['WIKIDATA_ID'], '/');
+        $meta[] = array('label' => 'owl:sameAs',
+                        'value' => $this->formatAsLink("https://scholia.toolforge.org/author" . substr($specimenProperties['WIKIDATA_ID'], $pos)));
     }
 
     return $meta;
@@ -216,6 +222,11 @@ private function getMetadataWithValues(SpecimenMapper $specimen, $metadata = arr
         }
     }
     return $result;
+}
+
+private function formatAsLink($link)
+{
+    return "<a href='$link'>$link</a>";
 }
 
 }

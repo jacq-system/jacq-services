@@ -1,5 +1,7 @@
-/nbproject/
+nbproject/
+.idea/
+vendor/
+logs/
+
+composer.lock
 variables.php
-/rest/vendor/
-/rest/logs/
-/rest/composer.lock
