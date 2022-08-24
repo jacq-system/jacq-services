@@ -6,7 +6,7 @@ class IiifMapper extends Mapper
  * get the URI of the iiif manifest of a given specimen-ID
  *
  * @param int $specimenID ID of specimen
- * @return string constructed uri or empty string if nothing found
+ * @return array constructed uri or empty string if nothing found
  */
 public function getManifestUri($specimenID)
 {
@@ -24,7 +24,7 @@ public function getManifestUri($specimenID)
  *
  * @param int $specimenID ID of specimen
  * @param string $currentUri originally called uri
- * @return array received manifest or false if no backend is defined
+ * @return mixed received manifest or false if no backend is defined
  */
 public function getManifest($specimenID, $currentUri)
 {
@@ -143,7 +143,7 @@ private function makeURI ($specimen, $parts)
                                             ->fetch_assoc();
                         // SELECT SUBSTRING_INDEX(SUBSTRING_INDEX(manifest, '/', -2), '/', 1) AS derivate_ID FROM `stblid_manifest` WHERE 1
                         $row = $this->db->query("SELECT " . $tokenParts[2] . "
-                                                 FROM herbar_pictures.{$subtoken}
+                                                 FROM herbar_pictures.$subtoken
                                                  WHERE stableIdentifier LIKE '" . $row_sid['stableIdentifier'] . "'
                                                  LIMIT 1")
                                         ->fetch_assoc();
@@ -184,22 +184,26 @@ private function getMetadata(SpecimenMapper $specimen, $metadata = array())
 
     $specimenProperties = $specimen->getProperties();
 
-    $meta[] = array('label' => 'CETAF_ID',          'value' => $this->formatAsLink($specimenProperties['stableIdentifier']));
-    $meta[] = array('label' => 'dwciri:recordedBy', 'value' => $this->formatAsLink($specimenProperties['WIKIDATA_ID']));
+    $meta[] = array('label' => 'CETAF_ID',          'value' => $specimenProperties['stableIdentifier']);
+    $meta[] = array('label' => 'dwciri:recordedBy', 'value' => $specimenProperties['WIKIDATA_ID']);
     if (!empty($specimenProperties['HUH_ID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['HUH_ID']));
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['HUH_ID']);
     }
     if (!empty($specimenProperties['VIAF_ID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['VIAF_ID']));
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['VIAF_ID']);
     }
     if (!empty($specimenProperties['ORCID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['ORCID']));
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['ORCID']);
     }
     if (!empty($specimenProperties['WIKIDATA_ID'])) {
-        $meta[] = array('label' => 'owl:sameAs', 'value' => $this->formatAsLink($specimenProperties['WIKIDATA_ID']));
-        $pos = strrpos($specimenProperties['WIKIDATA_ID'], '/');
-        $meta[] = array('label' => 'owl:sameAs',
-                        'value' => $this->formatAsLink("https://scholia.toolforge.org/author" . substr($specimenProperties['WIKIDATA_ID'], $pos)));
+        $meta[] = array('label' => 'owl:sameAs', 'value' => $specimenProperties['WIKIDATA_ID']);
+        $meta[] = array('label' => 'owl:sameAs', 'value' => "https://scholia.toolforge.org/author/" . basename($specimenProperties['WIKIDATA_ID']));
+    }
+
+    foreach ($meta as $key => $line) {
+        if (substr($line['value'], 0, 7) === 'http://' || substr($line['value'], 0, 8) === 'https://') {
+            $meta[$key]['value'] = "<a href='" . $line['value'] . "'>" . $line['value'] . "</a>";
+        }
     }
 
     return $meta;
@@ -222,11 +226,6 @@ private function getMetadataWithValues(SpecimenMapper $specimen, $metadata = arr
         }
     }
     return $result;
-}
-
-private function formatAsLink($link)
-{
-    return "<a href='$link'>$link</a>";
 }
 
 }
