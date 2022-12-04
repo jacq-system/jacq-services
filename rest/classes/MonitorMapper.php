@@ -18,7 +18,7 @@ class MonitorMapper extends Mapper
         $list = [];
         foreach ($rows as $row) {
             foreach (['used', 'committed', 'max'] as $item) {
-                $list[$item][] = [$row['uxtime'], $row[$item]];
+                $list[$item][] = [$row['uxtime'], $row[$item] / 1024 / 1024];
             }
         }
         return $list;
