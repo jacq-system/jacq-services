@@ -8,7 +8,7 @@ use function OpenApi\scan;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: objects", version="0.1")
+ * @OA\Info(title="JACQ Webservices: monitor", version="0.1")
  */
 
 /************************
@@ -30,12 +30,9 @@ $settings = [
         // Monolog settings
         'logger' => [
             'name' => 'slim-app',
-            'path' => __DIR__ . '/../logs/objects.log',
+            'path' => __DIR__ . '/../logs/monitor.log',
             'level' => \Monolog\Logger::DEBUG,
         ],
-
-        'jacq_input_services' => $_CONFIG['JACQ_INPUT_SERVICES'],
-        'APIKEY' => $_CONFIG['APIKEY'],
     ],
 ];
 
@@ -100,129 +97,14 @@ $app->add(function (Request $request, Response $response, $next)
 /*******************
  * Register routes *
  *******************/
-$app->post('/specimens/fromList', function (Request $request, Response $response)
+$app->get('/ready-for-chart/{from}[/{to}]', function (Request $request, Response $response, array $args)
 {
-//    $this->logger->addInfo("called specimens/fromList ");
+//    $this->logger->addInfo("called ready-for-chart ");
 
-    $mapper = new ObjectsMapper($this->db);
+    $mapper = new MonitorMapper($this->db);
 
-    $data = $mapper->getSpecimensFromList($request->getParsedBody());
-
-    $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-
-});
-
-/**
- * @OA\Get(
- *  path="/specimens/search",
- *  summary="search for all specimens which fit given criteria",
-  *  @OA\Parameter(
- *      name="p",
- *      in="query",
- *      description="optional number of page to display, starts with 0 (first page), defaults to 0",
- *      example="2",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
- *      name="rpp",
- *      in="query",
- *      description="optional number of records per page to display (<= 100), defaults to 50",
- *      example="20",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
- *      name="list",
- *      in="query",
- *      description="optional switch if all specimen data should be returned (=0) or just a list of specimen-IDs (=1), defaults to 1",
- *      example="1",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
- *      name="term",
- *      in="query",
- *      description="optional search term for scientific names, use * as a wildcard",
- *      example="prunus av*",
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Parameter(
- *      name="sc",
- *      in="query",
- *      description="optional search term for source codes, case insensitive",
- *      example="wu",
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Parameter(
- *      name="coll",
- *      in="query",
- *      description="optional search term for collector(s), case insensitive",
- *      example="rainer",
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Parameter(
- *      name="type",
- *      in="query",
- *      description="optional switch to search for type records only, defaults to 0",
- *      example="1",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
- *      name="sort",
- *      in="query",
- *      description="optional sorting of results, seperated by commas, '-' as first character changes sorting to DESC, possible items are sciname (scientific name), coll (collector(s)), ser (series), num (collectors number), herbnr (herbarium number), defaults to sciname,herbnr",
- *      example="coll,num",
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Response(response="200", description="successful operation"),
- * )
- */
-$app->get('/specimens/search', function (Request $request, Response $response)
-{
-//    $this->logger->addInfo("called specimens/search ");
-
-    $mapper = new ObjectsMapper($this->db);
-
-    $params = $request->getQueryParams();
-    $taxonIDList = array();
-    if (!empty($params['term'])) {
-        $mapperSciNames = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
-                                                                  'apikey' => $this->get('settings')['APIKEY']));
-        $scinamesList = $mapperSciNames->searchScientificName(trim(filter_var($params['term'], FILTER_SANITIZE_STRING)));
-        foreach ($scinamesList as $item) {
-            $taxonIDList[] = $item['taxonID'];
-        }
-    }
-    $data = $mapper->searchSpecimensList($params, $taxonIDList);
-
-    $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-
-});
-
-/**
- * @OA\Get(
- *  path="/specimens/{specimenID}",
- *  summary="get the properties of a specimen",
- *  @OA\Parameter(
- *      name="specimenID",
- *      in="path",
- *      description="ID of specimen",
- *      required=true,
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Response(response="200", description="successful operation"),
- * )
- */
-$app->get('/specimens/{specimenID}', function (Request $request, Response $response, array $args)
-{
-//    $this->logger->addInfo("called specimens ");
-
-    $mapper = new ObjectsMapper($this->db);
-
-    $data = $mapper->getSpecimenData(intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
-
-    $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
+    $rec = $mapper->getRecordingsForChart(htmlspecialchars($args['from']), htmlspecialchars($args['to'] ?? ''));
+    return $response->withJson($rec, null, JSON_NUMERIC_CHECK);
 });
 
 /**
