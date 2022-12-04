@@ -34,7 +34,7 @@ class MonitorMapper extends Mapper
      */
     private function formatDate($date): string
     {
-        if (!str_contains($date, '-')) {
+        if (!$this->strContains($date, '-')) {
             return sprintf("%s-%s-%s", substr($date, 0, 4),
                 (strlen($date > 4)) ? substr($date, 4, 2) : '01',
                 (strlen($date) > 6) ? substr($date, 6, 2) : '01');
@@ -46,5 +46,10 @@ class MonitorMapper extends Mapper
                 return sprintf("%s-01", $date);
             }
         }
+    }
+
+    private function strContains($haystack, $needle)
+    {
+        return $needle !== '' && mb_strpos($haystack, $needle) !== false;
     }
 }
