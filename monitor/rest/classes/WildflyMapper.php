@@ -1,15 +1,15 @@
 <?php
-class MonitorMapper extends Mapper
+class WildflyMapper extends Mapper
 {
     /**
      * @param string $from
      * @param string $to
      * @return array
      */
-    public function getRecordingsForChart(string $from, string $to): array
+    public function getRecordingsForChart(string $server, string $from, string $to): array
     {
         $rows = $this->db->query("SELECT UNIX_TIMESTAMP(created_at) * 1000 AS uxtime, `used`, `committed`, `max`
-                                 FROM `monitor`.`tbl_wildfly_local`
+                                 FROM `tbl_wildfly_$server`
                                  WHERE DATE(created_at) >= '" . $this->formatDate($from) . "'
                                  " . ((!empty($to)) ? "AND DATE(created_at) <= '" . $this->formatDate($to) . "'" : '') . "
                                  ORDER BY created_at")

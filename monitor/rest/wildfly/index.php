@@ -30,7 +30,7 @@ $settings = [
         // Monolog settings
         'logger' => [
             'name' => 'slim-app',
-            'path' => __DIR__ . '/../logs/monitor.log',
+            'path' => __DIR__ . '/../logs/wildfly.log',
             'level' => \Monolog\Logger::DEBUG,
         ],
     ],
@@ -97,13 +97,13 @@ $app->add(function (Request $request, Response $response, $next)
 /*******************
  * Register routes *
  *******************/
-$app->get('/ready-for-chart/{from}[/{to}]', function (Request $request, Response $response, array $args)
+$app->get('/input/ready-for-chart/{from}[/{to}]', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called ready-for-chart ");
 
-    $mapper = new MonitorMapper($this->db);
+    $mapper = new WildflyMapper($this->db);
 
-    $rec = $mapper->getRecordingsForChart(htmlspecialchars($args['from']), htmlspecialchars($args['to'] ?? ''));
+    $rec = $mapper->getRecordingsForChart('input', htmlspecialchars($args['from']), htmlspecialchars($args['to'] ?? ''));
     return $response->withJson($rec, null, JSON_NUMERIC_CHECK);
 });
 
