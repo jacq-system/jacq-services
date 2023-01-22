@@ -1,32 +1,52 @@
 <?php
+
+use Jacq\HerbNummerScan;
+
 class ObjectsMapper extends Mapper
 {
 
 /**
- * get all properties of a specimen with given ID
+ * get all or some properties of a specimen with given ID
  *
  * @param int $specimenID ID of specimen
+ * @param array|null $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
  * @return array properties (dc, dwc and jacq)
  */
-public function getSpecimenData($specimenID)
+public function getSpecimenData(int $specimenID, array $fieldgroups = null): array
 {
-    $specimen = new SpecimenMapper($this->db, intval($specimenID));
+    if (empty($fieldgroups)) {
+        $fieldgroups = array("dc", "dwc", "jacq");
+    }
 
+    $specimen = new SpecimenMapper($this->db, $specimenID);
+
+    $ret = array();
+    if (in_array("dc", $fieldgroups)) {
+        $ret['dc'] = $specimen->getDC();
+    }
+    if (in_array("dwc", $fieldgroups)) {
+        $ret['dwc'] = $specimen->getDWC();
+    }
+    if (in_array("jacq", $fieldgroups)) {
+        $ret['jacq'] = $specimen->getJACQ();
+    }
+    return $ret;
 //    return array_merge($specimen->getDC(), $specimen->getDWC(), $specimen->getJACQ());
-    return array("dc"   => $specimen->getDC(),
-                 "dwc"  => $specimen->getDWC(),
-                 "jacq" => $specimen->getJACQ());
+//    return array("dc"   => $specimen->getDC(),
+//                 "dwc"  => $specimen->getDWC(),
+//                 "jacq" => $specimen->getJACQ());
 }
 
 /**
- * get only properties with a value. null-values are loef out
+ * get only properties with a value. null-values are left out
  *
  * @param int $specimenID ID of specimen
+ * @param array|null $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
  * @return array properties (dc, dwc and jacq)
  */
-public function getSpecimenDataWithValues($specimenID)
+public function getSpecimenDataWithValues(int $specimenID, array $fieldgroups = null): array
 {
-    $data = $this->getSpecimenData($specimenID);
+    $data = $this->getSpecimenData($specimenID, $fieldgroups);
     $result = array();
     foreach ($data as $format => $group) {
         foreach ($group as $key => $value) {
@@ -38,17 +58,26 @@ public function getSpecimenDataWithValues($specimenID)
     return $result;
 }
 
-/**
- * get all properties of a list of specimen
- *
- * @param array $list list of sepcimen-IDs
- * @return array properties (dc, dwc and jacq for each specimen)
- */
-public function getSpecimensFromList($list)
+    /**
+     * TODO: change text
+     * get all properties with a value of a list of specimen
+     *
+     * @param array $list list of sepcimen-IDs
+     * @param array|null $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
+     * @return array properties (dc, dwc and jacq for each specimen)
+     */
+public function getSpecimensFromList(array $list, array $fieldgroups = null): array
 {
     $result = array();
     foreach ($list as $item) {
-        $result[] = $this->getSpecimenDataWithValues(intval($item));
+        $item = trim($item);
+        if (is_numeric(substr($item, 0, 1))) {
+            $result[] = $this->getSpecimenDataWithValues(intval($item), $fieldgroups);
+        } else {
+            $herbnummer = new HerbNummerScan($this->db, $item);
+            $specimenID = $this->getSpecimenIdFromHerbNummer($herbnummer->getHerbNummer(), $herbnummer->getSourceId());
+            $result[] = ($specimenID) ? $this->getSpecimenDataWithValues($specimenID, $fieldgroups) : ["error" => "Identifier $item not found"];
+        }
     }
     return $result;
 }
@@ -67,10 +96,10 @@ public function getSpecimensFromList($list)
  *      sort (sort order, default sciname, herbnr)
  *
  * @param array $params any parameters of the search
- * @param array[optional] $taxonIDList search for taxon terms has already finished, this is the list of results
- * @return type
+ * @param array $taxonIDList search for taxon terms has already finished, this is the list of results; defaults to empty array
+ * @return array
  */
-public function searchSpecimensList($params, $taxonIDList = array())
+public function searchSpecimensList(array $params, array $taxonIDList = array()): array
 {
     // check if all allowed parameters are in order and set default values if any are missing
     $allowedParams = array('p'    => 0,                 // page, default: display first page
@@ -226,13 +255,35 @@ public function searchSpecimensList($params, $taxonIDList = array())
  * get the url of the actual directory to call the same service again
  * @return string url to service directory
  */
-private function getBaseUrl()
+private function getBaseUrl(): string
 {
     $path = dirname(filter_input(INPUT_SERVER, 'SCRIPT_NAME', FILTER_SANITIZE_STRING));
 
     return filter_input(INPUT_SERVER, 'REQUEST_SCHEME', FILTER_SANITIZE_STRING) . "://"
          . filter_input(INPUT_SERVER, 'HTTP_HOST', FILTER_SANITIZE_STRING)
          . $path . '/';
+}
+
+/**
+ * get the specimen-ID of a given HerbNumber and source-id
+ *
+ * @param string $herbNummer
+ * @param int $source_id
+ * @return int
+ */
+private function getSpecimenIdFromHerbNummer(string $herbNummer, int $source_id): int
+{
+    $row = $this->db->query("SELECT specimen_ID 
+                             FROM tbl_specimens s 
+                              LEFT JOIN tbl_management_collections mc on s.collectionID = mc.collectionID
+                             WHERE s.HerbNummer = '$herbNummer'
+                              AND mc.source_id = '$source_id'")
+                -> fetch_assoc();
+    if ($row) {
+        return $row['specimen_ID'];
+    } else {
+        return 0;
+    }
 }
 
 }

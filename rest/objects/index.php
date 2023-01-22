@@ -1,6 +1,10 @@
 <?php
 require __DIR__ . '/../vendor/autoload.php';
 
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+use Monolog\Processor\UidProcessor;
+use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
 use function OpenApi\scan;
@@ -31,7 +35,7 @@ $settings = [
         'logger' => [
             'name' => 'slim-app',
             'path' => __DIR__ . '/../logs/objects.log',
-            'level' => \Monolog\Logger::DEBUG,
+            'level' => Logger::DEBUG,
         ],
 
         'jacq_input_services' => $_CONFIG['JACQ_INPUT_SERVICES'],
@@ -44,7 +48,7 @@ $settings = [
 /***********************
  * Instantiate the app *
  ***********************/
-$app = new \Slim\App($settings);
+$app = new App($settings);
 
 
 
@@ -56,9 +60,9 @@ $container = $app->getContainer();
 $container['logger'] = function ($c)
 {
     $settings = $c->get('settings')['logger'];
-    $logger = new \Monolog\Logger($settings['name']);
-    $logger->pushProcessor(new \Monolog\Processor\UidProcessor());
-    $logger->pushHandler(new \Monolog\Handler\StreamHandler($settings['path'], $settings['level']));
+    $logger = new Logger($settings['name']);
+    $logger->pushProcessor(new UidProcessor());
+    $logger->pushHandler(new StreamHandler($settings['path'], $settings['level']));
     return $logger;
 };
 
@@ -70,7 +74,7 @@ $container['db'] = function ($c)
     return $dbLink;
 };
 
-//Add container to handle all runtime exceptions/errors, fail safe and return json
+//Add container to handle all runtime exceptions/errors, fail-safe and return json
 //works only for PHP 7.x
 $container['phpErrorHandler'] = function ($container) {
     return function ($request, $response, $exception) use ($container) {
@@ -110,7 +114,21 @@ $app->post('/specimens/fromList', function (Request $request, Response $response
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
+});
 
+$app->post('/specimens/fromFile', function (Request $request, Response $response)
+{
+    // curl --silent -X POST --data-binary @- -H "Content-Type: text/plain" localhost/develop.jacq/services/rest/objects/specimens/fromFile < ~/Data/Gewerbe/web-projects/herbardb/s/filenames.txt
+
+//    $this->logger->addInfo("called specimens/fromFile ");
+
+    $mapper = new ObjectsMapper($this->db);
+
+    $data = $mapper->getSpecimensFromList(explode("\n", str_replace(["\r\n","\n\r","\r"],"\n", trim($request->getBody()->getContents()))),
+                                          ['jacq']);
+
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
 });
 
 /**
@@ -196,7 +214,6 @@ $app->get('/specimens/search', function (Request $request, Response $response)
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
-
 });
 
 /**

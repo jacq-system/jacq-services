@@ -10,10 +10,10 @@ h2 {
 }
 
 table.subtable {
-    margin-left: 0px;
+    margin-left: 0;
 }
 table.subtable td {
-    padding-bottom: 0px;
+    padding-bottom: 0;
     padding-right: 1em;
 }
 
