@@ -110,7 +110,7 @@ $app->post('/specimens/fromList', function (Request $request, Response $response
 
     $mapper = new ObjectsMapper($this->db);
 
-    $data = $mapper->getSpecimensFromList($request->getParsedBody(), 'jacq');
+    $data = $mapper->getSpecimensFromList($request->getParsedBody(), $request->getQueryParam('fieldgroups') ?? '');
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
@@ -125,7 +125,7 @@ $app->post('/specimens/fromFile', function (Request $request, Response $response
     $mapper = new ObjectsMapper($this->db);
 
     $data = $mapper->getSpecimensFromList(explode("\n", str_replace(["\r\n","\n\r","\r"],"\n", trim($request->getBody()->getContents()))),
-                                          'jacq');
+                                          $request->getQueryParam('fieldgroups') ?? '');
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
