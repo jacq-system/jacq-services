@@ -7,7 +7,7 @@ use mysqli;
 class HerbNummerScan
 {
 
-private string $HerbNummer;
+private string $HerbNummer = '';
 private int $source_id = 0;
 private mysqli $db;
 

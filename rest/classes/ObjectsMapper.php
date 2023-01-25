@@ -9,25 +9,25 @@ class ObjectsMapper extends Mapper
  * get all or some properties of a specimen with given ID
  *
  * @param int $specimenID ID of specimen
- * @param array|null $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
+ * @param string $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
  * @return array properties (dc, dwc and jacq)
  */
-public function getSpecimenData(int $specimenID, array $fieldgroups = null): array
+public function getSpecimenData(int $specimenID, string $fieldgroups = ''): array
 {
-    if (empty($fieldgroups)) {
-        $fieldgroups = array("dc", "dwc", "jacq");
+    if (strpos($fieldgroups, "dc") === false && strpos($fieldgroups, "dwc") === false && strpos($fieldgroups, "jacq") === false) {
+        $fieldgroups = "dc, dwc, jacq";
     }
 
     $specimen = new SpecimenMapper($this->db, $specimenID);
 
     $ret = array();
-    if (in_array("dc", $fieldgroups)) {
+    if (strpos($fieldgroups, "dc") !== false) {
         $ret['dc'] = $specimen->getDC();
     }
-    if (in_array("dwc", $fieldgroups)) {
+    if (strpos($fieldgroups, "dwc") !== false) {
         $ret['dwc'] = $specimen->getDWC();
     }
-    if (in_array("jacq", $fieldgroups)) {
+    if (strpos($fieldgroups, "jacq") !== false) {
         $ret['jacq'] = $specimen->getJACQ();
     }
     return $ret;
@@ -41,10 +41,10 @@ public function getSpecimenData(int $specimenID, array $fieldgroups = null): arr
  * get only properties with a value. null-values are left out
  *
  * @param int $specimenID ID of specimen
- * @param array|null $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
+ * @param string $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
  * @return array properties (dc, dwc and jacq)
  */
-public function getSpecimenDataWithValues(int $specimenID, array $fieldgroups = null): array
+public function getSpecimenDataWithValues(int $specimenID, string $fieldgroups = ''): array
 {
     $data = $this->getSpecimenData($specimenID, $fieldgroups);
     $result = array();
@@ -63,20 +63,40 @@ public function getSpecimenDataWithValues(int $specimenID, array $fieldgroups = 
      * get all properties with a value of a list of specimen
      *
      * @param array $list list of sepcimen-IDs
-     * @param array|null $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
+     * @param string $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
      * @return array properties (dc, dwc and jacq for each specimen)
      */
-public function getSpecimensFromList(array $list, array $fieldgroups = null): array
+public function getSpecimensFromList(array $list, string $fieldgroups = ''): array
 {
     $result = array();
+    $alreadyFound = array();
     foreach ($list as $item) {
         $item = trim($item);
         if (is_numeric(substr($item, 0, 1))) {
-            $result[] = $this->getSpecimenDataWithValues(intval($item), $fieldgroups);
+            $specimenID = intval($item);
+            if (!in_array($specimenID, $alreadyFound)) {
+                $data = $this->getSpecimenDataWithValues($specimenID, $fieldgroups);
+                if (!empty($data)) {
+                    $alreadyFound[] = $specimenID;
+                    $result[] = array_merge(["searchterm" => $specimenID], $data);
+                } else {
+                    $result[] = ["error" => "Identifier $specimenID not found"];
+                }
+            }
         } else {
             $herbnummer = new HerbNummerScan($this->db, $item);
             $specimenID = $this->getSpecimenIdFromHerbNummer($herbnummer->getHerbNummer(), $herbnummer->getSourceId());
-            $result[] = ($specimenID) ? $this->getSpecimenDataWithValues($specimenID, $fieldgroups) : ["error" => "Identifier $item not found"];
+            if ($specimenID) {
+                if (!in_array($specimenID, $alreadyFound)) {
+                    $data = $this->getSpecimenDataWithValues($specimenID, $fieldgroups);
+                    if (!empty($data)) {
+                        $alreadyFound[] = $specimenID;
+                    }
+                    $result[] = array_merge(["searchterm" => $item], $data);
+                }
+            } else {
+                $result[] = ["error" => "Identifier $item not found"];
+            }
         }
     }
     return $result;

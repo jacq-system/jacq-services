@@ -110,7 +110,7 @@ $app->post('/specimens/fromList', function (Request $request, Response $response
 
     $mapper = new ObjectsMapper($this->db);
 
-    $data = $mapper->getSpecimensFromList($request->getParsedBody());
+    $data = $mapper->getSpecimensFromList($request->getParsedBody(), 'jacq');
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
@@ -118,14 +118,14 @@ $app->post('/specimens/fromList', function (Request $request, Response $response
 
 $app->post('/specimens/fromFile', function (Request $request, Response $response)
 {
-    // curl --silent -X POST --data-binary @- -H "Content-Type: text/plain" localhost/develop.jacq/services/rest/objects/specimens/fromFile < ~/Data/Gewerbe/web-projects/herbardb/s/filenames.txt
+// curl --silent -X POST --data-binary @- -H "Content-Type: text/plain" localhost/develop.jacq/services/rest/objects/specimens/fromFile < ~/Data/Gewerbe/web-projects/herbardb/s/filenames.txt | jq '.'
 
 //    $this->logger->addInfo("called specimens/fromFile ");
 
     $mapper = new ObjectsMapper($this->db);
 
     $data = $mapper->getSpecimensFromList(explode("\n", str_replace(["\r\n","\n\r","\r"],"\n", trim($request->getBody()->getContents()))),
-                                          ['jacq']);
+                                          'jacq');
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;

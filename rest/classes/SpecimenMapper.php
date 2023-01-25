@@ -2,14 +2,14 @@
 class SpecimenMapper extends Mapper
 {
 
-protected $specimenID = 0;
+protected int $specimenID = 0;
 
 /**
  * holds the specimen properties
  *
  * @var array properties
  */
-protected $properties = array();
+protected array $properties = array();
 
 /**
  * class constructor. Prepares properties to be returned by the specific methods
@@ -17,14 +17,14 @@ protected $properties = array();
  * @param mysqli $db instance of mysqli-database
  * @param int $specimenID ID of specimen
  */
-public function __construct(mysqli $db, $specimenID)
+public function __construct(mysqli $db, int $specimenID)
 {
     parent::__construct($db);
 
-    if (intval($specimenID) == 0) {
+    if ($specimenID == 0) {
         return;  // nothing to look for, so just stop
     }
-    $this->specimenID = intval($specimenID);
+    $this->specimenID = $specimenID;
 
     /**
      * first get the stable identifier
@@ -43,6 +43,7 @@ public function __construct(mysqli $db, $specimenID)
      */
     $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tf.family, tg.genus, te.epithet,
                               s.HerbNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
+                              s.Coord_W, s.W_Min, s.W_Sec, s.Coord_N, s.N_Min, s.N_Sec, s.Coord_S, s.S_Min, s.S_Sec, s.Coord_E, s.E_Min, s.E_Sec,
                               c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
                               md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI,
                               ss.series,
@@ -59,43 +60,67 @@ public function __construct(mysqli $db, $specimenID)
                               LEFT JOIN tbl_tax_genera tg             ON tg.genID        = ts.genID
                               LEFT JOIN tbl_tax_families tf           ON tf.familyID     = tg.familyID
                               LEFT JOIN tbl_geo_nation gn             ON gn.nationID     = s.NationID
-                             WHERE s.specimen_ID = {$this->specimenID}")
+                             WHERE s.specimen_ID = $this->specimenID")
                         ->fetch_assoc();
 
     if (!empty($row)) {
         /**
+         * do any neccessary calculations
+         */
+        /**
          * CollectorTeam
          */
-        $this->properties['collectorTeam'] = $row['Sammler'];
+        $collectorTeam = $row['Sammler'];
         if (strstr($row['Sammler_2'], "et al.") || strstr($row['Sammler_2'], "alii")) {
-            $this->properties['collectorTeam'] .= " et al.";
+            $collectorTeam .= " et al.";
         } elseif ($row['Sammler_2']) {
             $parts = explode(',', $row['Sammler_2']);           // some people forget the final "&"
             if (count($parts) > 2) {                            // so we have to use an alternative way
-                $this->properties['collectorTeam'] .= ", " . $row['Sammler_2'];
+                $collectorTeam .= ", " . $row['Sammler_2'];
             } else {
-                $this->properties['collectorTeam'] .= " & " . $row['Sammler_2'];
+                $collectorTeam .= " & " . $row['Sammler_2'];
             }
         }
-
         /**
          * created
          */
         if (trim($row['Datum']) == "s.d.") {
-            $this->properties['created'] = '';
+            $created = '';
         } else {
-            $this->properties['created'] = trim($row['Datum']);
-            if ($this->properties['created']) {
+            $created = trim($row['Datum']);
+            if ($created) {
                 if (trim($row['Datum2'])) {
-                    $this->properties['created'] .= " - " . trim($row['Datum2']);
+                    $created .= " - " . trim($row['Datum2']);
                 }
             } else {
-                $this->properties['created'] = trim($row['Datum2']);
+                $created = trim($row['Datum2']);
             }
         }
 
+        if ($row['Coord_S'] > 0 || $row['S_Min'] > 0 || $row['S_Sec'] > 0) {
+            $decimalLatitude  = -round($row['Coord_S'] + $row['S_Min'] / 60 + $row['S_Sec'] / 3600, 5);
+            $verbatimLatitude = $row['Coord_S'] . "d " . (($row['S_Min']) ?: '?') . "m " . (($row['S_Sec']) ?: '?') . 's S';
+        } else if ($row['Coord_N'] > 0 || $row['N_Min'] > 0 || $row['N_Sec'] > 0) {
+            $decimalLatitude  = round($row['Coord_N'] + $row['N_Min'] / 60 + $row['N_Sec'] / 3600, 5);
+            $verbatimLatitude = $row['Coord_N'] . "d " . (($row['N_Min']) ?: '?') . "m " . (($row['N_Sec']) ?: '?') . 's N';
+        } else {
+            $decimalLatitude  = null;
+            $verbatimLatitude = '';
+        }
+        if ($row['Coord_W'] > 0 || $row['W_Min'] > 0 || $row['W_Sec'] > 0) {
+            $decimalLongitude  = -round($row['Coord_W'] + $row['W_Min'] / 60 + $row['W_Sec'] / 3600, 5);
+            $verbatimLongitude = $row['Coord_W'] . "d " . (($row['W_Min']) ?: '?') . "m " . (($row['W_Sec']) ?: '?') . 's W';
+        } else if ($row['Coord_E'] > 0 || $row['E_Min'] > 0 || $row['E_Sec'] > 0) {
+            $decimalLongitude  = round($row['Coord_E'] + $row['E_Min'] / 60 + $row['E_Sec'] / 3600, 5);
+            $verbatimLongitude = $row['Coord_E'] . "d " . (($row['E_Min']) ?: '?') . "m " . (($row['E_Sec']) ?: '?') . 's E';
+        } else {
+            $decimalLongitude  = null;
+            $verbatimLongitude = '';
+        }
+
+
         /**
-         * everything else
+         * store all properties
          */
         $this->properties['specimenID']              = $this->specimenID;
         $this->properties['scientificName']          = $row['sciName'];
@@ -106,6 +131,12 @@ public function __construct(mysqli $db, $specimenID)
         $this->properties['observation']             = $row['observation'];
         $this->properties['taxon_alt']               = $row['taxon_alt'];
         $this->properties['Fundort']                 = $row['Fundort'];
+        $this->properties['decimalLatitude']         = $decimalLatitude;
+        $this->properties['decimalLongitude']        = $decimalLongitude;
+        $this->properties['verbatimLatitude']        = $verbatimLatitude;
+        $this->properties['verbatimLongitude']       = $verbatimLongitude;
+        $this->properties['collectorTeam']           = $collectorTeam;
+        $this->properties['created']                 = $created;
         $this->properties['Nummer']                  = $row['Nummer'];
         $this->properties['series']                  = $row['series'];
         $this->properties['alt_number']              = $row['alt_number'];
@@ -126,7 +157,7 @@ public function __construct(mysqli $db, $specimenID)
  *
  * @return array properties
  */
-public function getProperties()
+public function getProperties(): array
 {
     return $this->properties;
 }
@@ -136,7 +167,7 @@ public function getProperties()
  *
  * @return int specimenID
  */
-public function getSpecimenID()
+public function getSpecimenID(): int
 {
     return $this->specimenID;
 }
@@ -146,7 +177,7 @@ public function getSpecimenID()
  *
  * @return string description
  */
-public function getDescription()
+public function getDescription(): string
 {
     return "A " . (($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen")
          . " of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}";
@@ -157,7 +188,7 @@ public function getDescription()
  *
  * @return string label
  */
-public function getLabel()
+public function getLabel(): string
 {
     return $this->properties['scientificName'];
 }
@@ -167,7 +198,7 @@ public function getLabel()
  *
  * @return string attribution
  */
-public function getAttribution()
+public function getAttribution(): string
 {
     return $this->properties['LicenseURI'];
 }
@@ -177,7 +208,7 @@ public function getAttribution()
  *
  * @return string logo URI
  */
-public function getLogoURI()
+public function getLogoURI(): string
 {
     return $this->properties['OwnerLogoURI'];
 }
@@ -187,7 +218,7 @@ public function getLogoURI()
  *
  * @return string stable identifier
  */
-public function getStableIdentifier()
+public function getStableIdentifier(): string
 {
     return $this->properties['stableIdentifier'];
 }
@@ -197,12 +228,12 @@ public function getStableIdentifier()
  *
  * @return array dc-data
  */
-public function getDC()
+public function getDC(): array
 {
     $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
 
     return array('dc:title'       => $this->properties['scientificName'],
-                 'dc:description' => "A {$basisOfRecord} of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}",
+                 'dc:description' => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}",
                  'dc:creator'     => $this->properties['collectorTeam'],
                  'dc:created'     => $this->properties['created'],
                  'dc:type'        => $basisOfRecord);
@@ -213,12 +244,12 @@ public function getDC()
  *
  * @return array dwc-data
  */
-public function getDWC()
+public function getDWC(): array
 {
     return array('dwc:materialSampleID'        => $this->properties['stableIdentifier'],
                  'dwc:basisOfRecord'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
                  'dwc:collectionCode'          => $this->properties['OwnerOrganizationAbbrev'],
-                 'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimenID']),
+                 'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
                  'dwc:scientificName'          => $this->properties['scientificName'],
                  'dwc:previousIdentifications' => $this->properties['taxon_alt'],
                  'dwc:family'                  => $this->properties['family'],
@@ -227,8 +258,12 @@ public function getDWC()
                  'dwc:country'                 => $this->properties['nation_engl'],
                  'dwc:countryCode'             => $this->properties['iso_alpha_3_code'],
                  'dwc:locality'                => $this->properties['Fundort'],
+                 'dwc:decimalLatitude'         => $this->properties['decimalLatitude'],
+                 'dwc:decimalLongitude'        => $this->properties['decimalLongitude'],
+                 'dwc:verbatimLatitude'        => $this->properties['verbatimLatitude'],
+                 'dwc:verbatimLongitude'       => $this->properties['verbatimLongitude'],
                  'dwc:eventDate'               => $this->properties['created'],
-                 'dwc:recordNumber'            => ($this->properties['HerbNummer']) ? $this->properties['HerbNummer'] : ('JACQ-ID ' . $this->properties['specimenID']),
+                 'dwc:recordNumber'            => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
                  'dwc:recordedBy'              => $this->properties['collectorTeam'],
                  'dwc:fieldNumber'             => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
 }
@@ -238,7 +273,7 @@ public function getDWC()
  *
  * @return array jacq-data
  */
-public function getJACQ()
+public function getJACQ(): array
 {
     $result = array();
     foreach ($this->properties as $key => $value) {
@@ -247,6 +282,11 @@ public function getJACQ()
 
     return $result;
 }
+
+// ---------------------------------------
+// ---------- private functions ----------
+// ---------------------------------------
+
 
 
 }
