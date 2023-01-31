@@ -21,19 +21,34 @@ public function __construct($db, string $searchtext)
 {
     $this->db = $db;
 
+    $posProt = strpos($searchtext, '://');
+    if ($posProt !== false) {
+        $searchtext = substr($searchtext, $posProt + 3);
+        $isStableID = 1;
+    } else {
+        $isStableID = 0;
+    }
+
     $row = $this->db->query("SELECT id, source_id, collectionID, `text`, HerbNummerConstruct, LENGTH(`text`) AS match_length
                              FROM scanHerbNummer 
                              WHERE `text` = SUBSTRING('" . $this->db->real_escape_string($searchtext) . "', 1, LENGTH(`text`))
+                              AND isStableID = $isStableID
                              ORDER BY match_length DESC")
                   ->fetch_assoc();
     if (empty($row)) {
         $this->HerbNummer = $searchtext;
+        $this->source_id = 0;
     } else {
         preg_match("/^\d+/", substr($searchtext, $row['match_length']), $matches);  // cut off any trailing non-numeric characters
-        $remainingText = $matches[0];
-        $constructor = $this->findConstructor($row['HerbNummerConstruct'], strlen($remainingText));
-        $this->HerbNummer = $this->generateHerbNummer($remainingText, $constructor);
-        $this->source_id = $row['source_id'];
+        if (empty($matches)) {
+            $this->HerbNummer = $searchtext;
+            $this->source_id = 0;
+        } else {
+            $remainingText = $matches[0];
+            $constructor = $this->findConstructor($row['HerbNummerConstruct'], strlen($remainingText));
+            $this->HerbNummer = $this->generateHerbNummer($remainingText, $constructor);
+            $this->source_id = $row['source_id'];
+        }
     }
 }
 
@@ -45,7 +60,10 @@ public function getHerbNummer(): string
     return $this->HerbNummer;
 }
 
-public function getSourceId()
+/**
+ * @return int
+ */
+public function getSourceId(): int
 {
     return $this->source_id;
 }

@@ -3,6 +3,7 @@ class SpecimenMapper extends Mapper
 {
 
 protected int $specimenID = 0;
+protected bool $isValid = false;
 
 /**
  * holds the specimen properties
@@ -64,6 +65,7 @@ public function __construct(mysqli $db, int $specimenID)
                         ->fetch_assoc();
 
     if (!empty($row)) {
+        $this->isValid = true;  // we have found valid data
         /**
          * do any neccessary calculations
          */
@@ -230,13 +232,17 @@ public function getStableIdentifier(): string
  */
 public function getDC(): array
 {
-    $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
+    if ($this->isValid) {
+        $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
 
-    return array('dc:title'       => $this->properties['scientificName'],
-                 'dc:description' => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}",
-                 'dc:creator'     => $this->properties['collectorTeam'],
-                 'dc:created'     => $this->properties['created'],
-                 'dc:type'        => $basisOfRecord);
+        return array('dc:title' => $this->properties['scientificName'],
+            'dc:description' => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by {$this->properties['collectorTeam']}",
+            'dc:creator' => $this->properties['collectorTeam'],
+            'dc:created' => $this->properties['created'],
+            'dc:type' => $basisOfRecord);
+    } else {
+        return array();
+    }
 }
 
 /**
@@ -246,26 +252,30 @@ public function getDC(): array
  */
 public function getDWC(): array
 {
-    return array('dwc:materialSampleID'        => $this->properties['stableIdentifier'],
-                 'dwc:basisOfRecord'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
-                 'dwc:collectionCode'          => $this->properties['OwnerOrganizationAbbrev'],
-                 'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
-                 'dwc:scientificName'          => $this->properties['scientificName'],
-                 'dwc:previousIdentifications' => $this->properties['taxon_alt'],
-                 'dwc:family'                  => $this->properties['family'],
-                 'dwc:genus'                   => $this->properties['genus'],
-                 'dwc:specificEpithet'         => $this->properties['epithet'],
-                 'dwc:country'                 => $this->properties['nation_engl'],
-                 'dwc:countryCode'             => $this->properties['iso_alpha_3_code'],
-                 'dwc:locality'                => $this->properties['Fundort'],
-                 'dwc:decimalLatitude'         => $this->properties['decimalLatitude'],
-                 'dwc:decimalLongitude'        => $this->properties['decimalLongitude'],
-                 'dwc:verbatimLatitude'        => $this->properties['verbatimLatitude'],
-                 'dwc:verbatimLongitude'       => $this->properties['verbatimLongitude'],
-                 'dwc:eventDate'               => $this->properties['created'],
-                 'dwc:recordNumber'            => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
-                 'dwc:recordedBy'              => $this->properties['collectorTeam'],
-                 'dwc:fieldNumber'             => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
+    if ($this->isValid) {
+        return array('dwc:materialSampleID' => $this->properties['stableIdentifier'],
+            'dwc:basisOfRecord' => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
+            'dwc:collectionCode' => $this->properties['OwnerOrganizationAbbrev'],
+            'dwc:catalogNumber' => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
+            'dwc:scientificName' => $this->properties['scientificName'],
+            'dwc:previousIdentifications' => $this->properties['taxon_alt'],
+            'dwc:family' => $this->properties['family'],
+            'dwc:genus' => $this->properties['genus'],
+            'dwc:specificEpithet' => $this->properties['epithet'],
+            'dwc:country' => $this->properties['nation_engl'],
+            'dwc:countryCode' => $this->properties['iso_alpha_3_code'],
+            'dwc:locality' => $this->properties['Fundort'],
+            'dwc:decimalLatitude' => $this->properties['decimalLatitude'],
+            'dwc:decimalLongitude' => $this->properties['decimalLongitude'],
+            'dwc:verbatimLatitude' => $this->properties['verbatimLatitude'],
+            'dwc:verbatimLongitude' => $this->properties['verbatimLongitude'],
+            'dwc:eventDate' => $this->properties['created'],
+            'dwc:recordNumber' => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
+            'dwc:recordedBy' => $this->properties['collectorTeam'],
+            'dwc:fieldNumber' => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
+    } else {
+        return array();
+    }
 }
 
 /**
