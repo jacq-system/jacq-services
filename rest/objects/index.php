@@ -104,6 +104,22 @@ $app->add(function (Request $request, Response $response, $next)
 /*******************
  * Register routes *
  *******************/
+/**
+ * @OA\Post(
+ *  path="/specimens/fromList",
+ *  summary="return all specimens from a given list of specimen-IDs or Unit-IDs or Stable Identifiers",
+ *  @OA\Parameter(
+ *      name="fieldgroups",
+ *      in="query",
+ *      description="optional fieldgroups to return as comma-seperated list; possible are jacq, dc and dwc, defaults to dc,dwc,jacq",
+ *      example="jacq,dc",
+ *      @OA\Schema(type="string")
+ *  ),
+
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+
 $app->post('/specimens/fromList', function (Request $request, Response $response)
 {
 //    $this->logger->addInfo("called specimens/fromList ");
@@ -135,7 +151,7 @@ $app->post('/specimens/fromFile', function (Request $request, Response $response
  * @OA\Get(
  *  path="/specimens/search",
  *  summary="search for all specimens which fit given criteria",
-  *  @OA\Parameter(
+ *  @OA\Parameter(
  *      name="p",
  *      in="query",
  *      description="optional number of page to display, starts with 0 (first page), defaults to 0",
