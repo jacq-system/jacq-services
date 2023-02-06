@@ -219,5 +219,77 @@
       </tr>
     </table>
 
+    <h2>Response of all Requests</h2>
+    All requests may respond with the same three blocks:
+    <span style="font-style: italic">dc (DublinCore), dwc (DarwinCore), jacq (internal data)</span><br>
+    In case of an empty descriptor (no data available), the descriptor is omitted.<br>
+    These descriptors are used:
+    <table>
+      <tr>
+        <td class="type">"dc"</td>
+        <td>title<br>
+            description<br>
+            creator<br>
+            created<br>
+            type
+        </td>
+      </tr><tr>
+      <td class="type">"dwc"</td>
+      <td>
+        <a href="https://dwc.tdwg.org/terms/#dwc:materialSampleID">materialSampleID</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:basisOfRecord">basisOfRecord</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:collectionCode">collectionCode</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:catalogNumber">catalogNumber</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:scientificName">scientificName</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:previousIdentifications">previousIdentifications</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:family">family</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:genus">genus</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:specificEpithet">specificEpithet</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:country">country</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:countryCode">countryCode</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:locality">locality</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:decimalLatitude">decimalLatitude</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:decimalLongitude">decimalLongitude</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:verbatimLatitude">verbatimLatitude</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:verbatimLongitude">verbatimLongitude</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:eventDate">eventDate</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:recordNumber">recordNumber</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:recordedBy">recordedBy</a><br>
+        <a href="https://dwc.tdwg.org/terms/#dwc:fieldNumber">fieldNumber</a>
+      </td>
+    </tr><tr>
+      <td class="type">"jacq"</td>
+      <td>
+        specimenID<br>
+        scientificName<br>
+        family<br>
+        genus<br>
+        epithet<br>
+        HerbNummer<br>
+        observation<br>
+        taxon_alt<br>
+        Fundort<br>
+        decimalLatitude<br>
+        decimalLongitude<br>
+        verbatimLatitude<br>
+        verbatimLongitude<br>
+        collectorTeam<br>
+        created<br>
+        Nummer<br>
+        series<br>
+        alt_number<br>
+        WIKIDATA_ID<br>
+        HUH_ID<br>
+        VIAF_ID<br>
+        ORCID<br>
+        OwnerOrganizationAbbrev<br>
+        OwnerLogoURI<br>
+        LicenseURI<br>
+        nation_engl<br>
+        iso_alpha_3_code
+      </td>
+    </tr>
+    </table>
+
   </body>
 </html>
