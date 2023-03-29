@@ -8,15 +8,19 @@ class IiifMapper extends Mapper
  * @param int $specimenID ID of specimen
  * @return array constructed uri or empty string if nothing found
  */
-public function getManifestUri($specimenID)
+public function getManifestUri(int $specimenID): array
 {
     $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_uri
                                   FROM tbl_specimens s
                                    LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
-                                  WHERE specimen_ID = '" . intval($specimenID) . "'")
+                                  WHERE specimen_ID = '$specimenID'")
                          ->fetch_assoc();
-    return array('uri' => $this->makeURI($specimen, $this->parser($specimen['manifest_uri'])));
+    if (!empty($specimen['manifest_uri'])) {
+        return array('uri' => $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri'])));
+    } else {
+        return array('uri' => '');
+    }
 }
 
 /**
@@ -26,18 +30,18 @@ public function getManifestUri($specimenID)
  * @param string $currentUri originally called uri
  * @return mixed received manifest or false if no backend is defined
  */
-public function getManifest($specimenID, $currentUri)
+public function getManifest(int $specimenID, string $currentUri)
 {
     $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_backend
                                   FROM tbl_specimens s
                                    LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
-                                  WHERE specimen_ID = '" . intval($specimenID) . "'")
+                                  WHERE specimen_ID = '$specimenID'")
                          ->fetch_assoc();
     if (!$specimen['manifest_backend']) {
         return false;
     } else {
-        $manifestBackend = $this->makeURI($specimen, $this->parser($specimen['manifest_backend']));
+        $manifestBackend = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_backend']));
 
         $result = array();
         if ($manifestBackend) {
@@ -79,7 +83,7 @@ public function getManifest($specimenID, $currentUri)
  * @param string $text text to tokenize
  * @return array found parts
  */
-private function parser ($text)
+private function parser (string $text): array
 {
     $parts = explode('<', $text);
     $result = array(array('text' => $parts[0], 'token' => false));
@@ -100,7 +104,7 @@ private function parser ($text)
  * @param array $parts text and tokens
  * @return string constructed uri or empty string if nothing found
  */
-private function makeURI ($specimen, $parts)
+private function makeURI (int $specimenID, array $parts): string
 {
     $uri = '';
     foreach ($parts as $part) {
@@ -110,25 +114,27 @@ private function makeURI ($specimen, $parts)
             $subtoken = (isset($tokenParts[1])) ? $tokenParts[1] : '';
             switch ($token) {
                 case 'specimenID':
-                    $uri .= $specimen['specimen_ID'];
+                    $uri .= $specimenID;
                     break;
                 case 'stableIdentifier':
                     $row = $this->db->query("SELECT stableIdentifier
                                              FROM tbl_specimens_stblid
-                                             WHERE specimen_ID = '" . $specimen['specimen_ID'] . "'
+                                             WHERE specimen_ID = '$specimenID'
                                              ORDER BY timestamp DESC
                                              LIMIT 1")
                                     ->fetch_assoc();
-                    switch ($subtoken) {
-                        case 'last':
-                            $uri .= substr($row['stableIdentifier'], strrpos($row['stableIdentifier'], '/') + 1);
-                            break;
-                        case 'https':
-                            $uri .= str_replace('http:', 'https:', $row['stableIdentifier']);
-                            break;
-                        default:
-                            $uri .= $row['stableIdentifier'];
-                            break;
+                    if (!empty($row)) {
+                        switch ($subtoken) {
+                            case 'last':
+                                $uri .= substr($row['stableIdentifier'], strrpos($row['stableIdentifier'], '/') + 1);
+                                break;
+                            case 'https':
+                                $uri .= str_replace('http:', 'https:', $row['stableIdentifier']);
+                                break;
+                            default:
+                                $uri .= $row['stableIdentifier'];
+                                break;
+                        }
                     }
                     break;
                 case 'fromDB':
@@ -137,7 +143,7 @@ private function makeURI ($specimen, $parts)
                     if ($subtoken && !empty($tokenParts[2])) {
                         $row_sid = $this->db->query("SELECT stableIdentifier
                                                      FROM tbl_specimens_stblid
-                                                     WHERE specimen_ID = '" . $specimen['specimen_ID'] . "'
+                                                     WHERE specimen_ID = '$specimenID'
                                                      ORDER BY timestamp DESC
                                                      LIMIT 1")
                                             ->fetch_assoc();
@@ -166,7 +172,7 @@ private function makeURI ($specimen, $parts)
  * @param array $metadata already existing metadata in manifest (optional)
  * @return array metadata
  */
-private function getMetadata(SpecimenMapper $specimen, $metadata = array())
+private function getMetadata(SpecimenMapper $specimen, array $metadata = array()): array
 {
     $meta = $metadata;
 
@@ -216,7 +222,7 @@ private function getMetadata(SpecimenMapper $specimen, $metadata = array())
  * @param array $metadata already existing metadata in manifest (optional)
  * @return array metadata
  */
-private function getMetadataWithValues(SpecimenMapper $specimen, $metadata = array())
+private function getMetadataWithValues(SpecimenMapper $specimen, array $metadata = array()): array
 {
     $meta = $this->getMetadata($specimen, $metadata);
     $result = array();
