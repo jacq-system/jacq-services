@@ -77,6 +77,8 @@ public function getManifest(int $specimenID, string $currentUri)
                 $data_string = json_encode($data);
                 $curl = curl_init();
                 curl_setopt($curl, CURLOPT_URL, $url);
+                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($curl,CURLOPT_SSL_VERIFYHOST,0);
                 curl_setopt($curl, CURLOPT_POST, true);
                 curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
