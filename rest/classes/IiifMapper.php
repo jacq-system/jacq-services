@@ -105,7 +105,7 @@ public function getManifest(int $specimenID, string $currentUri)
                 for($i=0; $i<count($obj['result']); $i++) {
                     $canvases[] =  array('@id' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
                         '@type' => 'sc:Canvas',
-                        '@label' =>  $obj['result'][$i]["identifier"],
+                        'label' =>  $obj['result'][$i]["identifier"],
                         'height' =>  $obj['result'][$i]["height"],
                         'width' =>  $obj['result'][$i]["width"],
                         'images' => array(array('@id' => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
