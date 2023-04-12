@@ -54,7 +54,7 @@ public function getManifest(int $specimenID, string $currentUri)
                 $key = $specimen['key'];
                 $filename = $this->getPictureData($specimenID); //woher? 'dr_045258'
                 //$herbariumid = $this->makeURI($specimen['specimen_ID'], [['text'=>'stableIdentifier:last', 'token' => true]]);//'dr045258';
-                $file_type = 'image/jp2'; //eventuell aus Ergebnis request
+                $file_type = 'image/jpeg'; //eventuell aus Ergebnis request
 
                 $data = array(
                     'id' => '1',
@@ -95,24 +95,22 @@ public function getManifest(int $specimenID, string $currentUri)
 
                 //$result = array();
 
-                $context = array('http://iiif.io/api/presentation/2/context.json',
-                    'http://www.w3.org/ns/anno.jsonld'
-                );
+                $context = 'http://iiif.io/api/presentation/2/context.json';
                 $result['@context'] = $context ;
                 $result['@id']      = $urlmanifestpre.$urlmanifestpost;
                 $result['@type']      = 'sc:Manifest';
                 $result['label']      = $specimenID;
                 $canvases = array();
                 for($i=0; $i<count($obj['result']); $i++) {
-                    $canvases[] =  array('@id' => $urlmanifestpre.'/c/'.$specimenID,
+                    $canvases[] =  array('@id' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
                         '@type' => 'sc:Canvas',
                         '@label' =>  $obj['result'][$i]["identifier"],
                         'height' =>  $obj['result'][$i]["height"],
                         'width' =>  $obj['result'][$i]["width"],
-                        'images' => array('@id' => $urlmanifestpre.'/i/'.$specimenID,
+                        'images' => array(array('@id' => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
                             '@type' => 'oa:Annotation',
                             'motivation' => 'sc:painting',
-                            'on' => $urlmanifestpre.'/c/'.$specimenID,
+                            'on' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
                             'resource' => array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
                                 '@type' => 'dctypes:Image',
                                 'format' => $file_type,
@@ -125,16 +123,16 @@ public function getManifest(int $specimenID, string $currentUri)
                                 ),
                             ),
                         ),
-                    );
+                    ));
 
                 };
-                $sequences = array('@id' => $urlmanifestpre.'/c/'.$specimenID,
+                $sequences = array('@id' => $urlmanifestpre.'#sequence-1',
                     '@type' => 'sc:Sequence',
                     'canvases' => $canvases,
                     'label' => 'Current order',
                     'viewingDirection' => 'left-to-right'
                 );
-                $result['@sequences']      = $sequences;
+                $result['@sequences']      = array($sequences);
 
                 $result['thumbnail']      = array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
                     '@type' => 'dctypes:Image',
