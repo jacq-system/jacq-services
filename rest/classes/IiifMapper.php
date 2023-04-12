@@ -117,7 +117,7 @@ public function getManifest(int $specimenID, string $currentUri)
                                 'format' => $file_type,
                                 'height' => $obj['result'][$i]["height"],
                                 'width' => $obj['result'][$i]["width"],
-                                '@service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
+                                'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
                                     '@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
                                     'profile' => 'http://iiif.io/api/image/2/level2.json',
                                     'protocol' => 'http://iiif.io/api/image'
