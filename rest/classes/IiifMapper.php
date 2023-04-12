@@ -95,7 +95,8 @@ public function getManifest(int $specimenID, string $currentUri)
 
                 //$result = array();
 
-                $context = 'http://iiif.io/api/presentation/2/context.json';
+                $context = array('http://iiif.io/api/presentation/2/context.json',
+                    'http://www.w3.org/ns/anno.jsonld');
                 $result['@context'] = $context ;
                 $result['@id']      = $urlmanifestpre.$urlmanifestpost;
                 $result['@type']      = 'sc:Manifest';
@@ -132,7 +133,7 @@ public function getManifest(int $specimenID, string $currentUri)
                     'label' => 'Current order',
                     'viewingDirection' => 'left-to-right'
                 );
-                $result['@sequences']      = array($sequences);
+                $result['sequences']      = array($sequences);
 
                 $result['thumbnail']      = array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
                     '@type' => 'dctypes:Image',
