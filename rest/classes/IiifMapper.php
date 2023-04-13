@@ -50,7 +50,8 @@ public function getManifest(int $specimenID, string $currentUri)
                 $url = substr($manifestBackend,5); //tbl_img_definition.imgserver_IP
                 $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri'])); //iiif_definition.manifest_uri
                 $urlmanifestpost = '/manifest.json';
-                $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['iiif_dir'].'/';
+                //$urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['iiif_dir'].'/';
+                $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].'/iiif/2/';
                 $key = $specimen['key'];
                 $filename = $this->getPictureData($specimenID); //woher? 'dr_045258'
                 //$herbariumid = $this->makeURI($specimen['specimen_ID'], [['text'=>'stableIdentifier:last', 'token' => true]]);//'dr045258';
@@ -138,7 +139,7 @@ public function getManifest(int $specimenID, string $currentUri)
                 $result['thumbnail']      = array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
                     '@type' => 'dctypes:Image',
                     'format' => 'image/jpeg',
-                    '@service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
+                    'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
                         '@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)),
                         'profile' => 'http://iiif.io/api/image/2/level2.json',
                         'protocol' => 'http://iiif.io/api/image'
