@@ -50,7 +50,7 @@ public function getManifest(int $specimenID, string $currentUri)
                 $url = substr($manifestBackend,5); //tbl_img_definition.imgserver_IP
                 $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri'])); //iiif_definition.manifest_uri
                 $urlmanifestpost = '/manifest.json';
-                //$urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['iiif_dir'].'/';
+                //$urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['img_service_directory'].'/';
                 $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].'/iiif/2/';
                 $key = $specimen['key'];
                 $filename = $this->getPictureData($specimenID); //woher? 'dr_045258'
@@ -355,159 +355,67 @@ private function getMetadataWithValues(SpecimenMapper $specimen, array $metadata
     }
     return $result;
 }
-private function getPictureData($specimenID)
-    {
-        $result = $this->db->query("SELECT id.`imgserver_Prot`, id.`imgserver_IP`, id.`imgserver_type`, id.`img_service_directory`, id.`is_djatoka`, id.`HerbNummerNrDigits`, id.`key`,
-                   mc.`coll_short_prj`, mc.`source_id`, mc.`collectionID`, mc.`picture_filename`,
-                   s.`HerbNummer`, s.`Bemerkungen`
-            FROM `tbl_specimens` s
-             LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
-             LEFT JOIN `tbl_img_definition` id ON id.`source_id_fk` = mc.`source_id`
-            WHERE s.`specimen_ID` = '" . intval($specimenID) . "'")
-             ->fetch_assoc();
-        // Fetch information for this image
-        if ($result) {
-           $url = ((!empty($result['imgserver_Prot'])) ? $result['imgserver_Prot'] : "http") . '://'
-                . $result['imgserver_IP']
-                . (($result['img_service_directory']) ? '/' . $result['img_service_directory'] . '/' : '/');
 
-            // Remove hyphens
-            $HerbNummer = str_replace('-', '', $result['HerbNummer']);
+/**
+ * get a clean filename for a given specimen-ID
+ *
+ * @param int $specimenID specimen-ID
+ * @return string the constructed filename or an empty string
+ */
+private function getPictureData(int $specimenID)
+{
+    $result = $this->db->query("SELECT s.`HerbNummer`, mc.`picture_filename`,  mc.`coll_short_prj`, id.`HerbNummerNrDigits`
+                                FROM `tbl_specimens` s
+                                 LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
+                                 LEFT JOIN `tbl_img_definition` id ON id.`source_id_fk` = mc.`source_id`
+                                WHERE s.`specimen_ID` = '$specimenID)'")
+                       ->fetch_assoc();
+    // Fetch information for this image
+    if ($result) {
+        // Remove hyphens
+        $HerbNummer = str_replace('-', '', $result['HerbNummer']);
 
-
-            // Construct clean filename
-            if ($result['imgserver_type'] == 'bgbm') {
-                // Remove spaces for B HerbNumber
-                $HerbNummer = ($result['HerbNummer']) ? $result['HerbNummer'] : ('JACQID' . $specimenID);
-                $HerbNummer = str_replace(' ', '', $HerbNummer);
-                $filename = sprintf($HerbNummer);
-                $key = $result['key'];
-            } elseif ($result['imgserver_type'] == 'baku') {       // depricated
-                $html = $result['Bemerkungen'];
-// create new ImageQuery object
-                $query = new ImageQuery();
-
-// fetch image uris
-                try {
-                    $uris = $query->fetchUris($html);
-                } catch (Exception $e) {
-                    echo 'an error occurred: ', $e->getMessage(), "\n";
-                    die();
-                }
-
-// do something with uris
-                foreach ($uris as $uriSubset) {
-                    $newHtmlCode = '<a href="' . $uriSubset["image"] . '" target="_blank"><img src="' . $uriSubset["preview"] . '"/></a>';
-                }
-
-                $url = $uriSubset["base"];
-#$url .= ($row['img_service_directory']) ? '/' . $row['img_service_directory'] . '/' : '';
-                if (substr($url, -1) != '/') {
-                    $url .= '/';  // to ensure that $url ends with a slash
-                }
-                $filename = sprintf($uriSubset["filename"]);
-                $originalFilename = sprintf($uriSubset["thumb"]);
-                $key = sprintf($uriSubset["html"]);
-            } else {
-                if ($result['collectionID'] == 90 || $result['collectionID'] == 92 || $result['collectionID'] == 123) { // w-krypt needs special treatment
-                    /* TODO
-                     * specimens of w-krypt are currently under transition from the old numbering system (w-krypt_1990-1234567) to the new
-                     * numbering system (w_1234567). During this time, new HerbNumbers are given to the specimens and the entries
-                     * in tbl_specimens are changed accordingly.
-                     * So, this script should first look for pictures, named after the new system before searching for pictures, named after the old system
-                     * When the transition is finished, this code-part (the whole elseif-block) should be removed
-                     * Johannes Schachner, 25.9.2021
-                     */
-                    $filename = sprintf("w_%0" . $result['HerbNummerNrDigits'] . ".0f", $HerbNummer);
-                    try {  // ask the picture server for a picture with the new filename
-                        $service = new \JsonRPC\Client($url . 'jacq-servlet/ImageServer');
-                        $pics = $service->execute('listResources',
-                            [
-                                $result['key'],
-                                [
-                                    $filename,
-                                    $filename . "_%",
-                                    $filename . "A",
-                                    $filename . "B",
-                                    "tab_" . $filename,
-                                    "obs_" . $filename,
-                                    "tab_" . $filename . "_%",
-                                    "obs_" . $filename . "_%"
-                                ]
-                            ]);
-                    } catch (Exception $e) {
-                        $pics = array();  // something has gone wrong, so no picture can be found anyway
-                    }
-                    if (count($pics) == 0) {  // nothing found, so use the old filename
-                        $filename = sprintf("w-krypt_%0" . $result['HerbNummerNrDigits'] . ".0f", $HerbNummer);
-                    }
-                } elseif (!empty($result['picture_filename'])) {   // special treatment for this collection is necessary
-                    $parts = $this-> parser($result['picture_filename']);
-                    $filename = '';
-                    foreach ($parts as $part) {
-                        if ($part['token']) {
-                            $tokenParts = explode(':', $part['text']);
-                            $token = $tokenParts[0];
-                            switch ($token) {
-                                case 'coll_short_prj':                                      // use contents of coll_short_prj
-                                    $filename .= $result['coll_short_prj'];
-                                    break;
-                                case 'HerbNummer':                                          // use HerbNummer with removed hyphens, options are :num and :reformat
-                                    if (in_array('num', $tokenParts)) {                     // ignore text with digits within, only use the last number
-                                        if (preg_match("/\d+$/", $HerbNummer, $matches)) {  // there is a number at the tail of HerbNummer
-                                            $number = $matches[0];
-                                        } else {                                            // HerbNummer ends with text
-                                            $number = 0;
-                                        }
-                                    } else {
-                                        $number = $HerbNummer;                              // use the complete HerbNummer
-                                    }
-                                    if (in_array("reformat", $tokenParts)) {                // correct the number of digits with leading zeros
-                                        $filename .= sprintf("%0" . $result['HerbNummerNrDigits'] . ".0f", $number);
-                                    } else {                                                // use it as it is
-                                        $filename .= $number;
-                                    }
-                                    break;
+        // Construct clean filename
+        if (!empty($result['picture_filename'])) {   // special treatment for this collection is necessary
+            $parts = $this-> parser($result['picture_filename']);
+            $filename = '';
+            foreach ($parts as $part) {
+                if ($part['token']) {
+                    $tokenParts = explode(':', $part['text']);
+                    $token = $tokenParts[0];
+                    switch ($token) {
+                        case 'coll_short_prj':                                      // use contents of coll_short_prj
+                            $filename .= $result['coll_short_prj'];
+                            break;
+                        case 'HerbNummer':                                          // use HerbNummer with removed hyphens, options are :num and :reformat
+                            if (in_array('num', $tokenParts)) {                     // ignore text with digits within, only use the last number
+                                if (preg_match("/\d+$/", $HerbNummer, $matches)) {  // there is a number at the tail of HerbNummer
+                                    $number = $matches[0];
+                                } else {                                            // HerbNummer ends with text
+                                    $number = 0;
+                                }
+                            } else {
+                                $number = $HerbNummer;                              // use the complete HerbNummer
                             }
-                        } else {
-                            $filename .= $part['text'];
-                        }
+                            if (in_array("reformat", $tokenParts)) {                // correct the number of digits with leading zeros
+                                $filename .= sprintf("%0" . $result['HerbNummerNrDigits'] . ".0f", $number);
+                            } else {                                                // use it as it is
+                                $filename .= $number;
+                            }
+                            break;
                     }
-                } else {    // standard filename, would be "<coll_short_prj>_<HerbNummer:reformat>"
-                    $filename = sprintf("%s_%0" . $result['HerbNummerNrDigits'] . ".0f", $result['coll_short_prj'], $HerbNummer);
+                } else {
+                    $filename .= $part['text'];
                 }
-                $key = $result['key'];
             }
-
-// Set original file-name if we didn't pass one (required for djatoka)
-// (required for pictures with suffixes)
-            //if (!$originalFilename) {
-             //   $originalFilename = $filename;
-            //}
-
-            //return array(
-            //    'url' => $url,
-            //    'requestFileName' => $filename,
-            //    //'originalFilename' => $originalFilename,
-            //    'filename' => $filename,
-            //   'specimenID' => $specimenID,
-            //    'is_djatoka' => $result['is_djatoka'],
-            //    'imgserver_type' => $result['imgserver_type'],
-            //    'key' => $key
-            //);
-            return $filename;
-        } else {
-            return array(
-                'url' => null,
-                'requestFileName' => null,
-                //'originalFilename' => null,
-                'filename' => null,
-                'specimenID' => null,
-                'is_djatoka' => null,
-                'imgserver_type' => null,
-                'key' => null
-            );
+        } else {    // standard filename, would be "<coll_short_prj>_<HerbNummer:reformat>"
+            $filename = sprintf("%s_%0" . $result['HerbNummerNrDigits'] . ".0f", $result['coll_short_prj'], $HerbNummer);
         }
+
+        return $filename;
+    } else {
+        return "";
     }
+}
 
 }
