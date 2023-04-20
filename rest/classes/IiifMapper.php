@@ -179,7 +179,7 @@ private function makeURI (int $specimenID, array $parts): string
 
 private function getManifestIiifServer(int $specimenID,string $manifestBackend): array
 {
-    $specimen = $this->db->query("SELECT s.specimen_ID,s.herbnummer, iiif.manifest_backend, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key, img.img_service_directory
+    $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key, img.img_service_directory
                                   FROM tbl_specimens s
                                   LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                   LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
@@ -188,7 +188,7 @@ private function getManifestIiifServer(int $specimenID,string $manifestBackend):
         ->fetch_assoc();
     $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri']));
     $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['img_service_directory'].'/';
-    $filename = $this->getPictureData($specimenID);
+    $filename = $this->getFilename($specimenID);
     $file_type = 'image/jpeg';
 
     $data = array(
@@ -355,7 +355,7 @@ private function getMetadataWithValues(SpecimenMapper $specimen, array $metadata
  * @param int $specimenID specimen-ID
  * @return string the constructed filename or an empty string
  */
-private function getPictureData(int $specimenID)
+private function getFilename(int $specimenID)
 {
     $result = $this->db->query("SELECT s.`HerbNummer`, mc.`picture_filename`,  mc.`coll_short_prj`, id.`HerbNummerNrDigits`
                                 FROM `tbl_specimens` s
