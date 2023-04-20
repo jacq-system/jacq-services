@@ -47,156 +47,38 @@ public function getManifest(int $specimenID, string $currentUri)
         $result = array();
         if ($manifestBackend) {
             if(substr($manifestBackend,0,5) == 'POST:') {
-                $url = substr($manifestBackend,5); //tbl_img_definition.imgserver_IP
-                $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri'])); //iiif_definition.manifest_uri
-                $urlmanifestpost = '/manifest.json';
-                //$urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['img_service_directory'].'/';
-                $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].'/iiif/2/';
-                $key = $specimen['key'];
-                $filename = $this->getPictureData($specimenID); //woher? 'dr_045258'
-                //$herbariumid = $this->makeURI($specimen['specimen_ID'], [['text'=>'stableIdentifier:last', 'token' => true]]);//'dr045258';
-                $file_type = 'image/jpeg'; //eventuell aus Ergebnis request
-
-                $data = array(
-                    'id' => '1',
-                    'method' => 'listResourcesWithMetadata',
-                    'params' => array(
-                        $key,
-                        array(
-                            $filename,
-                            $filename . "_%",
-                            $filename . "A",
-                            $filename . "B",
-                            "tab_" . $filename,
-                            "obs_" . $filename,
-                            "tab_" . $filename . "_%",
-                            "obs_" . $filename . "_%"
-                        )
-                    )
-                );
-
-                $data_string = json_encode($data);
-                $curl = curl_init();
-                curl_setopt($curl, CURLOPT_URL, $url);
-                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-                curl_setopt($curl,CURLOPT_SSL_VERIFYHOST,0);
-                curl_setopt($curl, CURLOPT_POST, true);
-                curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-                        'Content-Type: application/json',
-                        'Content-Length: ' . strlen($data_string))
-                );
-
-                $curl_response = curl_exec($curl);
-
-                $obj = json_decode($curl_response, TRUE);
-
-                curl_close($curl);
-
-                //$result = array();
-
-                $context = array('http://iiif.io/api/presentation/2/context.json',
-                    'http://www.w3.org/ns/anno.jsonld');
-                $result['@context'] = $context ;
-                $result['@id']      = $urlmanifestpre.$urlmanifestpost;
-                $result['@type']      = 'sc:Manifest';
-                $result['label']      = $specimenID;
-                $canvases = array();
-                for($i=0; $i<count($obj['result']); $i++) {
-                    $canvases[] =  array('@id' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
-                        '@type' => 'sc:Canvas',
-                        'label' =>  $obj['result'][$i]["identifier"],
-                        'height' =>  $obj['result'][$i]["height"],
-                        'width' =>  $obj['result'][$i]["width"],
-                        'images' => array(array('@id' => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
-                            '@type' => 'oa:Annotation',
-                            'motivation' => 'sc:painting',
-                            'on' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
-                            'resource' => array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
-                                '@type' => 'dctypes:Image',
-                                'format' => $file_type,
-                                'height' => $obj['result'][$i]["height"],
-                                'width' => $obj['result'][$i]["width"],
-                                'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
-                                    '@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
-                                    'profile' => 'http://iiif.io/api/image/2/level2.json',
-                                    'protocol' => 'http://iiif.io/api/image'
-                                ),
-                            ),
-                        ),
-                    ));
-
-                };
-                $sequences = array('@id' => $urlmanifestpre.'#sequence-1',
-                    '@type' => 'sc:Sequence',
-                    'canvases' => $canvases,
-                    'label' => 'Current order',
-                    'viewingDirection' => 'left-to-right'
-                );
-                $result['sequences']      = array($sequences);
-
-                $result['thumbnail']      = array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
-                    '@type' => 'dctypes:Image',
-                    'format' => 'image/jpeg',
-                    'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
-                        '@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)),
-                        'profile' => 'http://iiif.io/api/image/2/level2.json',
-                        'protocol' => 'http://iiif.io/api/image'
-                    ),
-                );
-
-                    $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
-
-                    $result['@id']         = $currentUri;  // to point at ourselves
-                    $result['description'] = $specimen->getDescription();
-                    $result['label']       = $specimen->getLabel();
-                    $result['attribution'] = $specimen->getAttribution();
-                    $result['logo']        = array('@id' => $specimen->getLogoURI());
-                    $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
-                        'label'   => 'RDF',
-                        'format'  => 'application/rdf+xml',
-                        'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
-                    if (empty($result['seeAlso'])) {
-                        $result['seeAlso']   = array($rdfLink);
-                    } else {
-                        $result['seeAlso'][] = $rdfLink;
-                    }
-                    $result['metadata']    = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
-
+                $result = $this->getManifestIiifServer($specimen['specimen_ID'],$manifestBackend);
             }else{
                 $curl = curl_init($manifestBackend);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                 $curl_response = curl_exec($curl);
 
-            if ($curl_response !== false) {
-                $result = json_decode($curl_response, true);
-                $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
-
-                $result['@id']         = $currentUri;  // to point at ourselves
-                $result['description'] = $specimen->getDescription();
-                $result['label']       = $specimen->getLabel();
-                $result['attribution'] = $specimen->getAttribution();
-                $result['logo']        = array('@id' => $specimen->getLogoURI());
-                $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
-                                               'label'   => 'RDF',
-                                               'format'  => 'application/rdf+xml',
-                                               'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
-                if (empty($result['seeAlso'])) {
-                    $result['seeAlso']   = array($rdfLink);
-                } else {
-                    $result['seeAlso'][] = $rdfLink;
+                if ($curl_response !== false) {
+                    $result = json_decode($curl_response, true);
                 }
-                $result['metadata']    = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
-            }
-            curl_close($curl);
+                curl_close($curl);
             };
-        }
+            $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
 
+            $result['@id']         = $currentUri;  // to point at ourselves
+            $result['description'] = $specimen->getDescription();
+            $result['label']       = $specimen->getLabel();
+            $result['attribution'] = $specimen->getAttribution();
+            $result['logo']        = array('@id' => $specimen->getLogoURI());
+            $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
+                                           'label'   => 'RDF',
+                                           'format'  => 'application/rdf+xml',
+                                           'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
+            if (empty($result['seeAlso'])) {
+                $result['seeAlso']   = array($rdfLink);
+            } else {
+                $result['seeAlso'][] = $rdfLink;
+            }
+            $result['metadata']    = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
+        }
         return $result;
     }
 }
-
 
 ////////////////////////////// private functions //////////////////////////////
 /**
@@ -285,6 +167,117 @@ private function makeURI (int $specimenID, array $parts): string
     }
 
     return $uri;
+}
+
+/**
+ * get array of metadata for a given specimen from POST request
+ *
+ * @param int $specimenID specimen-ID
+ * @param string $manifestBackend
+ * @return array metadata from iiif server
+ */
+
+private function getManifestIiifServer(int $specimenID,string $manifestBackend): array
+{
+    $specimen = $this->db->query("SELECT s.specimen_ID,s.herbnummer, iiif.manifest_backend, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key, img.img_service_directory
+                                  FROM tbl_specimens s
+                                  LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
+                                  LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
+                                  LEFT JOIN herbarinput.tbl_img_definition img ON img.source_id_fk = mc.source_id
+                                  WHERE specimen_ID = '$specimenID'")
+        ->fetch_assoc();
+    $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri']));
+    $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['img_service_directory'].'/';
+    $filename = $this->getPictureData($specimenID);
+    $file_type = 'image/jpeg';
+
+    $data = array(
+        'id' => '1',
+        'method' => 'listResourcesWithMetadata',
+        'params' => array(
+            $specimen['key'],
+            array(
+                $filename,
+                $filename . "_%",
+                $filename . "A",
+                $filename . "B",
+                "tab_" . $filename,
+                "obs_" . $filename,
+                "tab_" . $filename . "_%",
+                "obs_" . $filename . "_%"
+            )
+        )
+    );
+
+    $data_string = json_encode($data);
+    $curl = curl_init();
+    curl_setopt($curl, CURLOPT_URL, substr($manifestBackend,5));
+    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($curl,CURLOPT_SSL_VERIFYHOST,0);
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($data_string))
+    );
+
+    $curl_response = curl_exec($curl);
+
+    $obj = json_decode($curl_response, TRUE);
+
+    curl_close($curl);
+
+      $context = array('http://iiif.io/api/presentation/2/context.json',
+        'http://www.w3.org/ns/anno.jsonld');
+    $result['@context'] = $context ;
+    //$result['@id']      = $urlmanifestpre.$urlmanifestpost;
+    $result['@type']      = 'sc:Manifest';
+    //$result['label']      = $specimenID;
+    $canvases = array();
+    for($i=0; $i<count($obj['result']); $i++) {
+        $canvases[] =  array('@id' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
+            '@type' => 'sc:Canvas',
+            'label' =>  $obj['result'][$i]["identifier"],
+            'height' =>  $obj['result'][$i]["height"],
+            'width' =>  $obj['result'][$i]["width"],
+            'images' => array(array('@id' => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
+                '@type' => 'oa:Annotation',
+                'motivation' => 'sc:painting',
+                'on' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
+                'resource' => array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
+                    '@type' => 'dctypes:Image',
+                    'format' => $file_type,
+                    'height' => $obj['result'][$i]["height"],
+                    'width' => $obj['result'][$i]["width"],
+                    'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
+                        '@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
+                        'profile' => 'http://iiif.io/api/image/2/level2.json',
+                        'protocol' => 'http://iiif.io/api/image'
+                    ),
+                ),
+            ),
+            ));
+
+    };
+    $sequences = array('@id' => $urlmanifestpre.'#sequence-1',
+        '@type' => 'sc:Sequence',
+        'canvases' => $canvases,
+        'label' => 'Current order',
+        'viewingDirection' => 'left-to-right'
+    );
+    $result['sequences']      = array($sequences);
+
+    $result['thumbnail']      = array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
+        '@type' => 'dctypes:Image',
+        'format' => 'image/jpeg',
+        'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
+            '@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)),
+            'profile' => 'http://iiif.io/api/image/2/level2.json',
+            'protocol' => 'http://iiif.io/api/image'
+        ),
+    );
+  return $result;
 }
 
 /**
