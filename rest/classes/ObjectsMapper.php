@@ -29,6 +29,11 @@ public function getSpecimenData(int $specimenID, string $fieldgroups = ''): arra
     }
     if (strpos($fieldgroups, "jacq") !== false) {
         $ret['jacq'] = $specimen->getJACQ();
+
+        $imagelinks = new ImageLinkMapper($this->db, $specimenID);
+        $ret['jacq']['jacq:image']         = $imagelinks->getImageLink();
+        $ret['jacq']['jacq:downloadImage'] = $imagelinks->getFileLink();
+
     }
     return $ret;
 //    return array_merge($specimen->getDC(), $specimen->getDWC(), $specimen->getJACQ());
@@ -122,14 +127,15 @@ public function getSpecimensFromList(array $list, string $fieldgroups = ''): arr
 public function searchSpecimensList(array $params, array $taxonIDList = array()): array
 {
     // check if all allowed parameters are in order and set default values if any are missing
-    $allowedParams = array('p'    => 0,                 // page, default: display first page
-                           'rpp'  => 50,                // records per page, default: 50
-                           'list' => 1,                 // return just a list of specimen-IDs?, default: yes
-                           'term' => '',                // search for scientific name (joker = *)
-                           'sc'   => '',                // search for a source-code
-                           'coll' => '',                // search for a collector
-                           'type' => 0,                 // switch, search only for type records (default: no)
-                           'sort' => 'sciname,herbnr'   // sorting of result, default: order scinames and herbnumbers
+    $allowedParams = array('p'      => 0,               // page, default: display first page
+                           'rpp'    => 50,              // records per page, default: 50
+                           'list'   => 1,               // return just a list of specimen-IDs?, default: yes
+                           'term'   => '',              // search for scientific name (joker = *)
+                           'sc'     => '',              // search for a source-code
+                           'coll'   => '',              // search for a collector
+                           'nation' => '',              // search for a nation
+                           'type'   => 0,               // switch, search only for type records (default: no)
+                           'sort'   => 'sciname,herbnr' // sorting of result, default: order scinames and herbnumbers
                           );
     foreach ($allowedParams as $key => $default) {
         $filteredParam[$key] = (isset($params[$key])) ? trim(filter_var($params[$key], FILTER_SANITIZE_STRING)) : $default;
@@ -170,6 +176,11 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
         $joins['c'] = true;
         $valueE = $this->db->real_escape_string($filteredParam['coll']);
         $constraint .= " AND (c.Sammler LIKE '$valueE%' OR c2.Sammler_2 LIKE '%$valueE%') ";
+    }
+    if (!empty($filteredParam['nation'])) {
+        $joins['gn'] = true;
+        $nation = $this->db->real_escape_string($filteredParam['nation']);
+        $constraint .= " AND (n.nation_engl LIKE '$nation' OR n.nation LIKE '$nation' OR n.nation_deutsch LIKE '$nation') ";
     }
     if (!empty($filteredParam['type'])) {
         $joins['tst'] = true;
@@ -216,6 +227,7 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
                 case 'tst': $sql .= " LEFT JOIN tbl_specimens_types tst       ON tst.specimenID  = s.specimen_ID "; break;
                 case 'm':   $sql .= " LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
                                       LEFT JOIN meta m                        ON m.source_ID     = mc.source_ID ";  break;
+                case 'gn':  $sql .= " LEFT JOIN tbl_geo_nation n              ON n.nationID      = s.NationID ";    break;
                 case 'c':   $sql .= " LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
                                       LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID "; break;
                 case 'sn':  $sql .= " LEFT JOIN tbl_tax_sciname sn            ON sn.taxonID      = s.taxonID ";     break;

@@ -34,9 +34,9 @@ public function getManifest(int $specimenID, string $currentUri)
 {
     $specimen = $this->db->query("SELECT s.specimen_ID,s.herbnummer, iiif.manifest_backend, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key
                                   FROM tbl_specimens s
-                                  LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
-                                  LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
-                                  LEFT JOIN herbarinput.tbl_img_definition img ON img.source_id_fk = mc.source_id
+                                   LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
+                                   LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
+                                   LEFT JOIN herbarinput.tbl_img_definition img ON img.source_id_fk = mc.source_id
                                   WHERE specimen_ID = '$specimenID'")
                          ->fetch_assoc();
     if (!$specimen['manifest_backend']) {
@@ -46,9 +46,9 @@ public function getManifest(int $specimenID, string $currentUri)
 
         $result = array();
         if ($manifestBackend) {
-            if(substr($manifestBackend,0,5) == 'POST:') {
-                $result = $this->getManifestIiifServer($specimen['specimen_ID'],$manifestBackend);
-            }else{
+            if (substr($manifestBackend,0,5) == 'POST:') {
+                $result = $this->getManifestIiifServer($specimen['specimen_ID'], $manifestBackend);
+            } else {
                 $curl = curl_init($manifestBackend);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
                 $curl_response = curl_exec($curl);
@@ -57,28 +57,69 @@ public function getManifest(int $specimenID, string $currentUri)
                     $result = json_decode($curl_response, true);
                 }
                 curl_close($curl);
-            };
-            $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
-
-            $result['@id']         = $currentUri;  // to point at ourselves
-            $result['description'] = $specimen->getDescription();
-            $result['label']       = $specimen->getLabel();
-            $result['attribution'] = $specimen->getAttribution();
-            $result['logo']        = array('@id' => $specimen->getLogoURI());
-            $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
-                                           'label'   => 'RDF',
-                                           'format'  => 'application/rdf+xml',
-                                           'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
-            if (empty($result['seeAlso'])) {
-                $result['seeAlso']   = array($rdfLink);
-            } else {
-                $result['seeAlso'][] = $rdfLink;
             }
-            $result['metadata']    = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
+            if ($result) {
+                $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
+
+                $result['@id']         = $currentUri;  // to point at ourselves
+                $result['description'] = $specimen->getDescription();
+                $result['label']       = $specimen->getLabel();
+                $result['attribution'] = $specimen->getAttribution();
+                $result['logo']        = array('@id' => $specimen->getLogoURI());
+                $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
+                                               'label'   => 'RDF',
+                                               'format'  => 'application/rdf+xml',
+                                               'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
+                if (empty($result['seeAlso'])) {
+                    $result['seeAlso'] = array($rdfLink);
+                } else {
+                    $result['seeAlso'][] = $rdfLink;
+                }
+                $result['metadata'] = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
+            }
         }
         return $result;
     }
 }
+
+/**
+ * act as a proxy and get the iiif manifest just for the image of a given specimen-ID from the backend
+ *
+ * @param int $specimenID ID of specimen
+ * @return mixed received manifest or false if no backend is defined
+ */
+public function getImageManifest(int $specimenID)
+{
+    $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_backend
+                              FROM tbl_specimens s
+                               LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
+                               LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
+                              WHERE specimen_ID = '$specimenID'")
+        ->fetch_assoc();
+    if (!$specimen['manifest_backend']) {
+        return false;
+    } else {
+        $manifestBackend = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_backend']));
+
+        $result = array();
+        if ($manifestBackend) {
+            if (substr($manifestBackend,0,5) == 'POST:') {
+                $result = $this->getManifestIiifServer($specimen['specimen_ID'], $manifestBackend);
+            } else {
+                $curl = curl_init($manifestBackend);
+                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+                $curl_response = curl_exec($curl);
+
+                if ($curl_response !== false) {
+                    $result = json_decode($curl_response, true);
+                }
+                curl_close($curl);
+            }
+        }
+        return $result;
+    }
+}
+
 
 ////////////////////////////// private functions //////////////////////////////
 /**
@@ -177,17 +218,19 @@ private function makeURI (int $specimenID, array $parts): string
  * @return array metadata from iiif server
  */
 
-private function getManifestIiifServer(int $specimenID,string $manifestBackend): array
+private function getManifestIiifServer(int $specimenID, string $manifestBackend): array
 {
     $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key, img.img_service_directory
                                   FROM tbl_specimens s
-                                  LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
-                                  LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
-                                  LEFT JOIN herbarinput.tbl_img_definition img ON img.source_id_fk = mc.source_id
+                                   LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
+                                   LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
+                                   LEFT JOIN tbl_img_definition img               ON img.source_id_fk = mc.source_id
                                   WHERE specimen_ID = '$specimenID'")
-        ->fetch_assoc();
+                     ->fetch_assoc();
     $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri']));
-    $urliiif = $specimen['imgserver_Prot'].'://'.$specimen['imgserver_IP'].$specimen['img_service_directory'].'/';
+    $urliiif = $specimen['imgserver_Prot'] . '://'
+             . $specimen['imgserver_IP']
+             . (($specimen['img_service_directory']) ? $specimen['img_service_directory'] . '/' : '/');
     $filename = $this->getFilename($specimenID);
     $file_type = 'image/jpeg';
 
@@ -213,7 +256,7 @@ private function getManifestIiifServer(int $specimenID,string $manifestBackend):
     $curl = curl_init();
     curl_setopt($curl, CURLOPT_URL, substr($manifestBackend,5));
     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($curl,CURLOPT_SSL_VERIFYHOST,0);
+    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,0);
     curl_setopt($curl, CURLOPT_POST, true);
     curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -228,8 +271,8 @@ private function getManifestIiifServer(int $specimenID,string $manifestBackend):
 
     curl_close($curl);
 
-      $context = array('http://iiif.io/api/presentation/2/context.json',
-        'http://www.w3.org/ns/anno.jsonld');
+    $context = array('http://iiif.io/api/presentation/2/context.json',
+                     'http://www.w3.org/ns/anno.jsonld');
     $result['@context'] = $context ;
     //$result['@id']      = $urlmanifestpre.$urlmanifestpost;
     $result['@type']      = 'sc:Manifest';
@@ -277,7 +320,7 @@ private function getManifestIiifServer(int $specimenID,string $manifestBackend):
             'protocol' => 'http://iiif.io/api/image'
         ),
     );
-  return $result;
+    return $result;
 }
 
 /**
