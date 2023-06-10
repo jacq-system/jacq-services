@@ -29,11 +29,6 @@ public function getSpecimenData(int $specimenID, string $fieldgroups = ''): arra
     }
     if (strpos($fieldgroups, "jacq") !== false) {
         $ret['jacq'] = $specimen->getJACQ();
-
-        $imagelinks = new ImageLinkMapper($this->db, $specimenID);
-        $ret['jacq']['jacq:image']         = $imagelinks->getImageLink();
-        $ret['jacq']['jacq:downloadImage'] = $imagelinks->getFileLink();
-
     }
     return $ret;
 //    return array_merge($specimen->getDC(), $specimen->getDWC(), $specimen->getJACQ());

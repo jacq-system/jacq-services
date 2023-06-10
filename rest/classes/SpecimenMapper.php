@@ -151,6 +151,8 @@ public function __construct(mysqli $db, int $specimenID)
         $this->properties['LicenseURI']              = $row['LicenseURI'];
         $this->properties['nation_engl']             = $row['nation_engl'];
         $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
+        $this->properties['image']                   = "https://services.jacq.org/jacq-services/rest/images/show/$this->specimenID";
+        $this->properties['downloadImage']           = "https://services.jacq.org/jacq-services/rest/images/download/$this->specimenID";
     }
 }
 

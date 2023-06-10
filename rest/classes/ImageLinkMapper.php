@@ -96,12 +96,12 @@ public function __construct(mysqli $db, int $specimenID)
     }
 }
 
-public function getImageLink()
+public function getFirstImageShowLink()
 {
     return $this->imageLink;
 }
 
-public function getFileLink()
+public function getFirstImageDownloadLink()
 {
     return $this->fileLink;
 }
