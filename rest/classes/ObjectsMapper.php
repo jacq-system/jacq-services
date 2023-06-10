@@ -60,7 +60,7 @@ public function getSpecimenDataWithValues(int $specimenID, string $fieldgroups =
 
     /**
      * TODO: change text
-     * get all properties with a value of a list of specimen
+     * get all properties with a value from a list of specimen
      *
      * @param array $list list of sepcimen-IDs
      * @param string $fieldgroups which groups should be returned (dc, dwc, jacq), defaults to all
@@ -109,10 +109,12 @@ public function getSpecimensFromList(array $list, string $fieldgroups = ''): arr
  *      p (page to display, default first page),
  *      rpp (records per page, default 50),
  *      list (return just a list of specimen-IDs, default 1),
- *      term (search for taxon, default none),
- *      sc (source code, default none)
- *      coll (collector, default none)
+ *      term (search for taxon)
+ *      sc (search for source code)
+ *      coll (search for collector)
+ *      nation (search for nation)
  *      type (type records only, default 0)
+ *      withImages (records with images only, default 0)
  *      sort (sort order, default sciname, herbnr)
  *
  * @param array $params any parameters of the search

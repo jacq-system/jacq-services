@@ -6,7 +6,8 @@
         "zircote/swagger-php": "^3.1",
         "ext-mysqli": "*",
         "ext-curl": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+        "srjlewis/json-rpc": "@stable"
     },
     "autoload": {
         "psr-4": {

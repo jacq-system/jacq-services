@@ -122,8 +122,8 @@ public function __construct(mysqli $db, int $specimenID)
         }
 
         if (!empty($row['digital_image']) || !empty($row['digital_image_obs'])) {
-            $firstImageLink = "https://services.jacq.org/jacq-services/rest/images/show/$this->specimenID";
-            $firstImageDownloadLink = "https://services.jacq.org/jacq-services/rest/images/download/$this->specimenID";
+            $firstImageLink = "$this->serviceBaseUri/images/show/$this->specimenID";
+            $firstImageDownloadLink = "$this->serviceBaseUri/images/download/$this->specimenID";
         } else {
             $firstImageLink = $firstImageDownloadLink = '';
         }
