@@ -122,15 +122,16 @@ public function getSpecimensFromList(array $list, string $fieldgroups = ''): arr
 public function searchSpecimensList(array $params, array $taxonIDList = array()): array
 {
     // check if all allowed parameters are in order and set default values if any are missing
-    $allowedParams = array('p'      => 0,               // page, default: display first page
-                           'rpp'    => 50,              // records per page, default: 50
-                           'list'   => 1,               // return just a list of specimen-IDs?, default: yes
-                           'term'   => '',              // search for scientific name (joker = *)
-                           'sc'     => '',              // search for a source-code
-                           'coll'   => '',              // search for a collector
-                           'nation' => '',              // search for a nation
-                           'type'   => 0,               // switch, search only for type records (default: no)
-                           'sort'   => 'sciname,herbnr' // sorting of result, default: order scinames and herbnumbers
+    $allowedParams = array('p'          => 0,               // page, default: display first page
+                           'rpp'        => 50,              // records per page, default: 50
+                           'list'       => 1,               // return just a list of specimen-IDs?, default: yes
+                           'term'       => '',              // search for scientific name (joker = *)
+                           'sc'         => '',              // search for a source-code
+                           'coll'       => '',              // search for a collector
+                           'nation'     => '',              // search for a nation
+                           'type'       => 0,               // switch, search only for type records (default: no)
+                           'withImages' => 0,               // switch, search only for records with images (default: no)
+                           'sort'       => 'sciname,herbnr' // sorting of result, default: order scinames and herbnumbers
                           );
     foreach ($allowedParams as $key => $default) {
         $filteredParam[$key] = (isset($params[$key])) ? trim(filter_var($params[$key], FILTER_SANITIZE_STRING)) : $default;
@@ -180,6 +181,9 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
     if (!empty($filteredParam['type'])) {
         $joins['tst'] = true;
         $constraint .= " AND tst.typusID IS NOT NULL ";
+    }
+    if (!empty($filteredParam['withImages'])) {
+        $constraint .= " AND (s.digital_image = 1 OR s.digital_image_obs = 1) ";
     }
 
     // order the result
