@@ -45,6 +45,7 @@ public function __construct(mysqli $db, int $specimenID)
     $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tf.family, tg.genus, te.epithet,
                               s.HerbNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
                               s.Coord_W, s.W_Min, s.W_Sec, s.Coord_N, s.N_Min, s.N_Sec, s.Coord_S, s.S_Min, s.S_Sec, s.Coord_E, s.E_Min, s.E_Sec,
+                              s.digital_image, s.digital_image_obs,
                               c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
                               md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI,
                               ss.series,
@@ -120,8 +121,15 @@ public function __construct(mysqli $db, int $specimenID)
             $verbatimLongitude = '';
         }
 
+        if (!empty($row['digital_image']) || !empty($row['digital_image_obs'])) {
+            $firstImageLink = "https://services.jacq.org/jacq-services/rest/images/show/$this->specimenID";
+            $firstImageDownloadLink = "https://services.jacq.org/jacq-services/rest/images/download/$this->specimenID";
+        } else {
+            $firstImageLink = $firstImageDownloadLink = '';
+        }
 
-        /**
+
+            /**
          * store all properties
          */
         $this->properties['specimenID']              = $this->specimenID;
@@ -151,8 +159,8 @@ public function __construct(mysqli $db, int $specimenID)
         $this->properties['LicenseURI']              = $row['LicenseURI'];
         $this->properties['nation_engl']             = $row['nation_engl'];
         $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
-        $this->properties['image']                   = "https://services.jacq.org/jacq-services/rest/images/show/$this->specimenID";
-        $this->properties['downloadImage']           = "https://services.jacq.org/jacq-services/rest/images/download/$this->specimenID";
+        $this->properties['image']                   = $firstImageLink;
+        $this->properties['downloadImage']           = $firstImageDownloadLink;
     }
 }
 
