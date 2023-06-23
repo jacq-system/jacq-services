@@ -175,7 +175,7 @@ $app->post('/specimens/fromFile', function (Request $request, Response $response
  *  @OA\Parameter(
  *      name="term",
  *      in="query",
- *      description="optional search term for scientific names, use * as a wildcard",
+ *      description="optional search term for scientific names, use * as a wildcard, multiple terms seperated by ','",
  *      example="prunus av*",
  *      @OA\Schema(type="string")
  *  ),
@@ -221,9 +221,12 @@ $app->get('/specimens/search', function (Request $request, Response $response)
     if (!empty($params['term'])) {
         $mapperSciNames = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                                   'apikey' => $this->get('settings')['APIKEY']));
-        $scinamesList = $mapperSciNames->searchScientificName(trim(filter_var($params['term'], FILTER_SANITIZE_STRING)));
-        foreach ($scinamesList as $item) {
-            $taxonIDList[] = $item['taxonID'];
+        $termlist = explode(',', trim(filter_var($params['term'], FILTER_SANITIZE_STRING)));
+        foreach ($termlist as $term) {
+            $scinamesList = $mapperSciNames->searchScientificName(trim($term));
+            foreach ($scinamesList as $item) {
+                $taxonIDList[] = $item['taxonID'];
+            }
         }
     }
     $data = $mapper->searchSpecimensList($params, $taxonIDList);
