@@ -148,8 +148,45 @@ $app->post('/specimens/fromFile', function (Request $request, Response $response
 });
 
 /**
+ * "/specimens/search" is deprecated, use "/specimens" instead
+ * redirect deprecated endpoint "/specimens/search" to "/specimens"
+ */
+$app->get('/specimens/search', function (Request $request, Response $response)
+{
+    $this->logger->addInfo("called old specimens search ");
+
+    return $response->withRedirect($this->router->pathFor('specimens_root') . '?' . $request->getUri()->getQuery(), 307);
+});
+
+/**
  * @OA\Get(
- *  path="/specimens/search",
+ *  path="/specimens/{specimenID}",
+ *  summary="get the properties of a specimen",
+ *  @OA\Parameter(
+ *      name="specimenID",
+ *      in="path",
+ *      description="ID of specimen",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/specimens/{specimenID}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called specimens ");
+
+    $mapper = new ObjectsMapper($this->db);
+
+    $data = $mapper->getSpecimenData(intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
+
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+});
+
+/**
+ * @OA\Get(
+ *  path="/specimens",
  *  summary="search for all specimens which fit given criteria",
  *  @OA\Parameter(
  *      name="p",
@@ -210,7 +247,7 @@ $app->post('/specimens/fromFile', function (Request $request, Response $response
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/specimens/search', function (Request $request, Response $response)
+$app->get('/specimens', function (Request $request, Response $response)
 {
 //    $this->logger->addInfo("called specimens/search ");
 
@@ -233,33 +270,7 @@ $app->get('/specimens/search', function (Request $request, Response $response)
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *  path="/specimens/{specimenID}",
- *  summary="get the properties of a specimen",
- *  @OA\Parameter(
- *      name="specimenID",
- *      in="path",
- *      description="ID of specimen",
- *      required=true,
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Response(response="200", description="successful operation"),
- * )
- */
-$app->get('/specimens/{specimenID}', function (Request $request, Response $response, array $args)
-{
-//    $this->logger->addInfo("called specimens ");
-
-    $mapper = new ObjectsMapper($this->db);
-
-    $data = $mapper->getSpecimenData(intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
-
-    $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-});
+})->setName('specimens_root');
 
 /**
  * @OA\Get(
