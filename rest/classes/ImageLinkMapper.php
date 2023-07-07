@@ -143,7 +143,7 @@ private function djatoka()
 {
     $specimen = $this->db->query("SELECT s.`HerbNummer`, 
                                    id.`imgserver_Prot`, id.`imgserver_IP`, id.`img_service_directory`,  id.`HerbNummerNrDigits`, id.`key`,
-                                   mc.`coll_short_prj`, mc.`picture_filename`,
+                                   mc.`coll_short_prj`, mc.`picture_filename`
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                    LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
