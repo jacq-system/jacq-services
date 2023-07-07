@@ -191,11 +191,15 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
     // order the result
     $parts = explode(',', $filteredParam['sort']);
     foreach ($parts as $part) {
-        if (substr(trim($part), 0, 1) == '-') {
-            $key = substr(trim($part), 1);
+        $t_part = trim($part);
+        if (substr($t_part, 0, 1) == '-') {
+            $key = substr($t_part, 1);
             $orderSequence = " DESC";
+        } elseif (substr($t_part, 0, 1) == '+') {
+            $key = substr($t_part, 1);
+            $orderSequence = " ASC";
         } else {
-            $key = trim($part);
+            $key = $t_part;
             $orderSequence = '';
         }
         switch ($key) {
