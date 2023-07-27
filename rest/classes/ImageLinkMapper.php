@@ -80,15 +80,14 @@ private function parser ($text)
  */
 private function phaidra()
 {
-    $specimen = $this->db->query("SELECT s.`HerbNummer`, id.`HerbNummerNrDigits`, id.iiif_proxy, id.iiif_dir
+    $specimen = $this->db->query("SELECT s.`HerbNummer`, id.`HerbNummerNrDigits`, id.iiif_url
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                    LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
                                   WHERE s.`specimen_ID` = $this->specimenID")
                          ->fetch_assoc();
 
-    $this->imageLinks[0] = 'https://' . $specimen['iiif_proxy'] . $specimen['iiif_dir'] . '/'
-                         . "?manifest=$this->serviceBaseUri/iiif/manifest/$this->specimenID";
+    $this->imageLinks[0] = $specimen['iiif_url'] . "?manifest=" . $this->getServiceBaseUrl() . "/iiif/manifest/$this->specimenID";
     $iiif = new IiifMapper($this->db);
     $manifest = $iiif->getImageManifest($this->specimenID);
     if ($manifest) {
@@ -111,7 +110,7 @@ private function phaidra()
  */
 private function iiif()
 {
-    $specimen = $this->db->query("SELECT id.iiif_proxy, id.iiif_dir
+    $specimen = $this->db->query("SELECT id.iiif_url
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                    LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
@@ -119,7 +118,7 @@ private function iiif()
                          ->fetch_assoc();
 
     $iiif = new IiifMapper($this->db);
-    $this->imageLinks[0] = 'https://' . $specimen['iiif_proxy'] . $specimen['iiif_dir'] . '/' . "?manifest=" . $iiif->getManifestUri($this->specimenID)['uri'];
+    $this->imageLinks[0] = $specimen['iiif_url'] . "?manifest=" . $iiif->getManifestUri($this->specimenID)['uri'];
     // TODO: implement a link for download
 }
 
@@ -142,7 +141,7 @@ private function bgbm()
 private function djatoka()
 {
     $specimen = $this->db->query("SELECT s.`HerbNummer`, 
-                                   id.`imgserver_Prot`, id.`imgserver_IP`, id.`img_service_directory`,  id.`HerbNummerNrDigits`, id.`key`,
+                                   id.imgserver_url, id.`HerbNummerNrDigits`, id.`key`,
                                    mc.`coll_short_prj`, mc.`picture_filename`
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
@@ -189,11 +188,7 @@ private function djatoka()
     $images = array();
     // Create a service instance and send requests to jacq-servlet
     try {
-        $url = ((!empty($specimen['imgserver_Prot'])) ? $specimen['imgserver_Prot'] : "http") . '://'
-            . $specimen['imgserver_IP']
-            . (($specimen['img_service_directory']) ? '/' . $specimen['img_service_directory'] . '/' : '/')
-            . 'jacq-servlet/ImageServer';
-        $service = new \JsonRPC\Client($url);
+        $service = new \JsonRPC\Client($specimen['imgserver_url'] . 'jacq-servlet/ImageServer');
         $pics = $service->execute('listResources',
             [
                 $specimen['key'],

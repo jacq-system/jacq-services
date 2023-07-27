@@ -32,22 +32,21 @@ public function getManifestUri(int $specimenID): array
  */
 public function getManifest(int $specimenID, string $currentUri)
 {
-    $specimen = $this->db->query("SELECT s.specimen_ID,s.herbnummer, iiif.manifest_backend, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key
+    $row = $this->db->query("SELECT s.specimen_ID, iiif.manifest_backend
                                   FROM tbl_specimens s
                                    LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
-                                   LEFT JOIN herbarinput.tbl_img_definition img ON img.source_id_fk = mc.source_id
                                   WHERE specimen_ID = '$specimenID'")
                          ->fetch_assoc();
-    if (!$specimen['manifest_backend']) {
+    if (!$row['manifest_backend']) {
         return false;
     } else {
-        $manifestBackend = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_backend']));
+        $manifestBackend = $this->makeURI($row['specimen_ID'], $this->parser($row['manifest_backend']));
 
         $result = array();
         if ($manifestBackend) {
             if (substr($manifestBackend,0,5) == 'POST:') {
-                $result = $this->getManifestIiifServer($specimen['specimen_ID'], $manifestBackend);
+                $result = $this->getManifestIiifServer($row['specimen_ID'], $manifestBackend);
             } else {
                 $curl = curl_init($manifestBackend);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -220,7 +219,7 @@ private function makeURI (int $specimenID, array $parts): string
 
 private function getManifestIiifServer(int $specimenID, string $manifestBackend): array
 {
-    $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_uri, img.imgserver_Prot, img.imgserver_IP, img.iiif_dir, img.key, img.img_service_directory
+    $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_uri, img.imgserver_url, img.key
                                   FROM tbl_specimens s
                                    LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
@@ -228,9 +227,6 @@ private function getManifestIiifServer(int $specimenID, string $manifestBackend)
                                   WHERE specimen_ID = '$specimenID'")
                      ->fetch_assoc();
     $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri']));
-    $urliiif = $specimen['imgserver_Prot'] . '://'
-             . $specimen['imgserver_IP']
-             . (($specimen['img_service_directory']) ? $specimen['img_service_directory'] . '/' : '/');
     $filename = $this->getFilename($specimenID);
     $file_type = 'image/jpeg';
 
@@ -278,45 +274,53 @@ private function getManifestIiifServer(int $specimenID, string $manifestBackend)
     $result['@type']      = 'sc:Manifest';
     //$result['label']      = $specimenID;
     $canvases = array();
-    for($i=0; $i<count($obj['result']); $i++) {
-        $canvases[] =  array('@id' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
-            '@type' => 'sc:Canvas',
-            'label' =>  $obj['result'][$i]["identifier"],
+    for ($i = 0; $i < count($obj['result']); $i++) {
+        $canvases[] =  array(
+            '@id'    => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
+            '@type'  => 'sc:Canvas',
+            'label'  =>  $obj['result'][$i]["identifier"],
             'height' =>  $obj['result'][$i]["height"],
-            'width' =>  $obj['result'][$i]["width"],
-            'images' => array(array('@id' => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
-                '@type' => 'oa:Annotation',
-                'motivation' => 'sc:painting',
-                'on' => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
-                'resource' => array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
-                    '@type' => 'dctypes:Image',
-                    'format' => $file_type,
-                    'height' => $obj['result'][$i]["height"],
-                    'width' => $obj['result'][$i]["width"],
-                    'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
-                        '@id' => $urliiif.str_replace('/','!',substr($obj['result'][$i]["path"],1)),
-                        'profile' => 'http://iiif.io/api/image/2/level2.json',
-                        'protocol' => 'http://iiif.io/api/image'
+            'width'  =>  $obj['result'][$i]["width"],
+            'images' => array(
+                array(
+                    '@id'        => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
+                    '@type'      => 'oa:Annotation',
+                    'motivation' => 'sc:painting',
+                    'on'         => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
+                    'resource'   => array(
+                        '@id'     => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][$i]["path"], 1)),
+                        '@type'   => 'dctypes:Image',
+                        'format'  => $file_type,
+                        'height'  => $obj['result'][$i]["height"],
+                        'width'   => $obj['result'][$i]["width"],
+                        'service' => array(
+                            '@context' => 'http://iiif.io/api/image/2/context.json',
+                            '@id'      => $specimen['imgserver_url'] . str_replace('/', '!', substr($obj['result'][$i]["path"], 1)),
+                            'profile'  => 'http://iiif.io/api/image/2/level2.json',
+                            'protocol' => 'http://iiif.io/api/image'
+                        ),
                     ),
                 ),
-            ),
-            ));
-
-    };
-    $sequences = array('@id' => $urlmanifestpre.'#sequence-1',
-        '@type' => 'sc:Sequence',
-        'canvases' => $canvases,
-        'label' => 'Current order',
+            )
+        );
+    }
+    $sequences = array(
+        '@id'              => $urlmanifestpre.'#sequence-1',
+        '@type'            => 'sc:Sequence',
+        'canvases'         => $canvases,
+        'label'            => 'Current order',
         'viewingDirection' => 'left-to-right'
     );
-    $result['sequences']      = array($sequences);
+    $result['sequences'] = array($sequences);
 
-    $result['thumbnail']      = array('@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
-        '@type' => 'dctypes:Image',
-        'format' => 'image/jpeg',
-        'service' => array('@context' => 'http://iiif.io/api/image/2/context.json',
-            '@id' => $urliiif.str_replace('/','!',substr($obj['result'][0]["path"],1)),
-            'profile' => 'http://iiif.io/api/image/2/level2.json',
+    $result['thumbnail'] = array(
+        '@id'     => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
+        '@type'   => 'dctypes:Image',
+        'format'  => 'image/jpeg',
+        'service' => array(
+            '@context' => 'http://iiif.io/api/image/2/context.json',
+            '@id'      => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][0]["path"],1)),
+            'profile'  => 'http://iiif.io/api/image/2/level2.json',
             'protocol' => 'http://iiif.io/api/image'
         ),
     );

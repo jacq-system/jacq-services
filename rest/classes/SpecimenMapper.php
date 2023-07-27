@@ -122,8 +122,8 @@ public function __construct(mysqli $db, int $specimenID)
         }
 
         if (!empty($row['digital_image']) || !empty($row['digital_image_obs'])) {
-            $firstImageLink = "$this->serviceBaseUri/images/show/$this->specimenID";
-            $firstImageDownloadLink = "$this->serviceBaseUri/images/download/$this->specimenID";
+            $firstImageLink = $this->getServiceBaseUrl() . "/images/show/$this->specimenID";
+            $firstImageDownloadLink = $this->getServiceBaseUrl() . "/images/download/$this->specimenID";
         } else {
             $firstImageLink = $firstImageDownloadLink = '';
         }

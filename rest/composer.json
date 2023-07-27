@@ -1,4 +1,6 @@
 {
+    "name": "jacq-system/jacq-services",
+    "description": "all jacq services",
     "require": {
         "php": ">=8.1",
         "slim/slim": "3.*",
@@ -7,7 +9,7 @@
         "ext-mysqli": "*",
         "ext-curl": "*",
         "ext-json": "*",
-        "srjlewis/json-rpc": "@stable"
+        "srjlewis/json-rpc": "2.*"
     },
     "autoload": {
         "psr-4": {
