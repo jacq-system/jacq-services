@@ -58,7 +58,7 @@ public function getManifest(int $specimenID, string $currentUri)
                 curl_close($curl);
             }
             if ($result) {
-                $specimen = new SpecimenMapper($this->db, $specimen['specimen_ID']);
+                $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
 
                 $result['@id']         = $currentUri;  // to point at ourselves
                 $result['description'] = $specimen->getDescription();
