@@ -9,7 +9,9 @@
         "ext-mysqli": "*",
         "ext-curl": "*",
         "ext-json": "*",
-        "srjlewis/json-rpc": "2.*"
+        "srjlewis/json-rpc": "2.*",
+        "php-coord/php-coord": "*",
+        "php-coord/datapack-europe": "*"
     },
     "autoload": {
         "psr-4": {
