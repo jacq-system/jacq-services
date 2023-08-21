@@ -125,9 +125,16 @@ $app->add(function (Request $request, Response $response, $next)
  *      name="utm",
  *      in="query",
  *      description="convert from UTM",
- *      example="33U 601779 5340549",
+ *      example="33 N 601779 5340548",
  *      @OA\Schema(type="string")
  *  ),
+ *  @OA\Parameter(
+ *      name="mgrs",
+ *      in="query",
+ *      description="convert from MGRS",
+ *      example="33UXP0177940548",
+ *      @OA\Schema(type="string")
+ *   ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
@@ -135,54 +142,16 @@ $app->get('/convert', function (Request $request, Response $response)
 {
 //    $this->logger->addInfo("called convert ");
 
+    $converter = new \Jacq\CoordinateConversion();
     $params = $request->getQueryParams();
-    if (isset($params['lat']) && isset($params['lon'])) {  // from lat/lon
-        $lat = floatval($params['lat']);
-        $from = GeographicPoint::create(
-            Geographic2D::fromSRID(Geographic2D::EPSG_WGS_84),
-            new Degree($lat),
-            new Degree(floatval($params['lon'])),
-            null
-        );
-        $to = $from->asUTMPoint();
-        if ($lat < -32) {
-            $band = chr(floor($lat / 8) + ord('M')); // band is 'H' or below
-        } elseif ($lat < 8) {
-            $band = chr(floor($lat / 8) + ord('N')); // band is between 'J' and 'N'
-        } else {
-            $band = chr(floor($lat / 8) + ord('O')); // band is 'P' or above
-        }
-        $data = array(
-            'zone'        => $to->getZone(),
-            'hemisphere'  => $to->getHemisphere(),
-            'easting'     => (int)$to->getEasting()->getValue(),
-            'northing'    => (int)$to->getNorthing()->getValue(),
-            'string'      => $to->getZone() . $band . ' ' . (int) $to->getEasting()->getValue() . ' ' . (int) $to->getNorthing()->getValue()
-        );
-    } elseif (isset($params['utm'])) {  // from UTM
-        $parts = explode(' ', preg_replace('/\s+/', ' ', trim($params['utm'])));
-        if (is_numeric($parts[1])) {
-            $hemisphere = (substr($parts[0], 2) >= 'N') ? UTMPoint::HEMISPHERE_NORTH : UTMPoint::HEMISPHERE_SOUTH;
-            $easting = $parts[1];
-            $northing = $parts[2];
-        } else {
-            $hemisphere = ($parts[1] == 'S') ? UTMPoint::HEMISPHERE_SOUTH : UTMPoint::HEMISPHERE_NORTH;
-            $easting = $parts[2];
-            $northing = $parts[3];
-        }
-        $from = new UTMPoint(
-            Geographic2D::fromSRID(Geographic2D::EPSG_WGS_84),
-            new Metre($easting),
-            new Metre($northing),
-            intval($parts[0]),
-            $hemisphere
-        );
-        $to = $from->asGeographicPoint();
-        $data = array(
-            'lat'    => $to->getLatitude()->getValue(),
-            'lon'    => $to->getLongitude()->getValue(),
-            'string' => (string)$to
-        );
+    if (isset($params['lat']) && isset($params['lon'])) {   // from lat/lon
+        $data = array('utm' => $converter->latlon2utm($params['lat'], $params['lon']));
+    } elseif (isset($params['utm'])) {                      // from UTM
+        $data = array('latlon' => $converter->utm2latlon($params['utm']));
+    } elseif (isset($params['mgrs'])) {                     // from MGRS
+        $conv = $converter->mgrs2utm($params['mgrs']);
+        $data = array('utm'    => $conv,
+                      'latlon' => $converter->utm2latlon($conv['string']));
     } else {
         $data = array('error' => "nothing to do");
     }

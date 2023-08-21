@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JACQ webservices</title>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
+    <link rel="stylesheet" type="text/css" href="../css/description.css">
+  </head>
+  <body>
+    <h3>JACQ Webservices</h3>
+    <span class="rectangleLink"><a href="../JACQscinames/description.html">JACQ scinames</a></span>
+    <span class="rectangleLink"><a href="../autocomplete/description.html">autocomplete</a></span>
+    <span class="rectangleLink"><a href="../classification/description.html">classification</a></span>
+    <span class="rectangleLink"><a href="../stableIdentifier/description.html">stable Identifier</a></span>
+    <span class="rectangleLink"><a href="../iiif/description.html">iiif</a></span>
+    <span class="rectangleLink"><a href="../objects/description.html">objects</a></span>
+    <span class="rectangle">coordinates</span>
+
+    <h1>JACQ coordinate conversion Webservice</h1>
+    <h2>GET convert</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>convert one system (e.g. Coordinates) into another (e.g. UTM), using WGS 84</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="convert?lat=48.21&lon=16.37" target="_blank">https://services.jacq.org/jacq-services/rest/coords/convert?lat=48.21&lon=16.37</a><br>
+            convert lat/lon to utm<br>
+            <a href="convert?utm=33U%20601779%205340549" target="_blank">https://services.jacq.org/jacq-services/rest/coords/convert??utm=33U%20601779%205340549</a><br>
+            convert utm to lat/lon<br>
+            <a href="convert?mgrs=33%20UXP%2001779%2040548" target="_blank">https://services.jacq.org/jacq-services/rest/coords/convert?mgrs=33%20UXP%2001779%2040548</a><br>
+            convert mgrs to utm and lat/lon
+        </td>
+      </tr>
+    </table>
+
+  </body>
+</html>
