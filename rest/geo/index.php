@@ -13,7 +13,7 @@ use PHPCoord\UnitOfMeasure\Length\Metre;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: images", version="0.1")
+ * @OA\Info(title="JACQ Webservices: geographical", version="0.1")
  */
 
 /************************
@@ -152,6 +152,53 @@ $app->get('/convert', function (Request $request, Response $response)
         $conv = $converter->mgrs2utm($params['mgrs']);
         $data = array('utm'    => $conv,
                       'latlon' => $converter->utm2latlon($conv['string']));
+    } else {
+        $data = array('error' => "nothing to do");
+    }
+
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+});
+
+/**
+ * @OA\Get(
+ *  path="/checkBoundaries",
+ *  summary="check if lat/lon coordinates are within boundaries of a given nation",
+ *  @OA\Parameter(
+ *      name="lat",
+ *      in="query",
+ *      description="Latitude",
+ *      required=true,
+ *      example="48.21",
+ *      @OA\Schema(type="float")
+ *  ),
+ *  @OA\Parameter(
+ *      name="lon",
+ *      in="query",
+ *      description="Longitude",
+ *      required=true,
+ *      example="16.37",
+ *      @OA\Schema(type="float")
+ *  ),
+ *  @OA\Parameter(
+ *      name="nationID",
+ *      in="query",
+ *      description="Nation-ID",
+ *      required=true,
+ *      example="70",
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/checkBoundaries', function (Request $request, Response $response)
+{
+//    $this->logger->addInfo("called checkBoundaries ");
+
+    $checker = new \Jacq\CoordinateCheck($this->db);
+    $params = $request->getQueryParams();
+    if (isset($params['nationID']) && isset($params['lat']) && isset($params['lon'])) {
+        $data = $checker->nationBoundaries($params['nationID'], $params['lat'], $params['lon']);
     } else {
         $data = array('error' => "nothing to do");
     }
