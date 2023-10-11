@@ -181,6 +181,12 @@ $app->get('/multi', function (Request $request, Response $response, array $args)
  * @OA\Get(
  *  path="/errors",
  *  summary="get a list of all errors which prevent the generation of stable identifier",
+ *  @OA\Parameter(
+ *       name="sourceID",
+ *       in="query",
+ *       description="optional ID of source to check (default=all sources)",
+ *       @OA\Schema(type="integer")
+ *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
@@ -189,7 +195,7 @@ $app->get('/errors', function (Request $request, Response $response, array $args
 //    $this->logger->addInfo("called errors ");
 
     $mapper = new StableIdentifierMapper($this->db);
-    $data = $mapper->getEntriesWithErrors();
+    $data = $mapper->getEntriesWithErrors(intval($request->getQueryParam('sourceID')));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });

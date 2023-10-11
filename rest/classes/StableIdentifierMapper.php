@@ -99,19 +99,32 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
     return $data;
 }
 
-/**
- * get a list of all errors which prevent the generation of stable identifier
- *
- * @return array list of results
- */
-public function getEntriesWithErrors()
+    /**
+     * get a list of all errors which prevent the generation of stable identifier
+     *
+     * @param int $sourceID optional source-ID, check only this source
+     * @return array list of results
+     */
+public function getEntriesWithErrors($sourceID = 0)
 {
-    $rows = $this->db->query("SELECT specimen_ID AS specimenID
+    if (intval($sourceID)) {
+        $rows = $this->db->query("SELECT ss.specimen_ID AS specimenID
+                              FROM tbl_specimens_stblid ss
+                               JOIN tbl_specimens s ON ss.specimen_ID = s.specimen_ID
+                               JOIN tbl_management_collections mc ON s.collectionID = mc.collectionID
+                              WHERE ss.stableIdentifier IS NULL
+                               AND mc.source_id = " . intval($sourceID) . "
+                              GROUP BY ss.specimen_ID
+                              ORDER BY ss.specimen_ID")
+                         ->fetch_all(MYSQLI_ASSOC);
+    } else {
+        $rows = $this->db->query("SELECT specimen_ID AS specimenID
                               FROM tbl_specimens_stblid
                               WHERE stableIdentifier IS NULL
                               GROUP BY specimen_ID
                               ORDER BY specimen_ID")
-                 ->fetch_all(MYSQLI_ASSOC);
+                         ->fetch_all(MYSQLI_ASSOC);
+    }
     $data = array('total' => count($rows));
     foreach ($rows as $line => $row) {
         $data['result'][$line] = $row;
