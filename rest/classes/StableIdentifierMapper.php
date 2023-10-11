@@ -13,7 +13,9 @@ public function getSpecimenID($sid)
     // sometimes double slashes get lost, so "https://" mutates to "https:/". Probably slim-related bug
     $sidCorr = str_replace(':///', '://', str_replace(':/', '://', $sid));
 
-    $row = $this->db->query("SELECT specimen_ID FROM tbl_specimens_stblid WHERE stableIdentifier = '" . $this->db->escape_string($sidCorr) . "'")
+    $row = $this->db->query("SELECT specimen_ID 
+                             FROM tbl_specimens_stblid 
+                             WHERE stableIdentifier = '" . $this->db->escape_string($sidCorr) . "'")
                     ->fetch_assoc();
     if ($row) {
         return $row['specimen_ID'];
@@ -30,11 +32,20 @@ public function getSpecimenID($sid)
  */
 public function getAllSid($specimenID)
 {
-    return $this->db->query("SELECT stableIdentifier, timestamp
-                             FROM tbl_specimens_stblid
-                             WHERE specimen_ID = '" . intval($specimenID) . "'
-                             ORDER BY timestamp DESC")
-                    ->fetch_all(MYSQLI_ASSOC);
+    $ret['latest'] = $this->db->query("SELECT stableIdentifier, timestamp
+                                       FROM tbl_specimens_stblid
+                                       WHERE specimen_ID = '" . intval($specimenID) . "'
+                                        AND stableIdentifier IS NOT NULL
+                                       ORDER BY timestamp DESC
+                                       LIMIT 1")
+                              ->fetch_all(MYSQLI_ASSOC);
+    $ret['list'] = $this->db->query("SELECT stableIdentifier, timestamp, error
+                                     FROM tbl_specimens_stblid
+                                     WHERE specimen_ID = '" . intval($specimenID) . "'
+                                     ORDER BY timestamp DESC")
+                        ->fetch_all(MYSQLI_ASSOC);
+
+    return $ret;
 }
 
 /**
@@ -54,6 +65,7 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
 
     $result = $this->db->query("SELECT specimen_ID AS specimenID, count(specimen_ID) AS `numberEntries`
                                 FROM tbl_specimens_stblid
+                                WHERE stableIdentifier IS NOT NULL
                                 GROUP BY specimen_ID
                                 HAVING numberEntries > 1");
     $lastPage = floor(($result->num_rows - 1) / $entriesPerPage);
@@ -73,6 +85,7 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
 
     $rows = $this->db->query("SELECT specimen_ID AS specimenID, count(specimen_ID) AS `numberOfEntries`
                               FROM tbl_specimens_stblid
+                              WHERE stableIdentifier IS NOT NULL
                               GROUP BY specimen_ID
                               HAVING numberOfEntries > 1
                               ORDER BY numberOfEntries DESC, specimenID
@@ -81,6 +94,28 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
     foreach ($rows as $line => $row) {
         $data['result'][$line] = $row;
         $data['result'][$line]['stableIdentifierList'] = $this->getAllSid($row['specimenID']);
+    }
+
+    return $data;
+}
+
+/**
+ * get a list of all errors which prevent the generation of stable identifier
+ *
+ * @return array list of results
+ */
+public function getEntriesWithErrors()
+{
+    $rows = $this->db->query("SELECT specimen_ID AS specimenID
+                              FROM tbl_specimens_stblid
+                              WHERE stableIdentifier IS NULL
+                              GROUP BY specimen_ID
+                              ORDER BY specimen_ID")
+                 ->fetch_all(MYSQLI_ASSOC);
+    $data = array('total' => count($rows));
+    foreach ($rows as $line => $row) {
+        $data['result'][$line] = $row;
+        $data['result'][$line]['errorList'] = $this->getAllSid($row['specimenID'])['list'];
     }
 
     return $data;

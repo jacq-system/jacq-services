@@ -38,7 +38,7 @@
           <pre>     [</pre><br>
           <pre>      {</pre><br>
           <pre>       "stableIdentifier": stable identifier</pre><br>
-          <pre>       "stableIdentifier": and its timestamp</pre><br>
+          <pre>       "timestamp":        and its timestamp</pre><br>
           <pre>      },&hellip;</pre><br>
           <pre>     ]</pre><br>
           }
@@ -73,7 +73,7 @@
           <pre>     [</pre><br>
           <pre>      {</pre><br>
           <pre>       "stableIdentifier": stable identifier</pre><br>
-          <pre>       "stableIdentifier": and its timestamp</pre><br>
+          <pre>       "timestamp":        and its timestamp</pre><br>
           <pre>      },&hellip;</pre><br>
           <pre>     ]</pre><br>
           }
@@ -114,7 +114,7 @@
           <pre>            [</pre><br>
           <pre>             {</pre><br>
           <pre>              "stableIdentifier": stable identifier</pre><br>
-          <pre>              "stableIdentifier": and its timestamp</pre><br>
+          <pre>              "timestamp":        and its timestamp</pre><br>
           <pre>             },&hellip;</pre><br>
           <pre>            ]</pre><br>
           <pre>       },&hellip;</pre><br>
@@ -132,6 +132,43 @@
             get the third 100 entries of specimen-IDs with more than one stable identifier
         </td>
       </tr>
+    </table>
+
+    <h2>GET errors</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>get a list of all errors which prevent the generation of stable identifier</td>
+      </tr><tr>
+      <td class="type">API-description</td>
+      <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+    </tr><tr>
+      <td class="type">Response</td>
+      <td class="response">
+        <pre> {</pre><br>
+        <pre>  "total":        total number of records found</pre><br>
+        <pre>  "result":       List of found entries</pre><br>
+        <pre>      [</pre><br>
+        <pre>       {</pre><br>
+        <pre>        "specimenID":             ID of specimen</pre><br>
+        <pre>        "errorList":              List of errors and existing stable identifiers for this specimen-ID</pre><br>
+        <pre>            [</pre><br>
+        <pre>             {</pre><br>
+        <pre>              "stableIdentifier": stable identifier,</pre><br>
+        <pre>              "timestamp":        its timestamp</pre><br>
+        <pre>              "error":            and the error</pre><br>
+        <pre>             },&hellip;</pre><br>
+        <pre>            ]</pre><br>
+        <pre>       },&hellip;</pre><br>
+        <pre>      ]</pre><br>
+        <pre> },&hellip;</pre><br>
+      </td>
+    </tr><tr>
+      <td class="type">Example</td>
+      <td><a href="errors" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/errors</a><br>
+        get a list of all errors which prevent the generation of stable identifier
+      </td>
+    </tr>
     </table>
   </body>
 </html>

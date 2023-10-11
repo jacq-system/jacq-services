@@ -107,8 +107,8 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
     $sids = $mapper->getAllSid($specimenID);
     if ($sids) {
         $data = array('specimenID'             => intval($specimenID),
-                      'stableIdentifierLatest' => $sids[0],
-                      'stableIdentifierList'   => $sids);
+                      'stableIdentifierLatest' => $sids['latest'],
+                      'stableIdentifierList'   => $sids['list']);
     } else {
         $data = array();
     }
@@ -173,6 +173,23 @@ $app->get('/multi', function (Request $request, Response $response, array $args)
 
     $mapper = new StableIdentifierMapper($this->db);
     $data = $mapper->getMultipleEntries(intval($request->getQueryParam('page')), intval($request->getQueryParam('entriesPerPage')));
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+});
+
+/**
+ * @OA\Get(
+ *  path="/errors",
+ *  summary="get a list of all errors which prevent the generation of stable identifier",
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/errors', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called errors ");
+
+    $mapper = new StableIdentifierMapper($this->db);
+    $data = $mapper->getEntriesWithErrors();
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
