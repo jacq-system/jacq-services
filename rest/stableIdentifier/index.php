@@ -164,6 +164,12 @@ $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, a
  *      description="optional number entries per page (default=50)",
  *      @OA\Schema(type="integer")
  *  ),
+ *  @OA\Parameter(
+ *      name="sourceID",
+ *      in="query",
+ *      description="optional ID of source to check (default=all sources)",
+ *      @OA\Schema(type="integer")
+ *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
@@ -172,7 +178,12 @@ $app->get('/multi', function (Request $request, Response $response, array $args)
 //    $this->logger->addInfo("called multi ");
 
     $mapper = new StableIdentifierMapper($this->db);
-    $data = $mapper->getMultipleEntries(intval($request->getQueryParam('page')), intval($request->getQueryParam('entriesPerPage')));
+    $sourceID = intval($request->getQueryParam('sourceID'));
+    if ($sourceID) {
+        $data = $mapper->getMultipleEntriesFromSource($sourceID);
+    } else {
+        $data = $mapper->getMultipleEntries(intval($request->getQueryParam('page')), intval($request->getQueryParam('entriesPerPage')));
+    }
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -182,10 +193,10 @@ $app->get('/multi', function (Request $request, Response $response, array $args)
  *  path="/errors",
  *  summary="get a list of all errors which prevent the generation of stable identifier",
  *  @OA\Parameter(
- *       name="sourceID",
- *       in="query",
- *       description="optional ID of source to check (default=all sources)",
- *       @OA\Schema(type="integer")
+ *      name="sourceID",
+ *      in="query",
+ *      description="optional ID of source to check (default=all sources)",
+ *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )

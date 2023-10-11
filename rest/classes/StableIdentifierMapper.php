@@ -99,12 +99,39 @@ public function getMultipleEntries($page = 0, $entriesPerPage = 0)
     return $data;
 }
 
-    /**
-     * get a list of all errors which prevent the generation of stable identifier
-     *
-     * @param int $sourceID optional source-ID, check only this source
-     * @return array list of results
-     */
+/**
+ * get a list of all specimens with multiple stable identifiers of a given source
+ *
+ * @param int $sourceID source-ID
+ * @return array list of results
+ */
+public function getMultipleEntriesFromSource(int $sourceID)
+{
+    $rows = $this->db->query("SELECT ss.specimen_ID AS specimenID, count(ss.specimen_ID) AS `numberOfEntries`
+                              FROM tbl_specimens_stblid ss
+                               JOIN tbl_specimens s ON ss.specimen_ID = s.specimen_ID
+                               JOIN tbl_management_collections mc ON s.collectionID = mc.collectionID
+                              WHERE ss.stableIdentifier IS NOT NULL
+                               AND mc.source_id = $sourceID
+                              GROUP BY ss.specimen_ID
+                              HAVING numberOfEntries > 1
+                              ORDER BY numberOfEntries DESC, specimenID")
+                     ->fetch_all(MYSQLI_ASSOC);
+    $data = array('total' => count($rows));
+    foreach ($rows as $line => $row) {
+        $data['result'][$line] = $row;
+        $data['result'][$line]['stableIdentifierList'] = $this->getAllSid($row['specimenID']);
+    }
+
+    return $data;
+}
+
+/**
+ * get a list of all errors which prevent the generation of stable identifier
+ *
+ * @param int $sourceID optional source-ID, check only this source
+ * @return array list of results
+ */
 public function getEntriesWithErrors($sourceID = 0)
 {
     if (intval($sourceID)) {
