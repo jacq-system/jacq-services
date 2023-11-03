@@ -186,25 +186,33 @@ private function djatoka()
         $filename = sprintf("%s_%0" . $specimen['HerbNummerNrDigits'] . ".0f", $specimen['coll_short_prj'], $HerbNummer);
     }
     $images = array();
-    // Create a service instance and send requests to jacq-servlet
     try {
-        $service = new \JsonRPC\Client($specimen['imgserver_url'] . 'jacq-servlet/ImageServer');
-        $pics = $service->execute('listResources',
-            [
-                $specimen['key'],
-                [
-                    $filename,
-                    $filename . "_%",
-                    $filename . "A",
-                    $filename . "B",
-                    "tab_" . $this->specimenID,
-                    "obs_" . $this->specimenID,
-                    "tab_" . $this->specimenID . "_%",
-                    "obs_" . $this->specimenID . "_%"
-                ]
-            ]);
-        if (count($pics ?? array()) > 0) {
-            foreach ($pics as $pic) {
+        // Create a client instance and send requests to jacq-servlet
+        $client = new GuzzleHttp\Client(['timeout' => 8]);
+        $response1 = $client->request('POST', $specimen['imgserver_url'] . 'jacq-servlet/ImageServer', [
+            'json'   => ['method' => 'listResources',
+                         'params' => [$specimen['key'],
+                                       [ $filename,
+                                         $filename . "_%",
+                                         $filename . "A",
+                                         $filename . "B",
+                                         "tab_" . $this->specimenID,
+                                         "obs_" . $this->specimenID,
+                                         "tab_" . $this->specimenID . "_%",
+                                         "obs_" . $this->specimenID . "_%"
+                                       ]
+                                     ],
+                         'id'     => 1
+                        ],
+            'verify' => false
+        ]);
+        $data = json_decode($response1->getBody()->getContents(), true);
+        if (!empty($data['error'])) {
+            throw new Exception($data['error']);
+        } elseif (empty($data['result'][0])) {
+            throw throw new Exception("FAIL: '$filename' returned empty result");
+        } else {
+            foreach ($data['result'] as $pic) {
                 $images[] = 'filename=' . rawurlencode(basename($pic)) . '&sid=' . $this->specimenID;
             }
         }

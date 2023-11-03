@@ -10,6 +10,7 @@
         "ext-curl": "*",
         "ext-json": "*",
         "srjlewis/json-rpc": "2.*",
+        "guzzlehttp/guzzle": "^7.0",
         "php-coord/php-coord": "*",
         "php-coord/datapack-europe": "*"
     },
