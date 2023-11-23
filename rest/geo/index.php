@@ -186,7 +186,14 @@ $app->get('/convert', function (Request $request, Response $response)
  *      description="Nation-ID",
  *      required=true,
  *      example="70",
- *      @OA\Schema(type="string")
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="province",
+ *      in="query",
+ *      description="Province-ID",
+ *      example="622",
+ *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
@@ -197,11 +204,14 @@ $app->get('/checkBoundaries', function (Request $request, Response $response)
 
     $checker = new \Jacq\CoordinateCheck($this->db);
     $params = $request->getQueryParams();
+    $data = array();
     if (isset($params['nationID']) && isset($params['lat']) && isset($params['lon'])) {
-        $data = $checker->nationBoundaries($params['nationID'], $params['lat'], $params['lon']);
-    } else {
-        $data = array('error' => "nothing to do");
+        $data['nation'] = $checker->nationBoundaries(intval($params['nationID']), floatval($params['lat']), floatval($params['lon']));
     }
+    if (isset($params['provinceID']) && isset($params['lat']) && isset($params['lon'])) {
+        $data['province'] = $checker->provinceBoundaries(intval($params['provinceID']), floatval($params['lat']), floatval($params['lon']));
+    }
+    $data['error'] = (empty($data)) ? "nothing to do" : null;
 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
