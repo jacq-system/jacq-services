@@ -119,7 +119,14 @@ private function iiif()
 
     $iiif = new IiifMapper($this->db);
     $this->imageLinks[0] = $specimen['iiif_url'] . "?manifest=" . $iiif->getManifestUri($this->specimenID)['uri'];
-    // TODO: implement a link for download
+    $manifest = $iiif->getImageManifest($this->specimenID);
+    foreach ($manifest['sequences'] as $sequence) {
+        foreach ($sequence['canvases'] as $canvas) {
+            foreach ($canvas['images'] as $image) {
+                $this->fileLinks[] = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
+            }
+        }
+    }
 }
 
 /**
