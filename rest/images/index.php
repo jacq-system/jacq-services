@@ -143,12 +143,40 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
  */
 $app->get('/download/{specimenID}', function (Request $request, Response $response, array $args)
 {
-//    $this->logger->addInfo("called show ");
+//    $this->logger->addInfo("called download ");
 
-    $specimenID = intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT));
-    $mapper = new ImageLinkMapper($this->db, $specimenID);
+    $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
     $imageLink = $mapper->getFirstImageDownloadLink();
+    if ($imageLink) {
+        return $response->withRedirect($imageLink, 303);
+    } else {
+        $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
+        return $handler($request, $response);
+    }
+});
+
+/**
+ * @OA\Get(
+ *  path="/europeana/{specimenID}",
+ *  summary="get the uri to download the first image of a given specimen-ID with resolution 1200,x with a redirect (303)",
+ *  @OA\Parameter(
+ *      name="specimenID",
+ *      in="path",
+ *      description="ID of specimen",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/europeana/{specimenID}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called europeana ");
+
+    $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
+
+    $imageLink = $mapper->getFirstImageEuropeanaLink();
     if ($imageLink) {
         return $response->withRedirect($imageLink, 303);
     } else {

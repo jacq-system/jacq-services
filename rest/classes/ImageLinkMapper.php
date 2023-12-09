@@ -46,7 +46,12 @@ public function getFirstImageShowLink()
 
 public function getFirstImageDownloadLink()
 {
-    return $this->fileLinks[0] ?? '';
+    return $this->fileLinks['full'][0] ?? '';
+}
+
+public function getFirstImageEuropeanaLink()
+{
+    return $this->fileLinks['europeana'][0] ?? '';
 }
 
 // ---------------------------------------
@@ -94,9 +99,12 @@ private function phaidra()
         foreach ($manifest['sequences'] as $sequence) {
             foreach ($sequence['canvases'] as $canvas) {
                 foreach ($canvas['images'] as $image) {
-                    $this->fileLinks[] = 'https://www.jacq.org/downloadPhaidra.php?filename='
-                                       . sprintf("WU%0" . $specimen['HerbNummerNrDigits'] . ".0f", str_replace('-', '', $specimen['HerbNummer']))
-                                       . ".jpg&url=" . $image['resource']['service']['@id'] . "/full/full/0/default.jpg";
+                    $this->fileLinks['full'][] = 'https://www.jacq.org/downloadPhaidra.php?filename='
+                                               . sprintf("WU%0" . $specimen['HerbNummerNrDigits'] . ".0f", str_replace('-', '', $specimen['HerbNummer']))
+                                               . ".jpg&url=" . $image['resource']['service']['@id'] . "/full/full/0/default.jpg";
+                    $this->fileLinks['europeana'][] = 'https://www.jacq.org/downloadPhaidra.php?filename='
+                                                    . sprintf("WU%0" . $specimen['HerbNummerNrDigits'] . ".0f", str_replace('-', '', $specimen['HerbNummer']))
+                                                    . ".jpg&url=" . $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
                 }
             }
         }
@@ -123,7 +131,8 @@ private function iiif()
     foreach ($manifest['sequences'] as $sequence) {
         foreach ($sequence['canvases'] as $canvas) {
             foreach ($canvas['images'] as $image) {
-                $this->fileLinks[] = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
+                $this->fileLinks['full'][] = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
+                $this->fileLinks['europeana'][] = $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
             }
         }
     }
@@ -231,7 +240,8 @@ private function djatoka()
 
     foreach ($images as $image) {
         $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
-        $this->fileLinks[]  = 'https://www.jacq.org/image.php?' . $image . '&method=download&format=jpeg2000';
+        $this->fileLinks['full'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=download&format=jpeg2000';
+        $this->fileLinks['europeana'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=europeana&format=jpeg2000';
     }
 }
 
