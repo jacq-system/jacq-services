@@ -241,7 +241,7 @@ private function djatoka()
     foreach ($images as $image) {
         $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
         $this->fileLinks['full'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=download&format=jpeg2000';
-        $this->fileLinks['europeana'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=europeana&format=jpeg2000';
+        $this->fileLinks['europeana'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
     }
 }
 
