@@ -82,7 +82,7 @@ public function getManifest(int $specimenID, string $currentUri)
 }
 
 /**
- * act as a proxy and get the iiif manifest just for the image of a given specimen-ID from the backend
+ * act as a proxy and get the iiif manifest just for the image of a given specimen-ID from the backend or the manifest_uri if no backend is defined
  *
  * @param int $specimenID ID of specimen
  * @return mixed received manifest or false if no backend is defined
@@ -94,29 +94,29 @@ public function getImageManifest(int $specimenID)
                                LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
                               WHERE specimen_ID = '$specimenID'")
-        ->fetch_assoc();
+                         ->fetch_assoc();
     if (!$specimen['manifest_backend']) {
-        return false;
+        $manifestBackend = $this->getManifestUri($specimen['specimen_ID'])['uri'];
     } else {
         $manifestBackend = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_backend']));
-
-        $result = array();
-        if ($manifestBackend) {
-            if (substr($manifestBackend,0,5) == 'POST:') {
-                $result = $this->getManifestIiifServer($specimen['specimen_ID'], $manifestBackend);
-            } else {
-                $curl = curl_init($manifestBackend);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                $curl_response = curl_exec($curl);
-
-                if ($curl_response !== false) {
-                    $result = json_decode($curl_response, true);
-                }
-                curl_close($curl);
-            }
-        }
-        return $result;
     }
+
+    $result = array();
+    if ($manifestBackend) {
+        if (substr($manifestBackend,0,5) == 'POST:') {
+            $result = $this->getManifestIiifServer($specimen['specimen_ID'], $manifestBackend);
+        } else {
+            $curl = curl_init($manifestBackend);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            $curl_response = curl_exec($curl);
+
+            if ($curl_response !== false) {
+                $result = json_decode($curl_response, true);
+            }
+            curl_close($curl);
+        }
+    }
+    return $result;
 }
 
 
