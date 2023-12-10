@@ -128,11 +128,13 @@ private function iiif()
     $iiif = new IiifMapper($this->db);
     $this->imageLinks[0] = $specimen['iiif_url'] . "?manifest=" . $iiif->getManifestUri($this->specimenID)['uri'];
     $manifest = $iiif->getImageManifest($this->specimenID);
-    foreach ($manifest['sequences'] as $sequence) {
-        foreach ($sequence['canvases'] as $canvas) {
-            foreach ($canvas['images'] as $image) {
-                $this->fileLinks['full'][] = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
-                $this->fileLinks['europeana'][] = $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
+    if ($manifest) {
+        foreach ($manifest['sequences'] as $sequence) {
+            foreach ($sequence['canvases'] as $canvas) {
+                foreach ($canvas['images'] as $image) {
+                    $this->fileLinks['full'][] = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
+                    $this->fileLinks['europeana'][] = $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
+                }
             }
         }
     }

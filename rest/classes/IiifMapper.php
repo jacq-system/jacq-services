@@ -96,7 +96,7 @@ public function getImageManifest(int $specimenID)
                               WHERE specimen_ID = '$specimenID'")
                          ->fetch_assoc();
     if (!$specimen['manifest_backend']) {
-        $manifestBackend = $this->getManifestUri($specimen['specimen_ID'])['uri'];
+        $manifestBackend = $this->getManifestUri($specimen['specimen_ID'])['uri'] ?? '';
     } else {
         $manifestBackend = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_backend']));
     }
@@ -108,6 +108,8 @@ public function getImageManifest(int $specimenID)
         } else {
             $curl = curl_init($manifestBackend);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
             $curl_response = curl_exec($curl);
 
             if ($curl_response !== false) {
