@@ -183,7 +183,7 @@ private function makeURI (int $specimenID, array $parts): string
                         }
                     }
                     break;
-                case 'HerbNummer':  // use HerbNummer with removed hyphens, options are :num and/or :reformat
+                case 'herbNumber':  // use HerbNummer with removed hyphens, options are :num and/or :reformat
                     $row = $this->db->query("SELECT id.`HerbNummerNrDigits`, s.`HerbNummer`
                                              FROM `tbl_specimens` s
                                               LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
