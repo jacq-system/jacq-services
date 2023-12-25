@@ -183,14 +183,14 @@ private function makeURI (int $specimenID, array $parts): string
                         }
                     }
                     break;
-                case 'herbNumber':  // use HerbNummer with removed hyphens, options are :num and/or :reformat
+                case 'herbNumber':  // use HerbNummer with removed hyphens and spaces, options are :num and/or :reformat
                     $row = $this->db->query("SELECT id.`HerbNummerNrDigits`, s.`HerbNummer`
                                              FROM `tbl_specimens` s
                                               LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                               LEFT JOIN `tbl_img_definition` id ON id.`source_id_fk` = mc.`source_id`
                                              WHERE s.`specimen_ID` = '$specimenID'")
                                     ->fetch_assoc();
-                    $HerbNummer = str_replace('-', '', $row['HerbNummer']); // remove hyphens
+                    $HerbNummer = str_replace(['-', ' '], '', $row['HerbNummer']); // remove hyphens and spaces
                     // first check subtoken :num
                     if (in_array('num', $tokenParts)) {                         // ignore text with digits within, only use the last number
                         if (preg_match("/\d+$/", $HerbNummer, $matches)) {  // there is a number at the tail of HerbNummer, so use it
