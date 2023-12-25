@@ -37,7 +37,7 @@ public function __construct(mysqli $db, int $specimenID)
                                  LIMIT 1")
                         ->fetch_assoc();
 
-    $this->properties['stableIdentifier'] = (!empty($row_sid)) ?$row_sid['stableIdentifier'] : '';
+    $this->properties['stableIdentifier'] = $row_sid['stableIdentifier'] ?? '';
 
     /**
      * then get all other properties of the specimen
@@ -129,7 +129,7 @@ public function __construct(mysqli $db, int $specimenID)
         }
 
 
-            /**
+        /**
          * store all properties
          */
         $this->properties['specimenID']              = $this->specimenID;
