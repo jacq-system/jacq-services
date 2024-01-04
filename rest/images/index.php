@@ -187,6 +187,32 @@ $app->get('/europeana/{specimenID}', function (Request $request, Response $respo
 
 /**
  * @OA\Get(
+ *  path="/list/{specimenID}",
+ *  summary="get a list of all image-uris of a given specimen-ID",
+ *  @OA\Parameter(
+ *      name="specimenID",
+ *      in="path",
+ *      description="ID of specimen",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/list/{specimenID}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called list ");
+
+    $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
+
+    $data = $mapper->getList();
+
+    $jsonResponse = $response->withJson($data);
+    return $jsonResponse;
+});
+
+/**
+ * @OA\Get(
  *     path="/openapi",
  *     tags={"documentation"},
  *     summary="OpenAPI JSON File that describes the API",

@@ -54,6 +54,12 @@ public function getFirstImageEuropeanaLink()
     return $this->fileLinks['europeana'][0] ?? '';
 }
 
+public function getList()
+{
+    return array('show'     => $this->imageLinks,
+                 'download' => $this->fileLinks);
+}
+
 // ---------------------------------------
 // ---------- private functions ----------
 // ---------------------------------------
@@ -236,7 +242,7 @@ private function djatoka()
         }
     }
     catch( Exception $e ) {
-        // something went wrong so we fall back to the original filename
+        // something went wrong, so we fall back to the original filename
         $images[0] = 'filename=' . rawurlencode(basename($filename)) . '&sid=' . $this->specimenID;
     }
 
