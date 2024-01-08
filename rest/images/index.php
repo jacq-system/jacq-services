@@ -69,7 +69,8 @@ $container['db'] = function ($c)
 
 //Add container to handle all runtime exceptions/errors, fail safe and return json
 //works only for PHP 7.x
-$container['phpErrorHandler'] = function ($container) {
+$container['phpErrorHandler'] = function ($container)
+{
     return function ($request, $response, $exception) use ($container) {
         $data = [
             'message' => $exception->getMessage()
@@ -79,7 +80,15 @@ $container['phpErrorHandler'] = function ($container) {
     };
 };
 
-
+//Override the default Not Found Handler
+unset($container['notFoundHandler']);
+$container['notFoundHandler'] = function ($c)
+{
+    return function ($request, $response) use ($c) {
+        $response = new \Slim\Http\Response(404);
+        return $response->withJson(array("error" => "no image available"));
+    };
+};
 
 /***********************
  * Register middleware *
