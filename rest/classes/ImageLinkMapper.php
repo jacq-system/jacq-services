@@ -166,7 +166,7 @@ private function djatoka()
 {
     $specimen = $this->db->query("SELECT s.`HerbNummer`, 
                                    id.imgserver_url, id.`HerbNummerNrDigits`, id.`key`,
-                                   mc.`coll_short_prj`, mc.`picture_filename`
+                                   mc.`coll_short_prj`, mc.`picture_filename`, mc.`source_id`
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                    LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
@@ -234,7 +234,9 @@ private function djatoka()
         if (!empty($data['error'])) {
             throw new Exception($data['error']);
         } elseif (empty($data['result'][0])) {
-            throw throw new Exception("FAIL: '$filename' returned empty result");
+            if ($specimen['source_id'] == 47) { // FT returns always empty results...
+                throw new Exception("FAIL: '$filename' returned empty result");
+            }
         } else {
             foreach ($data['result'] as $pic) {
                 $images[] = 'filename=' . rawurlencode(basename($pic)) . '&sid=' . $this->specimenID;
@@ -246,10 +248,12 @@ private function djatoka()
         $images[0] = 'filename=' . rawurlencode(basename($filename)) . '&sid=' . $this->specimenID;
     }
 
-    foreach ($images as $image) {
-        $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
-        $this->fileLinks['full'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=download&format=jpeg2000';
-        $this->fileLinks['europeana'][]  = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
+    if (!empty($images)) {
+        foreach ($images as $image) {
+            $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
+            $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download&format=jpeg2000';
+            $this->fileLinks['europeana'][] = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
+        }
     }
 }
 
