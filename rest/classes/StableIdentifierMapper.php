@@ -13,14 +13,19 @@ public function getSpecimenID($sid)
     // sometimes double slashes get lost, so "https://" mutates to "https:/". Probably slim-related bug
     $sidCorr = str_replace(':///', '://', str_replace(':/', '://', $sid));
 
-    $row = $this->db->query("SELECT specimen_ID 
+    $pos = strpos($sidCorr, "JACQID");
+    if ($pos !== false) {  // we've found a sid with JACQID in it, so return the attached specimen-ID
+        return intval(substr($sidCorr, $pos + 6));
+    } else {
+        $row = $this->db->query("SELECT specimen_ID 
                              FROM tbl_specimens_stblid 
                              WHERE stableIdentifier = '" . $this->db->escape_string($sidCorr) . "'")
-                    ->fetch_assoc();
-    if ($row) {
-        return $row['specimen_ID'];
-    } else {
-        return 0;
+                        ->fetch_assoc();
+        if ($row) {
+            return $row['specimen_ID'];
+        } else {
+            return 0;
+        }
     }
 }
 
