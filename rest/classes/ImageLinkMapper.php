@@ -239,7 +239,24 @@ private function djatoka()
             }
         } else {
             foreach ($data['result'] as $pic) {
-                $images[] = 'filename=' . rawurlencode(basename($pic)) . '&sid=' . $this->specimenID;
+                $picProcessed = rawurlencode(basename($pic));
+                if (substr($picProcessed, 0, 4) == 'obs_') {
+                    $images_obs[] = $picProcessed;
+                } elseif (substr($picProcessed, 0, 4) == 'tab_') {
+                    $images_tab[] = $picProcessed;
+                } else {
+                    $images[] = "filename=$picProcessed&sid=" . $this->specimenID;
+                }
+            }
+            if (!empty($images_obs)) {
+                foreach($images_obs as $pic) {
+                    $images[] = "filename=$pic&sid=" . $this->specimenID;
+                }
+            }
+            if (!empty($images_tab)) {
+                foreach($images_tab as $pic) {
+                    $images[] = "filename=$pic&sid=" . $this->specimenID;
+                }
             }
         }
     }
