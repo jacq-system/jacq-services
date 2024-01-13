@@ -37,7 +37,7 @@ public function getSpecimenID($sid)
  */
 public function getAllSid($specimenID)
 {
-    $ret['latest'] = $this->db->query("SELECT stableIdentifier, timestamp
+    $ret['latest'] = $this->db->query("SELECT stableIdentifier, timestamp, CONCAT('https://www.jacq.org/detail.php?ID=', specimen_ID) AS link
                                        FROM tbl_specimens_stblid
                                        WHERE specimen_ID = '" . intval($specimenID) . "'
                                         AND stableIdentifier IS NOT NULL
@@ -49,6 +49,13 @@ public function getAllSid($specimenID)
                                      WHERE specimen_ID = '" . intval($specimenID) . "'
                                      ORDER BY timestamp DESC")
                         ->fetch_all(MYSQLI_ASSOC);
+
+    foreach ($ret['list'] as $key => $val) {
+        if (!empty($val['error'])) {
+            preg_match("/already exists \((?P<number>\d+)\)$/", $val['error'], $parts);
+            $ret['list'][$key]['link'] = (!empty($parts['number'])) ? "https://www.jacq.org/detail.php?ID=" . $parts['number'] : '';
+        }
+    }
 
     return $ret;
 }
@@ -140,7 +147,7 @@ public function getMultipleEntriesFromSource(int $sourceID)
 public function getEntriesWithErrors($sourceID = 0)
 {
     if (intval($sourceID)) {
-        $rows = $this->db->query("SELECT ss.specimen_ID AS specimenID
+        $rows = $this->db->query("SELECT ss.specimen_ID AS specimenID, CONCAT('https://www.jacq.org/detail.php?ID=', ss.specimen_ID) AS link
                               FROM tbl_specimens_stblid ss
                                JOIN tbl_specimens s ON ss.specimen_ID = s.specimen_ID
                                JOIN tbl_management_collections mc ON s.collectionID = mc.collectionID
@@ -150,7 +157,7 @@ public function getEntriesWithErrors($sourceID = 0)
                               ORDER BY ss.specimen_ID")
                          ->fetch_all(MYSQLI_ASSOC);
     } else {
-        $rows = $this->db->query("SELECT specimen_ID AS specimenID
+        $rows = $this->db->query("SELECT specimen_ID AS specimenID, CONCAT('https://www.jacq.org/detail.php?ID=', specimen_ID) AS link
                               FROM tbl_specimens_stblid
                               WHERE stableIdentifier IS NULL
                               GROUP BY specimen_ID

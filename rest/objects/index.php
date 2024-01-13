@@ -292,6 +292,11 @@ $app->get('/description', function(Request $request, Response $response)
     return file_get_contents('description.html');
 });
 
+$app->get('/', function(Request $request, Response $response)
+{
+    return file_get_contents('description.html');
+});
+
 // Catch-all route to serve a 404 Not Found page if none of the routes match
 // this route has to be defined as last route
 $app->map(['GET', 'POST', 'PUT', 'DELETE', 'PATCH'], '/{routes:.+}', function (Request $request, Response $response)

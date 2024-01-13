@@ -7,8 +7,8 @@
     <link rel="stylesheet" type="text/css" href="../css/description.css">
   </head>
   <body>
-    <h3>JACQ Webservices</h3>
-    <span class="rectangleLink"><a href="../JACQscinames/description.html">JACQ scinames</a></span>
+    <h3><a href="../description/index.php">JACQ Webservices</a></h3>
+    <span class="rectangleLink"><a href="../JACQscinames/description.html">scinames</a></span>
     <span class="rectangleLink"><a href="../autocomplete/description.html">autocomplete</a></span>
     <span class="rectangleLink"><a href="../classification/description.html">classification</a></span>
     <span class="rectangle">stable Identifier</span>
@@ -16,7 +16,7 @@
     <span class="rectangleLink"><a href="../objects/description.html">objects</a></span>
 
     <h1>JACQ stable Identifier Webservice</h1>
-    <h2>GET sid/{specimenID}</h2>
+    <h2 id="section_sid">GET sid/{specimenID}</h2>
     <table>
       <tr>
         <td class="type">summary</td>
@@ -33,6 +33,7 @@
           <pre>     {</pre><br>
           <pre>      "stableIdentifier":  stable identifier</pre><br>
           <pre>      "timestamp":         and its timestamp</pre><br>
+          <pre>      "link":              link to details-page of JACQ (for convenience)</pre><br>
           <pre>     }</pre><br>
           <pre> "stableIdentifierList":   list of all found stable identifiers, ordered by timestamp</pre><br>
           <pre>     [</pre><br>
@@ -51,7 +52,7 @@
       </tr>
     </table>
 
-    <h2>GET resolve/{sid}</h2>
+    <h2 id="section_resolve">GET resolve/{sid}</h2>
     <table>
       <tr>
         <td class="type">summary</td>
@@ -86,7 +87,7 @@
       </tr>
     </table>
 
-    <h2>GET errors</h2>
+    <h2 id="section_errors">GET errors</h2>
     <table>
       <tr>
         <td class="type">summary</td>
@@ -103,12 +104,14 @@
         <pre>      [</pre><br>
         <pre>       {</pre><br>
         <pre>        "specimenID":             ID of specimen</pre><br>
+        <pre>        "link":                   link to details-page of JACQ (for convenience)</pre><br>
         <pre>        "errorList":              List of errors and existing stable identifiers (if any) for this specimen-ID</pre><br>
         <pre>            [</pre><br>
         <pre>             {</pre><br>
         <pre>              "stableIdentifier": stable identifier (if it exists) or null</pre><br>
         <pre>              "timestamp":        timestamp of creation</pre><br>
         <pre>              "error":            and the error</pre><br>
+        <pre>              "link":             link to details-page of JACQ of the blocking specimen (if present) (for convenience)</pre><br>
         <pre>             },&hellip;</pre><br>
         <pre>            ]</pre><br>
         <pre>       },&hellip;</pre><br>
@@ -128,7 +131,7 @@
     </tr>
     </table>
 
-    <h2>GET multi</h2>
+    <h2 id="section_multi">GET multi</h2>
     <table>
       <tr>
         <td class="type">summary</td>
