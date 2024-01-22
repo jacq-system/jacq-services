@@ -55,7 +55,8 @@
     <table>
       <tr>
         <td class="type">summary</td>
-        <td>Get specimen-id, valid stable identifier and all stable identifiers of a given stable identifier</td>
+        <td>Get specimen-id, valid stable identifier and all stable identifiers of a given stable idnetifier.<br>
+            Answers with 303 instead of 200 if parameter "withredirect" is given</td>
       </tr><tr>
         <td class="type">API-description</td>
         <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
@@ -83,6 +84,11 @@
         <td class="type">Example</td>
         <td><a href="resolve/https://wu.jacq.org/WU-0000264" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/resolve/https://wu.jacq.org/WU-0000264</a><br>
             look for specimen ID and stable identifiers of stable identifier https://wu.jacq.org/WU-0000264
+        </td>
+      </tr><tr>
+        <td></td>
+        <td><a href="resolve/https://wu.jacq.org/WU-0000264?withredirect=1" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/resolve/https://wu.jacq.org/WU-0000264?withredirect=1</a><br>
+          same as above, but with redirect (303)
         </td>
       </tr>
     </table>
@@ -125,7 +131,7 @@
       </td>
     </tr><tr>
       <td class="type">Example</td>
-      <td><a href="errors" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/errors?sourceID=1</a><br>
+      <td><a href="errors?sourceID=1" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/errors?sourceID=1</a><br>
         get a list of all errors from source-ID 1 (WU) which prevented the generation of stable identifiers for this source
       </td>
     </tr>

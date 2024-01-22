@@ -119,13 +119,20 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
 /**
  * @OA\Get(
  *  path="/resolve/{sid}",
- *  summary="Get specimen-id, valid stable identifier and all stable identifiers of a given stable idnetifier",
+ *  summary="Get specimen-id, valid stable identifier and all stable identifiers of a given stable idnetifier. Answers with 303 instead of 200 if parameter withredirect is given",
  *  @OA\Parameter(
  *      name="sid",
  *      in="path",
  *      description="stable identifier of specimen",
  *      required=true,
  *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Parameter(
+ *      name="withredirect",
+ *      in="query",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
@@ -134,18 +141,22 @@ $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, a
 {
 //    $this->logger->addInfo("called resolve ");
 
+    $params = $request->getQueryParams();
     $mapper = new StableIdentifierMapper($this->db);
     $specimenID = $mapper->getSpecimenID(filter_var($args['sid'], FILTER_SANITIZE_STRING));
     if ($specimenID) {
         $sids = $mapper->getAllSid($specimenID);
         $data = array('specimenID'             => intval($specimenID),
-                      'stableIdentifierLatest' => $sids[0],
-                      'stableIdentifierList'   => $sids);
+                      'stableIdentifierLatest' => $sids['latest'],
+                      'stableIdentifierList'   => $sids['list']);
     } else {
         $data = array();
     }
-    $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
+    if (!empty($params['withredirect']) && !empty($data['stableIdentifierLatest']['link'])) {
+        return $response->withJson($data)->withRedirect($data['stableIdentifierLatest']['link'], 303);
+    } else {
+        return $response->withJson($data);
+    }
 });
 
 /**

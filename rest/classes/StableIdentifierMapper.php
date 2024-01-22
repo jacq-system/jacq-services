@@ -43,12 +43,12 @@ public function getAllSid($specimenID)
                                         AND stableIdentifier IS NOT NULL
                                        ORDER BY timestamp DESC
                                        LIMIT 1")
-                              ->fetch_all(MYSQLI_ASSOC);
+                              ->fetch_assoc();
     $ret['list'] = $this->db->query("SELECT stableIdentifier, timestamp, error
                                      FROM tbl_specimens_stblid
                                      WHERE specimen_ID = '" . intval($specimenID) . "'
                                      ORDER BY timestamp DESC")
-                        ->fetch_all(MYSQLI_ASSOC);
+                            ->fetch_all(MYSQLI_ASSOC);
 
     foreach ($ret['list'] as $key => $val) {
         if (!empty($val['error'])) {
