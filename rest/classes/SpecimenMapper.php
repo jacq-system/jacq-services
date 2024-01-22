@@ -155,8 +155,8 @@ public function __construct(mysqli $db, int $specimenID)
         $this->properties['VIAF_ID']                 = $row['VIAF_ID'];
         $this->properties['ORCID']                   = $row['ORCID'];
         $this->properties['OwnerOrganizationAbbrev'] = $row['OwnerOrganizationAbbrev'];
-        $this->properties['OwnerLogoURI']            = $row['OwnerLogoURI'];
-        $this->properties['LicenseURI']              = $row['LicenseURI'];
+        $this->properties['OwnerLogoURI']            = $row['OwnerLogoURI'] ?? '';
+        $this->properties['LicenseURI']              = $row['LicenseURI'] ?? '';
         $this->properties['nation_engl']             = $row['nation_engl'];
         $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
         $this->properties['image']                   = $firstImageLink;
