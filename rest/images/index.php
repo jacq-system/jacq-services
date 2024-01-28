@@ -117,7 +117,14 @@ $app->add(function (Request $request, Response $response, $next)
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Parameter(
+ *      name="withredirect",
+ *      in="query",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/show/{specimenID}', function (Request $request, Response $response, array $args)
@@ -150,6 +157,13 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *      @OA\Parameter(
+ *      name="withredirect",
+ *      in="query",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -185,6 +199,13 @@ $app->get('/download/{specimenID}', function (Request $request, Response $respon
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *      @OA\Parameter(
+ *      name="withredirect",
+ *      in="query",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
