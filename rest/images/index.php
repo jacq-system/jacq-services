@@ -124,12 +124,17 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
 {
 //    $this->logger->addInfo("called show ");
 
-    $specimenID = intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT));
-    $mapper = new ImageLinkMapper($this->db, $specimenID);
+    $params = $request->getQueryParams();
+    $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
     $imageLink = $mapper->getFirstImageShowLink();
     if ($imageLink) {
-        return $response->withRedirect($imageLink, 303);
+        $data = array('link' => $imageLink);
+        if (!empty($params['withredirect'])) {
+            return $response->withJson($data)->withRedirect($imageLink, 303);
+        } else {
+            return $response->withJson($data);
+        }
     } else {
         $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
         return $handler($request, $response);
@@ -154,11 +159,17 @@ $app->get('/download/{specimenID}', function (Request $request, Response $respon
 {
 //    $this->logger->addInfo("called download ");
 
+    $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
     $imageLink = $mapper->getFirstImageDownloadLink();
     if ($imageLink) {
-        return $response->withRedirect($imageLink, 303);
+        $data = array('link' => $imageLink);
+        if (!empty($params['withredirect'])) {
+            return $response->withJson($data)->withRedirect($imageLink, 303);
+        } else {
+            return $response->withJson($data);
+        }
     } else {
         $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
         return $handler($request, $response);
@@ -183,11 +194,17 @@ $app->get('/europeana/{specimenID}', function (Request $request, Response $respo
 {
 //    $this->logger->addInfo("called europeana ");
 
+    $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
     $imageLink = $mapper->getFirstImageEuropeanaLink();
     if ($imageLink) {
-        return $response->withRedirect($imageLink, 303);
+        $data = array('link' => $imageLink);
+        if (!empty($params['withredirect'])) {
+            return $response->withJson($data)->withRedirect($imageLink, 303);
+        } else {
+            return $response->withJson($data);
+        }
     } else {
         $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
         return $handler($request, $response);
