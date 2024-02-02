@@ -8,8 +8,12 @@ use function OpenApi\scan;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: iiif", version="0.1")
+ * @OA\Info(
+ *     title="JACQ Webservices: iiif",
+ *     version="0.1"
+ * )
  */
+include __DIR__ . '/../inc/openApiServer.php';
 
 /************************
  * include all settings *
@@ -99,7 +103,7 @@ $app->add(function (Request $request, Response $response, $next)
  *******************/
 /**
  * @OA\Get(
- *  path="/manifestUri/{specimenID}",
+ *  path="/iiif/manifestUri/{specimenID}",
  *  summary="get the manifest URI for a given specimen-ID",
  *  @OA\Parameter(
  *      name="specimenID",
@@ -126,7 +130,7 @@ $app->get('/manifestUri/{specimenID}', function (Request $request, Response $res
 
 /**
  * @OA\Get(
- *  path="/manifest/{specimenID}",
+ *  path="/iiif/manifest/{specimenID}",
  *  summary="get the manifest for a given specimen-ID",
  *  @OA\Parameter(
  *      name="specimenID",
@@ -157,14 +161,16 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
 
 /**
  * @OA\Get(
- *     path="/openapi",
+ *     path="/iiif/openapi",
  *     tags={"documentation"},
  *     summary="OpenAPI JSON File that describes the API",
  *     @OA\Response(response="200", description="OpenAPI Description File"),
  * )
  */
-$app->get('/openapi', function (Request $request, Response $response) {
-    $swagger = scan(__DIR__);
+$app->get('/openapi', function (Request $request, Response $response)
+{
+//    $swagger = scan(__DIR__);
+    $swagger = \OpenApi\Generator::scan([__DIR__, __DIR__ . '/../inc']);
     $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });

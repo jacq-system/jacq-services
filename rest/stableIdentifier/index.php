@@ -8,8 +8,12 @@ use function OpenApi\scan;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: stableIdentifier", version="0.1")
+ * @OA\Info(
+ *     title="JACQ Webservices: stableIdentifier",
+ *     version="0.1"
+ * )
  */
+include __DIR__ . '/../inc/openApiServer.php';
 
 /************************
  * include all settings *
@@ -86,7 +90,7 @@ $container['phpErrorHandler'] = function ($container) {
  *******************/
 /**
  * @OA\Get(
- *  path="/sid/{specimenID}",
+ *  path="/stableIdentifier/sid/{specimenID}",
  *  summary="Get specimen-id, valid stable identifier and all stable identifiers of a given specimen-id",
  *  @OA\Parameter(
  *      name="specimenID",
@@ -118,7 +122,7 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
 
 /**
  * @OA\Get(
- *  path="/resolve/{sid}",
+ *  path="/stableIdentifier/resolve/{sid}",
  *  summary="Get specimen-id, valid stable identifier and all stable identifiers of a given stable idnetifier. Answers with 303 instead of 200 if parameter withredirect is given",
  *  @OA\Parameter(
  *      name="sid",
@@ -161,7 +165,7 @@ $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, a
 
 /**
  * @OA\Get(
- *  path="/multi",
+ *  path="/stableIdentifier/multi",
  *  summary="Get all entries with more than one stable identifier per specimen-ID",
  *  @OA\Parameter(
  *      name="page",
@@ -201,7 +205,7 @@ $app->get('/multi', function (Request $request, Response $response, array $args)
 
 /**
  * @OA\Get(
- *  path="/errors",
+ *  path="/stableIdentifier/errors",
  *  summary="get a list of all errors which prevent the generation of stable identifier",
  *  @OA\Parameter(
  *      name="sourceID",
@@ -224,14 +228,16 @@ $app->get('/errors', function (Request $request, Response $response, array $args
 
 /**
  * @OA\Get(
- *     path="/openapi",
+ *     path="/stableIdentifier/openapi",
  *     tags={"documentation"},
  *     summary="OpenAPI JSON File that describes the API",
  *     @OA\Response(response="200", description="OpenAPI Description File"),
  * )
  */
-$app->get('/openapi', function ($request, $response, $args) {
-    $swagger = scan(__DIR__);
+$app->get('/openapi', function ($request, $response, $args)
+{
+//    $swagger = scan(__DIR__);
+    $swagger = \OpenApi\Generator::scan([__DIR__, __DIR__ . '/../inc']);
     $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
