@@ -14,18 +14,22 @@ public function getSpecimenID($sid)
     $sidCorr = str_replace(':///', '://', str_replace(':/', '://', $sid));
 
     $pos = strpos($sidCorr, "JACQID");
-    if ($pos !== false) {  // we've found a sid with JACQID in it, so return the attached specimen-ID
-        return intval(substr($sidCorr, $pos + 6));
+    if ($pos !== false) {  // we've found a sid with JACQID in it, so check the attached specimen-ID and return it, if valid
+        $specimen_ID = intval(substr($sidCorr, $pos + 6));
+        $row = $this->db->query("SELECT specimen_ID 
+                             FROM tbl_specimens
+                             WHERE specimen_ID = $specimen_ID")
+                        ->fetch_assoc();
     } else {
         $row = $this->db->query("SELECT specimen_ID 
                              FROM tbl_specimens_stblid 
                              WHERE stableIdentifier = '" . $this->db->escape_string($sidCorr) . "'")
                         ->fetch_assoc();
-        if ($row) {
-            return $row['specimen_ID'];
-        } else {
-            return 0;
-        }
+    }
+    if ($row) {
+        return $row['specimen_ID'];
+    } else {
+        return 0;
     }
 }
 
