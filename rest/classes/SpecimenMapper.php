@@ -40,7 +40,7 @@ public function __construct(mysqli $db, int $specimenID)
     $this->properties['stableIdentifier'] = $row_sid['stableIdentifier'] ?? '';
 
     /**
-     * then get all other properties of the specimen
+     * then get all other properties of the specimen if it is accessible
      */
     $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tf.family, tg.genus, te.epithet,
                               s.HerbNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
@@ -62,7 +62,8 @@ public function __construct(mysqli $db, int $specimenID)
                               LEFT JOIN tbl_tax_genera tg             ON tg.genID        = ts.genID
                               LEFT JOIN tbl_tax_families tf           ON tf.familyID     = tg.familyID
                               LEFT JOIN tbl_geo_nation gn             ON gn.nationID     = s.NationID
-                             WHERE s.specimen_ID = $this->specimenID")
+                             WHERE s.specimen_ID = $this->specimenID
+                              AND s.`accessible` != '0'")
                         ->fetch_assoc();
 
     if (!empty($row)) {
