@@ -88,7 +88,21 @@ private function getClassification(int $scientificNameId, int $sourceId): bool|a
                               AND source_id = $sourceId
                               AND source = 'CITATION'")
                     ->fetch_assoc();
-    return $row ?? null;
+    if (empty($row)) {
+        return null;
+    }
+    if (!empty($row['acc_scientific_name_id'])) {
+        $row = $this->db->query("SELECT classification_id, scientific_name_id, acc_scientific_name_id, parent_scientific_name_id, source_id
+                             FROM tbl_classification 
+                             WHERE scientific_name_id = {$row['acc_scientific_name_id']}
+                              AND source_id = $sourceId
+                              AND source = 'CITATION'")
+                        ->fetch_assoc();
+        if (empty($row)) {
+            return null;
+        }
+    }
+    return $row;
 }
 
 private function getScientificName(int $scientificNameId): bool|array|null

@@ -25,6 +25,9 @@ public function getList(array $criteria = array())
     if (isset($criteria['separated'])) {
         $constraints[] = "separated = " . intval($criteria['separated']);
     }
+    if (isset($criteria['derivativeID'])) {
+        $constraints[] = "derivative_id = " . intval($criteria['derivativeID']);
+    }
 
     $ret = array();
     $rows = $this->db->query("(SELECT * FROM view_botanical_object_living " . (($constraints) ? "WHERE " . implode(" AND ", $constraints) : '') . ") 
@@ -89,6 +92,7 @@ public function getList(array $criteria = array())
         $ret[] = array(
             'ID'                                 => $row['derivative_id'],
             'Wissenschaftlicher Name'            => $row['scientific_name'],
+            'scientificNameId' => $row['scientific_name_id'],
             'Standort'                           => $row['organisation_description'],
             'Akzessionsnummer'                   => $row['accession_number'],
             'Ort'                                => $row['gathering_location'],

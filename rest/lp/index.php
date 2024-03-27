@@ -8,7 +8,7 @@ use function OpenApi\scan;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: geographical", version="0.1")
+ * @OA\Info(title="JACQ Webservices: livingplants", version="0.1")
  */
 
 /************************
@@ -105,8 +105,22 @@ $app->add(function (Request $request, Response $response, $next)
  *  @OA\Parameter(
  *      name="org",
  *      in="query",
- *      description="optional id of organisation (and its children), defaults to 1 (all)",
+ *      description="optional id of organisation (and its children), defaults to all",
  *      example="4",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="separated",
+ *      in="query",
+ *      description="optional status of separated bit (0 or 1), defaults to all",
+ *      example="0",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="derivativeID",
+ *      in="query",
+ *      description="optional derivate-id; if given, only the derivative with this id will be returned, defaults to all",
+ *      example="1645",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -124,12 +138,16 @@ $app->get('/derivatives', function (Request $request, Response $response)
     if (isset($request->getQueryParams()['separated'])) {
         $criteria['separated'] = intval($request->getQueryParams()['separated']);
     }
+    if (isset($request->getQueryParams()['derivativeID'])) {
+        $criteria['derivativeID'] = intval($request->getQueryParams()['derivativeID']);
+    }
 
     $classificationManager = new Jacq\Input\ClassificationManager($this->dbji, [10400, 26389]);
     $derivativeManager = new Jacq\Input\DerivativeManager($this->dbji, $classificationManager);
 
     $jsonResponse = $response->withJson($derivativeManager->getList($criteria));
     return $jsonResponse;
+    // https://www.convertcsv.com/json-to-csv.htm
 });
 
 /**
