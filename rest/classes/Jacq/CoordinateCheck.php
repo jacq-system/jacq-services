@@ -63,7 +63,9 @@ private function checkBoundingBox(float $lat, float $lon, array $boundaries): ?b
 {
     if (!empty($boundaries)) {
         foreach ($boundaries as $boundary) {
-            if ($lat >= $boundary['bound_south'] && $lat <= $boundary['bound_north'] && $lon >= $boundary['bound_west'] && $lon <= $boundary['bound_east']) {
+            if ($lat >= $boundary['bound_south'] && $lat <= $boundary['bound_north']
+                && (($boundary['bound_east'] > $boundary['bound_west'] && ($lon >= $boundary['bound_west'] && $lon <= $boundary['bound_east']))
+                    || ($boundary['bound_east'] < $boundary['bound_west'] && ($lon >= $boundary['bound_west'] || $lon <= $boundary['bound_east'])))) {
                 return true;
             }
         }
