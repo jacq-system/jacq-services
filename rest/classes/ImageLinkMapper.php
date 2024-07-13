@@ -100,7 +100,7 @@ private function phaidra()
 
     $this->imageLinks[0] = $specimen['iiif_url'] . "?manifest=" . $this->getServiceBaseUrl() . "/iiif/manifest/$this->specimenID";
     $iiif = new IiifMapper($this->db);
-    $manifest = $iiif->getImageManifest($this->specimenID);
+    $manifest = $iiif->getManifest($this->specimenID);
     if ($manifest) {
         foreach ($manifest['sequences'] as $sequence) {
             foreach ($sequence['canvases'] as $canvas) {
@@ -133,7 +133,7 @@ private function iiif()
 
     $iiif = new IiifMapper($this->db);
     $this->imageLinks[0] = $specimen['iiif_url'] . "?manifest=" . $iiif->getManifestUri($this->specimenID)['uri'];
-    $manifest = $iiif->getImageManifest($this->specimenID);
+    $manifest = $iiif->getManifest($this->specimenID);
     if ($manifest) {
         foreach ($manifest['sequences'] as $sequence) {
             foreach ($sequence['canvases'] as $canvas) {
