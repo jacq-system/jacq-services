@@ -24,13 +24,12 @@ public function getManifestUri(int $specimenID): array
 }
 
 /**
- * act as a proxy and get the iiif manifest of a given specimen-ID from the backend
+ * act as a proxy and get the iiif manifest of a given specimen-ID from the backend (enriched with additional data) or the manifest server if no backend was defined
  *
  * @param int $specimenID ID of specimen
- * @param string $currentUri originally called uri
- * @return mixed received manifest or false if no backend is defined
+ * @return array received manifest
  */
-public function getManifest(int $specimenID, string $currentUri)
+public function getManifest(int $specimenID)
 {
     $row = $this->db->query("SELECT s.specimen_ID, iiif.manifest_backend
                                   FROM tbl_specimens s
@@ -38,47 +37,53 @@ public function getManifest(int $specimenID, string $currentUri)
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
                                   WHERE specimen_ID = '$specimenID'")
                          ->fetch_assoc();
-    if (!$row['manifest_backend']) {
-        return false;
-    } else {
+    if  (empty($row['specimen_ID'])) {
+        return array();  // nothing found
+    } elseif (empty($row['manifest_backend'])) {  // no backend is defined, so fall back to manifest server
+        $manifestBackend = $this->getManifestUri($row['specimen_ID'])['uri'] ?? '';
+        $fallback = true;
+    } else {  // get data from backend
         $manifestBackend = $this->makeURI($row['specimen_ID'], $this->parser($row['manifest_backend']));
-
-        $result = array();
-        if ($manifestBackend) {
-            if (substr($manifestBackend,0,5) == 'POST:') {
-                $result = $this->getManifestIiifServer($row['specimen_ID'], $manifestBackend);
-            } else {
-                $curl = curl_init($manifestBackend);
-                curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-                $curl_response = curl_exec($curl);
-
-                if ($curl_response !== false) {
-                    $result = json_decode($curl_response, true);
-                }
-                curl_close($curl);
-            }
-            if ($result) {
-                $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
-
-                $result['@id']         = $currentUri;  // to point at ourselves
-                $result['description'] = $specimen->getDescription();
-                $result['label']       = $specimen->getLabel();
-                $result['attribution'] = $specimen->getAttribution();
-                $result['logo']        = array('@id' => $specimen->getLogoURI());
-                $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
-                                               'label'   => 'RDF',
-                                               'format'  => 'application/rdf+xml',
-                                               'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
-                if (empty($result['seeAlso'])) {
-                    $result['seeAlso'] = array($rdfLink);
-                } else {
-                    $result['seeAlso'][] = $rdfLink;
-                }
-                $result['metadata'] = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
-            }
-        }
-        return $result;
+        $fallback = false;
     }
+
+    $result = array();
+    if ($manifestBackend) {
+        if (substr($manifestBackend,0,5) == 'POST:') {
+            $result = $this->getManifestIiifServer($row['specimen_ID'], $manifestBackend);
+        } else {
+            $curl = curl_init($manifestBackend);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            $curl_response = curl_exec($curl);
+
+            if ($curl_response !== false) {
+                $result = json_decode($curl_response, true);
+            }
+            curl_close($curl);
+        }
+        if ($result && !$fallback) {  // we used a true backend, so enrich the manifest with additional data
+            $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
+
+            $result['@id']         = $this->getServiceBaseUrl() . "/iiif/manifest/$specimenID";  // to point at ourselves
+            $result['description'] = $specimen->getDescription();
+            $result['label']       = $specimen->getLabel();
+            $result['attribution'] = $specimen->getAttribution();
+            $result['logo']        = array('@id' => $specimen->getLogoURI());
+            $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
+                                           'label'   => 'RDF',
+                                           'format'  => 'application/rdf+xml',
+                                           'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
+            if (empty($result['seeAlso'])) {
+                $result['seeAlso'] = array($rdfLink);
+            } else {
+                $result['seeAlso'][] = $rdfLink;
+            }
+            $result['metadata'] = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
+        }
+    }
+    return $result;
 }
 
 /**
@@ -235,6 +240,17 @@ private function makeURI (int $specimenID, array $parts): string
 }
 
 /**
+ * create image manifest as an array for a given specimen with data from a Cantaloupe-Server extended with a Djatoka-Interface
+ *
+ * @param int $specimenID specimen-ID
+ * @return array manifest metadata
+ */
+private function createManifestFromExtendedCantaloupe(int $specimenID)
+{
+
+}
+
+/**
  * get array of metadata for a given specimen from POST request
  *
  * @param int $specimenID specimen-ID
@@ -253,7 +269,6 @@ private function getManifestIiifServer(int $specimenID, string $manifestBackend)
                      ->fetch_assoc();
     $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri']));
     $filename = $this->getFilename($specimenID);
-    $file_type = 'image/jpeg';
 
     $data = array(
         'id' => '1',
@@ -315,7 +330,7 @@ private function getManifestIiifServer(int $specimenID, string $manifestBackend)
                     'resource'   => array(
                         '@id'     => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][$i]["path"], 1)),
                         '@type'   => 'dctypes:Image',
-                        'format'  => $file_type,
+                        'format'  => (((new SplFileInfo($obj['result'][$i]['path']))->getExtension() == 'jp2') ? 'image/jp2' : 'image/jpeg'),
                         'height'  => $obj['result'][$i]["height"],
                         'width'   => $obj['result'][$i]["width"],
                         'service' => array(

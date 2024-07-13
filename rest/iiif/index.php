@@ -83,6 +83,15 @@ $container['phpErrorHandler'] = function ($container) {
     };
 };
 
+//Override the default Not Found Handler
+unset($container['notFoundHandler']);
+$container['notFoundHandler'] = function ($c)
+{
+    return function ($request, $response) use ($c) {
+        $response = new \Slim\Http\Response(404);
+        return $response->withJson(array("error" => "no iiif data available"));
+    };
+};
 
 
 /***********************
@@ -149,13 +158,13 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
     $mapper = new IiifMapper($this->db);
     $specimenID = intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT));
 
-    $manifest = $mapper->getManifest($specimenID, (string) $request->getUri());
-    if ($manifest === false) {
-        $manifestUri = $mapper->getManifestUri($specimenID);
-        return $response->withRedirect($manifestUri['uri'], 303);
-    } else {
+    $manifest = $mapper->getManifest($specimenID);
+    if (!empty($manifest)) {
         $jsonResponse = $response->withJson($manifest);
         return $jsonResponse;
+    } else {
+        $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
+        return $handler($request, $response);
     }
 });
 
