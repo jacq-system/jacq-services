@@ -50,7 +50,7 @@ public function getManifest(int $specimenID)
     $result = array();
     if ($manifestBackend) {
         if (substr($manifestBackend,0,5) == 'POST:') {
-            $result = $this->getManifestIiifServer($row['specimen_ID'], $manifestBackend);
+            $result = $this->getManifestIiifServer($row['specimen_ID']);
         } else {
             $curl = curl_init($manifestBackend);
             curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
@@ -83,6 +83,23 @@ public function getManifest(int $specimenID)
             $result['metadata'] = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
         }
     }
+    return $result;
+}
+
+/**
+ * create image manifest as an array for a given image filename and server-ID with data from a Cantaloupe-Server extended with a Djatoka-Interface
+ *
+ * @param int $server_id ID of image server
+ * @param string $filename name of image file
+ * @return array manifest metadata
+ */
+public function createManifestFromExtendedCantaloupeImage(int $server_id, string $identifier)
+{
+    $urlmanifestpre = $this->getServiceBaseUrl() . "/iiif/createManifest/$server_id/$identifier";
+
+    $result = $this->createManifestFromExtendedCantaloupe($server_id, $identifier, $urlmanifestpre);
+    $result['@id'] = $urlmanifestpre;  // to point at ourselves
+
     return $result;
 }
 
@@ -205,97 +222,84 @@ private function makeURI (int $specimenID, array $parts): string
  * @param int $specimenID specimen-ID
  * @return array manifest metadata
  */
-private function createManifestFromExtendedCantaloupe(int $specimenID)
+private function createManifestFromExtendedCantaloupe(int $server_id, string $identifier, string $urlmanifestpre)
 {
+    $imgServer = $this->db->query("SELECT iiif.manifest_backend, img.imgserver_url, img.key
+                                   FROM tbl_img_definition img
+                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = img.source_id_fk
+                                   WHERE img.img_def_ID = '$server_id'")
+                          ->fetch_assoc();
+    if (empty($imgServer['manifest_backend'])) {
+        return array();  // nothing found
+    }
 
-}
-
-/**
- * get array of metadata for a given specimen from POST request
- *
- * @param int $specimenID specimen-ID
- * @param string $manifestBackend
- * @return array metadata from iiif server
- */
-
-private function getManifestIiifServer(int $specimenID, string $manifestBackend): array
-{
-    $specimen = $this->db->query("SELECT s.specimen_ID, iiif.manifest_uri, img.imgserver_url, img.key
-                                  FROM tbl_specimens s
-                                   LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
-                                   LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
-                                   LEFT JOIN tbl_img_definition img               ON img.source_id_fk = mc.source_id
-                                  WHERE specimen_ID = '$specimenID'")
-                     ->fetch_assoc();
-    $urlmanifestpre = $this->makeURI($specimen['specimen_ID'], $this->parser($specimen['manifest_uri']));
-    $filename = $this->getFilename($specimenID);
-
+    // ask the enhanced djatoka server for resources with metadata
     $data = array(
         'id' => '1',
         'method' => 'listResourcesWithMetadata',
         'params' => array(
-            $specimen['key'],
+            $imgServer['key'],
             array(
-                $filename,
-                $filename . "_%",
-                $filename . "A",
-                $filename . "B",
-                "tab_" . $filename,
-                "obs_" . $filename,
-                "tab_" . $filename . "_%",
-                "obs_" . $filename . "_%"
+                $identifier,
+                $identifier . "_%",
+                $identifier . "A",
+                $identifier . "B",
+                "tab_" . $identifier,
+                "obs_" . $identifier,
+                "tab_" . $identifier . "_%",
+                "obs_" . $identifier . "_%"
             )
         )
     );
 
     $data_string = json_encode($data);
     $curl = curl_init();
-    curl_setopt($curl, CURLOPT_URL, substr($manifestBackend,5));
+    curl_setopt($curl, CURLOPT_URL, substr($imgServer['manifest_backend'],5));
     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,0);
     curl_setopt($curl, CURLOPT_POST, true);
     curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array(
-            'Content-Type: application/json',
-            'Content-Length: ' . strlen($data_string))
+    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
+                                                        'Content-Length: ' . strlen($data_string))
     );
 
     $curl_response = curl_exec($curl);
-
     $obj = json_decode($curl_response, TRUE);
-
     curl_close($curl);
 
-    $context = array('http://iiif.io/api/presentation/2/context.json',
-                     'http://www.w3.org/ns/anno.jsonld');
-    $result['@context'] = $context ;
+    if (empty($obj['result'])) {
+        return array();  // nothing found
+    }
+
+    $result['@context'] = array('http://iiif.io/api/presentation/2/context.json',
+                                'http://www.w3.org/ns/anno.jsonld');
     //$result['@id']      = $urlmanifestpre.$urlmanifestpost;
     $result['@type']      = 'sc:Manifest';
     //$result['label']      = $specimenID;
     $canvases = array();
     for ($i = 0; $i < count($obj['result']); $i++) {
         $canvases[] =  array(
-            '@id'    => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
+            '@id'    => $urlmanifestpre.'/c/'.$identifier.'_'.$i,
             '@type'  => 'sc:Canvas',
             'label'  =>  $obj['result'][$i]["identifier"],
             'height' =>  $obj['result'][$i]["height"],
             'width'  =>  $obj['result'][$i]["width"],
             'images' => array(
                 array(
-                    '@id'        => $urlmanifestpre.'/i/'.$specimenID.'_'.$i,
+                    '@id'        => $urlmanifestpre.'/i/'.$identifier.'_'.$i,
                     '@type'      => 'oa:Annotation',
                     'motivation' => 'sc:painting',
-                    'on'         => $urlmanifestpre.'/c/'.$specimenID.'_'.$i,
+                    'on'         => $urlmanifestpre.'/c/'.$identifier.'_'.$i,
                     'resource'   => array(
-                        '@id'     => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][$i]["path"], 1)),
+                        '@id'     => $imgServer['imgserver_url'] . str_replace('/','!', substr($obj['result'][$i]["path"], 1)),
                         '@type'   => 'dctypes:Image',
                         'format'  => (((new SplFileInfo($obj['result'][$i]['path']))->getExtension() == 'jp2') ? 'image/jp2' : 'image/jpeg'),
                         'height'  => $obj['result'][$i]["height"],
                         'width'   => $obj['result'][$i]["width"],
                         'service' => array(
                             '@context' => 'http://iiif.io/api/image/2/context.json',
-                            '@id'      => $specimen['imgserver_url'] . str_replace('/', '!', substr($obj['result'][$i]["path"], 1)),
+                            '@id'      => $imgServer['imgserver_url'] . str_replace('/', '!', substr($obj['result'][$i]["path"], 1)),
                             'profile'  => 'http://iiif.io/api/image/2/level2.json',
                             'protocol' => 'http://iiif.io/api/image'
                         ),
@@ -314,17 +318,40 @@ private function getManifestIiifServer(int $specimenID, string $manifestBackend)
     $result['sequences'] = array($sequences);
 
     $result['thumbnail'] = array(
-        '@id'     => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
+        '@id'     => $imgServer['imgserver_url'] . str_replace('/','!', substr($obj['result'][0]["path"],1)).'/full/400,/0/default.jpg',
         '@type'   => 'dctypes:Image',
         'format'  => 'image/jpeg',
         'service' => array(
             '@context' => 'http://iiif.io/api/image/2/context.json',
-            '@id'      => $specimen['imgserver_url'] . str_replace('/','!', substr($obj['result'][0]["path"],1)),
+            '@id'      => $imgServer['imgserver_url'] . str_replace('/','!', substr($obj['result'][0]["path"],1)),
             'profile'  => 'http://iiif.io/api/image/2/level2.json',
             'protocol' => 'http://iiif.io/api/image'
         ),
     );
+
     return $result;
+}
+
+/**
+ * get array of metadata for a given specimen from POST request
+ *
+ * @param int $specimenID specimen-ID
+ * @return array metadata from iiif server
+ */
+
+private function getManifestIiifServer(int $specimenID): array
+{
+    $specimen = $this->db->query("SELECT iiif.manifest_uri, img.img_def_ID
+                                  FROM tbl_specimens s
+                                   LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
+                                   LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
+                                   LEFT JOIN tbl_img_definition img               ON img.source_id_fk = mc.source_id
+                                  WHERE specimen_ID = '$specimenID'")
+                     ->fetch_assoc();
+    $urlmanifestpre = $this->makeURI($specimenID, $this->parser($specimen['manifest_uri']));
+    $identifier = $this->getFilename($specimenID);
+
+    return $this->createManifestFromExtendedCantaloupe($specimen['img_def_ID'], $identifier, $urlmanifestpre);
 }
 
 /**

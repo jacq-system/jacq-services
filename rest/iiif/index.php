@@ -170,6 +170,44 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
 
 /**
  * @OA\Get(
+ *  path="/iiif/createManifest/{serverID}/{imageFilename}",
+ *  summary="create a manifest for an image server with a given image filename",
+ *  @OA\Parameter(
+ *      name="serverID",
+ *      in="path",
+ *      description="ID of image server",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
+ *      name="imageIdentifier",
+ *      in="path",
+ *      description="image identifier",
+ *      required=true,
+ *      @OA\Schema(type="string")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/createManifest/{serverID}/{imageIdentifier}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called manifest ");
+
+    $mapper = new IiifMapper($this->db);
+    $serverID = intval(filter_var($args['serverID'], FILTER_SANITIZE_NUMBER_INT));
+
+    $manifest = $mapper->createManifestFromExtendedCantaloupeImage($serverID, $args['imageIdentifier']);
+    if (!empty($manifest)) {
+        $jsonResponse = $response->withJson($manifest);
+        return $jsonResponse;
+    } else {
+        $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
+        return $handler($request, $response);
+    }
+});
+
+/**
+ * @OA\Get(
  *     path="/iiif/openapi",
  *     tags={"documentation"},
  *     summary="OpenAPI JSON File that describes the API",
