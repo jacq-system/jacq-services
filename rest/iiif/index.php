@@ -191,12 +191,12 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
  */
 $app->get('/createManifest/{serverID}/{imageIdentifier}', function (Request $request, Response $response, array $args)
 {
-//    $this->logger->addInfo("called manifest ");
+//    $this->logger->addInfo("called createManifest ");
 
     $mapper = new IiifMapper($this->db);
     $serverID = intval(filter_var($args['serverID'], FILTER_SANITIZE_NUMBER_INT));
 
-    $manifest = $mapper->createManifestFromExtendedCantaloupeImage($serverID, $args['imageIdentifier']);
+    $manifest = $mapper->createManifestFromExtendedCantaloupeImage($serverID, filter_var($args['imageIdentifier'], FILTER_SANITIZE_URL));
     if (!empty($manifest)) {
         $jsonResponse = $response->withJson($manifest);
         return $jsonResponse;

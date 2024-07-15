@@ -95,12 +95,24 @@ public function getManifest(int $specimenID)
  */
 public function createManifestFromExtendedCantaloupeImage(int $server_id, string $identifier)
 {
-    $urlmanifestpre = $this->getServiceBaseUrl() . "/iiif/createManifest/$server_id/$identifier";
+    // check if this image identifier is already part of a specimen and return the correct manifest if so
+    $djatokaImage = $this->db->query("SELECT specimen_ID 
+                                      FROM herbar_pictures.djatoka_images 
+                                      WHERE server_id = $server_id
+                                       AND filename = '" . $this->db->real_escape_string($identifier) . "'")
+                             ->fetch_assoc();
+    if (!empty($djatokaImage['specimen_ID'])) {  // we've hit an already existing specimen
+        return $this->getManifest($djatokaImage['specimen_ID']);
+    } else {
+        $urlmanifestpre = $this->getServiceBaseUrl() . "/iiif/createManifest/$server_id/$identifier";
 
-    $result = $this->createManifestFromExtendedCantaloupe($server_id, $identifier, $urlmanifestpre);
-    $result['@id'] = $urlmanifestpre;  // to point at ourselves
+        $result = $this->createManifestFromExtendedCantaloupe($server_id, $identifier, $urlmanifestpre);
+        if (!empty($result)) {
+            $result['@id'] = $urlmanifestpre;  // to point at ourselves
+        }
 
-    return $result;
+        return $result;
+    }
 }
 
 
