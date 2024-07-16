@@ -43,7 +43,7 @@ public function __construct(mysqli $db, int $specimenID)
      * then get all other properties of the specimen if it is accessible
      */
     $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tf.family, tg.genus, te.epithet,
-                              s.HerbNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
+                              s.HerbNummer, s.CollNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
                               s.Coord_W, s.W_Min, s.W_Sec, s.Coord_N, s.N_Min, s.N_Sec, s.Coord_S, s.S_Min, s.S_Sec, s.Coord_E, s.E_Min, s.E_Sec,
                               s.digital_image, s.digital_image_obs,
                               c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
@@ -139,6 +139,7 @@ public function __construct(mysqli $db, int $specimenID)
         $this->properties['genus']                   = $row['genus'];
         $this->properties['epithet']                 = $row['epithet'];
         $this->properties['HerbNummer']              = $row['HerbNummer'];
+        $this->properties['CollNummer']              = $row['CollNummer'];
         $this->properties['observation']             = $row['observation'];
         $this->properties['taxon_alt']               = $row['taxon_alt'];
         $this->properties['Fundort']                 = $row['Fundort'];

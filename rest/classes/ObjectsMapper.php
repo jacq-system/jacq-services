@@ -110,8 +110,10 @@ public function getSpecimensFromList(array $list, string $fieldgroups = ''): arr
  *      rpp (records per page, default 50),
  *      list (return just a list of specimen-IDs, default 1),
  *      term (search for taxon)
+ *      herbnr (search for herbarium nuber)
+ *      collnr (search for collection number))
  *      sc (search for source code)
- *      coll (search for collector)
+ *      cltr (search for collector)
  *      nation (search for nation)
  *      type (type records only, default 0)
  *      withImages (records with images only, default 0)
@@ -128,8 +130,10 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
                            'rpp'        => 50,              // records per page, default: 50
                            'list'       => 1,               // return just a list of specimen-IDs?, default: yes
                            'term'       => '',              // search for scientific name (joker = *)
+                           'herbnr'     => '',              // search for herbarium number (joker = *)
+                           'collnr'     => '',              // search for collection number (joker = *)
                            'sc'         => '',              // search for a source-code
-                           'coll'       => '',              // search for a collector
+                           'cltr'       => '',              // search for a collector
                            'nation'     => '',              // search for a nation
                            'type'       => 0,               // switch, search only for type records (default: no)
                            'withImages' => 0,               // switch, search only for records with images (default: no)
@@ -166,13 +170,27 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
             $constraint .= " AND 0 ";
         }
     }
+    if (!empty($filteredParam['herbnr'])) {
+        if (str_contains($filteredParam['herbnr'], '*')) {
+            $constraint .= " AND s.HerbNummer LIKE '" . strtr($this->db->real_escape_string($filteredParam['herbnr']), '*', '%') . "' ";
+        } else {
+            $constraint .= " AND s.HerbNummer = '" . $this->db->real_escape_string($filteredParam['herbnr']) . "' ";
+        }
+    }
+    if (!empty($filteredParam['collnr'])) {
+        if (str_contains($filteredParam['collnr'], '*')) {
+            $constraint .= " AND s.CollNummer LIKE '" . strtr($this->db->real_escape_string($filteredParam['collnr']), '*', '%') . "' ";
+        } else {
+            $constraint .= " AND s.CollNummer = '" . $this->db->real_escape_string($filteredParam['collnr']) . "' ";
+        }
+    }
     if (!empty($filteredParam['sc'])) {
         $joins['m'] = true;
         $constraint .= " AND m.source_code LIKE '" . $this->db->real_escape_string($filteredParam['sc']) . "' ";
     }
-    if (!empty($filteredParam['coll'])) {
+    if (!empty($filteredParam['cltr'])) {
         $joins['c'] = true;
-        $valueE = $this->db->real_escape_string($filteredParam['coll']);
+        $valueE = $this->db->real_escape_string($filteredParam['cltr']);
         $constraint .= " AND (c.Sammler LIKE '$valueE%' OR c2.Sammler_2 LIKE '%$valueE%') ";
     }
     if (!empty($filteredParam['nation'])) {
@@ -207,7 +225,7 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
                 $joins['sn'] = true;
                 $order .= "sn.scientificName{$orderSequence},";
                 break;
-            case 'coll':
+            case 'cltr':
                 $joins['c'] = true;
                 $order .= "c.Sammler{$orderSequence},c2.Sammler_2{$orderSequence},";
                 break;
