@@ -97,6 +97,14 @@ public function searchScientificName ($term)
 /*
 INSERT INTO tbl_tax_sciname SELECT taxonID, herbar_view.GetScientificName(taxonID, 0), herbar_view._buildScientificName(taxonID) FROM tbl_tax_species
 SELECT * FROM `tbl_tax_sciname` WHERE MATCH(scientificName) against('+prunus +avium' IN BOOLEAN MODE)
+
+and from time to time
+UPDATE tbl_tax_sciname SET checkName = herbar_view.GetScientificName(taxonID, 0)
+UPDATE tbl_tax_sciname SET
+ scientificName = herbar_view.GetScientificName(taxonID, 0),
+ taxonName = herbar_view._buildScientificName(taxonID)
+WHERE checkName != scientificName
+UPDATE tbl_tax_sciname SET checkName = NULL
 */
     $parts = explode(" ", $term);
     $rows = $this->db->query("SELECT taxonID, scientificName, taxonName
