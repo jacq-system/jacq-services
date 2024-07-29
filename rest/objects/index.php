@@ -260,7 +260,7 @@ $app->get('/specimens', function (Request $request, Response $response)
                                                                   'apikey' => $this->get('settings')['APIKEY']));
         $termlist = explode(',', trim(filter_var($params['term'], FILTER_SANITIZE_STRING)));
         foreach ($termlist as $term) {
-            $scinamesList = $mapperSciNames->searchScientificName(trim($term));
+            $scinamesList = $mapperSciNames->findScientificName(trim($term));
             foreach ($scinamesList as $item) {
                 $taxonIDList[] = $item['taxonID'];
             }

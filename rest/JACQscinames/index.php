@@ -109,10 +109,11 @@ $app->get('/uuid/{taxonID}', function (Request $request, Response $response, arr
     $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                       'apikey' => $this->get('settings')['APIKEY']));
     $taxonID = intval(filter_var($args['taxonID'], FILTER_SANITIZE_NUMBER_INT));
-    $data = $mapper->getUuid($taxonID);
-    $data['taxonID'] = $taxonID;
-    $data['scientificName'] = $mapper->getScientificName($taxonID);
-    $data['taxonName'] = $mapper->getTaxonName($taxonID);
+    $data = array('uuid'           => $mapper->getUuid($taxonID),
+                  'url'            => $mapper->getUuidUrl(),
+                  'taxonID'        => $taxonID,
+                  'scientificName' => $mapper->getScientificName($taxonID),
+                  'taxonName'      => $mapper->getTaxonName($taxonID));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -138,17 +139,18 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
     $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                       'apikey' => $this->get('settings')['APIKEY']));
     $taxonID = intval(filter_var($args['taxonID'], FILTER_SANITIZE_NUMBER_INT));
-    $data = $mapper->getUuid($taxonID);
-    $data['taxonID'] = $taxonID;
-    $data['scientificName'] = $mapper->getScientificName($taxonID);
-    $data['taxonName'] = $mapper->getTaxonName($taxonID);
+    $data = array('uuid'           => $mapper->getUuid($taxonID),
+                  'url'            => $mapper->getUuidUrl(),
+                  'taxonID'        => $taxonID,
+                  'scientificName' => $mapper->getScientificName($taxonID),
+                  'taxonName'      => $mapper->getTaxonName($taxonID));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
 
 /**
  * @OA\Get(
- *  path="/search/{term}",
+ *  path="/find/{term}",
  *  summary="search for scientific names; get taxonIDs and scientific names of search result",
  *  @OA\Parameter(
  *      name="term",
@@ -161,13 +163,13 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/search/{term}', function (Request $request, Response $response, array $args)
+$app->get('/find/{term}', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called search ");
 
     $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                       'apikey' => $this->get('settings')['APIKEY']));
-    $data = $mapper->searchScientificName(trim(filter_var($args['term'], FILTER_SANITIZE_STRING)));
+    $data = $mapper->findScientificName(trim(filter_var($args['term'], FILTER_SANITIZE_STRING)));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -192,12 +194,13 @@ $app->get('/resolve/{uuid}', function (Request $request, Response $response, arr
 
     $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                       'apikey' => $this->get('settings')['APIKEY']));
-    $taxonData = $mapper->getTaxonID(filter_var($args['uuid'], FILTER_SANITIZE_STRING));
-    $data = array('uuid'           => $taxonData['uuid'],
-                  'url'            => $taxonData['url'],
-                  'taxonID'        => $taxonData['taxonID'],
-                  'scientificName' => $mapper->getScientificName($taxonData['taxonID']),
-                  'taxonName'      => $mapper->getTaxonName($taxonData['taxonID']));
+    $uuid = filter_var($args['uuid'], FILTER_SANITIZE_URL);
+    $taxonID = $mapper->getTaxonID($uuid);
+    $data = array('uuid'           => $uuid,
+                  'url'            => $mapper->getUuidUrl(),
+                  'taxonID'        => $taxonID,
+                  'scientificName' => $mapper->getScientificName($taxonID),
+                  'taxonName'      => $mapper->getTaxonName($taxonID));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
