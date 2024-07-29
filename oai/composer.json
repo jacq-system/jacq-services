@@ -1,0 +1,23 @@
+{
+    "name": "jacq-system/oai",
+    "description": "JACQ OAI-PMH 2.0 Data Provider",
+    "minimum-stability": "stable",
+    "license": "proprietary",
+    "authors": [
+        {
+            "name": "joschach",
+            "email": "joschach@ap4net.at"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "ext-mysqli": "*",
+        "ext-xmlwriter": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "": "classes/",
+            "Jacq\\": "classes/Jacq/"
+        }
+    }
+}
