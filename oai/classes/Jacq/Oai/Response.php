@@ -15,6 +15,7 @@ private mysqli $db;
 private array $params;
 private bool $errorOccurred;
 private string $baseURL = 'https://services.jacq.org/jacq-services/oai/';
+private array $setsAllowed = [1, 5];
 private XMLWriter $xml;
 
 /**
@@ -95,7 +96,7 @@ private function identify(): void
         $this->xml->writeElement('earliestDatestamp', '2004-11-01T00:00:00Z');
         $this->xml->writeElement('deletedRecord', 'no');
         $this->xml->writeElement('granularity', 'YYYY-MM-DDThh:mm:ssZ');
-        $this->xml->writeElement('adminEmail', 'office@ap4net.at');//'info@jacq.org');
+        $this->xml->writeElement('adminEmail', 'info@jacq.org');
     $this->xml->endElement();
 }
 
@@ -114,6 +115,11 @@ private function listMetadataFormats(): void
             $this->xml->writeElement('schema', 'http://www.openarchives.org/OAI/2.0/oai_dc.xsd');
             $this->xml->writeElement('metadataNamespace', 'http://www.openarchives.org/OAI/2.0/oai_dc/');
         $this->xml->endElement();
+        $this->xml->startElement('metadataFormat');
+            $this->xml->writeElement('metadataPrefix', 'oai_edm');
+            $this->xml->writeElement('schema', 'http://gams.uni-graz.at/edm/2017-08/EDM.xsd');
+            $this->xml->writeElement('metadataNamespace', 'http://www.europeana.eu/schemas/edm/');
+        $this->xml->endElement();
     $this->xml->endElement();
 }
 
@@ -124,8 +130,20 @@ private function listMetadataFormats(): void
  */
 private function listSets(): void
 {
-    // as we don't support sets, we return an error
-    $this->error('noSetHierarchy', 'This repository does not support sets');
+    $sets = $this->db->query("SELECT source_id_fk, img_coll_short 
+                              FROM tbl_img_definition 
+                              WHERE source_id_fk IN (" . implode(',', $this->setsAllowed) . ")");
+
+    $this->request();
+
+    $this->xml->startElement('ListSets');
+    foreach ($sets as $set) {
+        $this->xml->startElement('set');
+            $this->xml->writeElement('setSpec', "source_{$set['source_id_fk']}");
+            $this->xml->writeElement('setName', $set['img_coll_short']);
+        $this->xml->endElement();
+    }
+    $this->xml->endElement();
 }
 
 /**
@@ -145,8 +163,12 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         if (isset($this->params['until']) && !preg_match("/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/", $this->params['until'])) {
             $this->error('badArgument', "The until format of '{$this->params['until']}' is wrong.");
         }
+        if (isset($this->params['set']) && !preg_match("/^source_\d+$/", $this->params['set'])) {
+            $this->error('badArgument', "The set format of '{$this->params['set']}' is wrong.");
+        }
         $arguments['from'] = $this->params['from'] ?? '';
         $arguments['until'] = $this->params['until'] ?? '';
+        $arguments['set'] = $this->params['set'] ?? '';
         $arguments['metadataPrefix'] = $this->params['metadataPrefix'] ?? '';
         $arguments['start'] = 0;
     }
@@ -159,24 +181,31 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
 
     $constraintParts = array();
     if ($arguments['from']) {
-        $constraintParts[] = "aktualdatum >= '" . $this->changeTimeZone($arguments['from'], 'UTC', 'Europe/Vienna') . "'";
+        $constraintParts[] = "s.aktualdatum >= '" . $this->changeTimeZone($arguments['from'], 'UTC', 'Europe/Vienna') . "'";
     }
     if ($arguments['until']) {
-        $constraintParts[] = "aktualdatum <= '" . $this->changeTimeZone($arguments['until'], 'UTC', 'Europe/Vienna') . "'";
+        $constraintParts[] = "s.aktualdatum <= '" . $this->changeTimeZone($arguments['until'], 'UTC', 'Europe/Vienna') . "'";
     }
+    if ($arguments['set']) {
+        $constraintParts[] = "mc.source_id = " . intval(substr($arguments['set'], strlen('source_')));
+    }
+    $constraint = " WHERE s.`accessible` = 1 AND s.`digital_image` = 1 AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ") AND s.collectionID = 5 ";
     if (!empty($constraintParts)) {
-        $constraint = " WHERE collectionID = 5 AND " . implode(' AND ', $constraintParts);
-    } else {
-        $constraint = " WHERE collectionID = 5 ";
+        $constraint .= " AND " . implode(' AND ', $constraintParts);
     }
     $blocksize = ($identifiersOnly) ? 1000 : 20;
-    $rows = $this->db->query("SELECT specimen_ID, aktualdatum
-                              FROM tbl_specimens
+    $rows = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, mc.source_id
+                              FROM tbl_specimens s
+                               LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
                               $constraint
-                              ORDER BY specimen_ID
+                              ORDER BY s.specimen_ID
                               LIMIT {$arguments['start']}, $blocksize")
                      ->fetch_all(MYSQLI_ASSOC);
-    $numRows = $this->db->query("SELECT COUNT(*) FROM tbl_specimens $constraint")->fetch_row()[0];
+    $numRows = $this->db->query("SELECT COUNT(*) 
+                                 FROM tbl_specimens s
+                                  LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
+                                 $constraint")
+                        ->fetch_row()[0];
 
     if ($numRows == 0) {
         $this->error('noRecordsMatch', "The combination of the given values results in an empty list.");
@@ -188,8 +217,9 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $this->xml->startElement('ListIdentifiers');
         foreach ($rows as $row) {
             $this->xml->startElement('header');
-            $this->xml->writeElement('identifier', "oai:jacq.org:{$row['specimen_ID']}");
-            $this->xml->writeElement('datestamp', $this->changeTimeZone($row['aktualdatum'], 'Europe/Vienna', 'UTC'));
+                $this->xml->writeElement('identifier', "oai:jacq.org:{$row['specimen_ID']}");
+                $this->xml->writeElement('datestamp', $this->changeTimeZone($row['aktualdatum'], 'Europe/Vienna', 'UTC'));
+                $this->xml->writeElement('setSpec', "source_{$row['source_id']}");
             $this->xml->endElement();
         }
     } else {
@@ -206,6 +236,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
             $this->xml->text("start=" . ($arguments['start'] + $blocksize)
                             . (($arguments['from']) ? "|from={$arguments['from']}" : '')
                             . (($arguments['until']) ? "|until={$arguments['until']}" : '')
+                            . (($arguments['set']) ? "|set={$arguments['set']}" : '')
                             . "|metadataPrefix={$arguments['metadataPrefix']}");
         $this->xml->endElement();
     }
@@ -247,6 +278,7 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
         $this->xml->startElement('header');
             $this->xml->writeElement('identifier', "oai:jacq.org:{$specimen->getSpecimenID()}");
             $this->xml->writeElement('datestamp', $this->changeTimeZone($specimen->getProperty('aktualdatum'), 'Europe/Vienna', 'UTC'));
+            $this->xml->writeElement('setSpec', "source_" . $specimen->getProperty('source_id'));
         $this->xml->endElement();
         $this->xml->startElement('metadata');
             if ($metadataPrefix == 'oai_dc') {
@@ -269,7 +301,43 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
                     }
                 $this->xml->endElement();
             } elseif ($metadataPrefix == 'oai_edm') {
-                $this->xml->startElement('oai_edm');
+                $specimenEdm = $specimen->getEdm();
+                $this->xml->startElement('rdf:RDF');
+                    $this->xml->writeAttribute('xmlns:rdf', 'http://www.w3.org/1999/02/22-rdf-syntax-ns#');
+                    $this->xml->writeAttribute('xmlns:ore', 'http://www.openarchives.org/ore/terms/');
+                    $this->xml->writeAttribute('xmlns:rdaGr2', 'http://rdvocab.info/ElementsGr2/');
+                    $this->xml->writeAttribute('xmlns:oai', 'http://www.openarchives.org/OAI/2.0/');
+                    $this->xml->writeAttribute('xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
+                    $this->xml->writeAttribute('xmlns:xs', 'http://www.w3.org/2001/XMLSchema');
+                    $this->xml->writeAttribute('xmlns:wgs84_pos', 'http://www.w3.org/2003/01/geo/wgs84_pos#');
+                    $this->xml->writeAttribute('xmlns:dcterms', 'http://purl.org/dc/terms/');
+                    $this->xml->writeAttribute('xmlns:t', 'http://www.tei-c.org/ns/1.0');
+                    $this->xml->writeAttribute('xmlns:oai_dc', 'http://www.openarchives.org/OAI/2.0/oai_dc/');
+                    $this->xml->writeAttribute('xmlns:edm', 'http://www.europeana.eu/schemas/edm/');
+                    $this->xml->writeAttribute('xmlns:owl', 'http://www.w3.org/2002/07/owl#');
+                    $this->xml->writeAttribute('xmlns:skos', 'http://www.w3.org/2004/02/skos/core#');
+                    $this->xml->writeAttribute('xmlns:svcs', 'http://rdfs.org/sioc/services#');
+                    $this->xml->writeAttribute('xmlns:lido', 'http://www.lido-schema.org');
+                    $this->xml->writeAttribute('xmlns:dc', 'http://purl.org/dc/elements/1.1/');
+                    $this->xml->writeAttribute('xmlns:doap', 'http://usefulinc.com/ns/doap#');
+                    $this->xml->writeAttribute('xmlns:europeana', 'http://www.europeana.eu/schemas/ese/');
+                    $this->xml->writeAttribute('xsi:schemaLocation', 'http://www.w3.org/1999/02/22-rdf-syntax-ns# https://gams.uni-graz.at/edm/2017-08/EDM.xsd');
+                    $this->xml->startElement('ore:Aggregation');
+                        $this->xmlWriteEdmElement('edm:aggregatedCHO', $specimenEdm['edm:aggregatedCHO']);
+                        $this->xml->writeElement('edm:dataProvider', $specimenEdm['edm:dataProvider']);
+                        $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['edm:isShownAt']);
+                        $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['edm:isShownBy']);
+                        $this->xmlWriteEdmElement('edm:rights', $specimenEdm['edm:rights']);
+                    $this->xml->endElement();
+                    $this->xml->startElement('edm:ProvidedCHO');
+                        $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:aggregatedCHO']);
+                        $this->xml->writeElement('dc:title', $specimenEdm['dc:title']);
+                        $this->xml->writeElement('dc:description', $specimenEdm['dc:description']);
+                        $this->xml->writeElement('dc:identifier', $specimenEdm['dc:identifier']);
+                    $this->xml->endElement();
+                    $this->xml->startElement('edm:WebResource');
+                        $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:isShownBy']);
+                    $this->xml->endElement();
                 $this->xml->endElement();
             }
         $this->xml->endElement();
@@ -317,8 +385,6 @@ private function validateParameters(): bool
                 if (count($this->params) > 2) {
                     $this->error('badArgument', 'The usage of resumptionToken as an argument allows no other arguments.');
                 }
-            } elseif (array_key_exists('set', $this->params)) {
-                $this->error('noSetHierarchy', 'This repository does not support sets');
             } elseif (!array_key_exists('metadataPrefix', $this->params)) {
                 $this->error('badArgument', "The required argument 'metadataPrefix' is missing in the request.");
             } else {
@@ -451,6 +517,19 @@ private function changeTimeZone(string $dateString, string $timeZoneSource, stri
         error_log($e->getMessage());
     }
     return $result;
+}
+
+/**
+ * insert an EDM-Element with a single attribute, the attribute-name is always 'rdf:resource'
+ *
+ * @param string $elementName    name of the element
+ * @param string $attributeValue value of the attribute
+ */
+private function xmlWriteEdmElement(string $elementName, string $attributeValue): void
+{
+    $this->xml->startElement($elementName);
+    $this->xml->writeAttribute('rdf:resource', $attributeValue);
+    $this->xml->endElement();
 }
 
 }

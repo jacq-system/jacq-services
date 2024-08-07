@@ -55,6 +55,7 @@ class SpecimenMapper
                               s.aktualdatum,
                               c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
                               md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI,
+                              mc.source_id,
                               ss.series,
                               gn.nation_engl, gn.iso_alpha_3_code
                              FROM tbl_specimens s
@@ -146,6 +147,7 @@ class SpecimenMapper
              * store all properties
              */
             $this->properties['specimenID']              = $this->specimenID;
+            $this->properties['source_id']               = $row['source_id'];
             $this->properties['scientificName']          = $row['sciName'];
             $this->properties['family']                  = $row['family'];
             $this->properties['genus']                   = $row['genus'];
@@ -168,6 +170,7 @@ class SpecimenMapper
             $this->properties['HUH_ID']                  = $row['HUH_ID'];
             $this->properties['VIAF_ID']                 = $row['VIAF_ID'];
             $this->properties['ORCID']                   = $row['ORCID'];
+            $this->properties['OwnerOrganizationName']   = $row['OwnerOrganizationName'];
             $this->properties['OwnerOrganizationAbbrev'] = $row['OwnerOrganizationAbbrev'];
             $this->properties['OwnerLogoURI']            = $row['OwnerLogoURI'] ?? '';
             $this->properties['LicenseURI']              = $row['LicenseURI'] ?? '';
@@ -281,11 +284,12 @@ class SpecimenMapper
         if ($this->isValid) {
             $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
 
-            return array('dc:title' => $this->properties['scientificName'],
+            return array(
+                'dc:title'       => $this->properties['scientificName'],
                 'dc:description' => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by " . $this->collapseCollectorTeam(),
-                'dc:creator' => $this->properties['collectorTeam'],
-                'dc:created' => $this->properties['created'],
-                'dc:type' => $basisOfRecord);
+                'dc:creator'     => $this->properties['collectorTeam'],
+                'dc:created'     => $this->properties['created'],
+                'dc:type'        => $basisOfRecord);
         } else {
             return array();
         }
@@ -319,6 +323,46 @@ class SpecimenMapper
                 'dwc:recordNumber' => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
                 'dwc:recordedBy' => $this->properties['collectorTeam'],
                 'dwc:fieldNumber' => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
+        } else {
+            return array();
+        }
+    }
+
+    public function getEDM(): array
+    {
+        if ($this->isValid) {
+            $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
+            $shownAt = "https://www.jacq.org/detail.php?ID=" . $this->specimenID;
+
+            return array(
+                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/kurzreferenz-edm-pflichtfelder
+
+                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
+                // ore:Aggregation
+                'edm:aggregatedCHO' => "$shownAt#CHO",
+                'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],   // TODO: check, if this is correct
+                'edm:isShownAt'     => $shownAt,                                     // TODO: check, if this is correct
+                'edm:isShownBy'     => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1",
+                'edm:rights'        => $this->properties['LicenseURI'],              // TODO: check, if this is correct
+
+                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-kulturgut
+                // edm:ProvidedCHO, about = edm:aggregatedCHO
+                'dc:title'          => $this->properties['scientificName'],
+                'dc:description'    => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by " . $this->collapseCollectorTeam(),
+                'dc:identifier'     => $this->properties['stableIdentifier'],        // TODO: check, if this is correct
+                //'dc:language'     unused
+                'edm:type'          => 'IMAGE',                                      // TODO: check, if this is correct
+                //'dc:subject'      unused
+                'dc:type'           => $basisOfRecord,
+                //dcterms:spatial   unused
+                //dcterms:temporal  unused
+                'dcterms:created'   => $this->properties['created'],
+                'dc:creator'        => $this->properties['collectorTeam'],
+
+                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
+                // edm:WebResource
+                'dc:rights'         => '',                                           // TODO: fill with data
+            );
         } else {
             return array();
         }
