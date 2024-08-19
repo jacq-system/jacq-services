@@ -120,7 +120,7 @@ $app->add(function (Request $request, Response $response, $next)
  *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
- *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
  *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
@@ -162,7 +162,7 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
  *      @OA\Parameter(
  *      name="withredirect",
  *      in="query",
- *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
  *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
@@ -204,7 +204,7 @@ $app->get('/download/{specimenID}', function (Request $request, Response $respon
  *      @OA\Parameter(
  *      name="withredirect",
  *      in="query",
- *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
  *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
@@ -219,6 +219,48 @@ $app->get('/europeana/{specimenID}', function (Request $request, Response $respo
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
     $imageLink = $mapper->getFirstImageEuropeanaLink();
+    if ($imageLink) {
+        $data = array('link' => $imageLink);
+        if (!empty($params['withredirect'])) {
+            return $response->withJson($data)->withRedirect($imageLink, 303);
+        } else {
+            return $response->withJson($data);
+        }
+    } else {
+        $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
+        return $handler($request, $response);
+    }
+});
+
+/**
+ * @OA\Get(
+ *  path="/thumb/{specimenID}",
+ *  summary="get the uri to download the first image of a given specimen-ID with resolution 160,x with a redirect (303)",
+ *  @OA\Parameter(
+ *      name="specimenID",
+ *      in="path",
+ *      description="ID of specimen",
+ *      required=true,
+ *      @OA\Schema(type="integer")
+ *  ),
+ *      @OA\Parameter(
+ *      name="withredirect",
+ *      in="query",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Response(response="200", description="successful operation"),
+ * )
+ */
+$app->get('/thumb/{specimenID}', function (Request $request, Response $response, array $args)
+{
+//    $this->logger->addInfo("called thumb ");
+
+    $params = $request->getQueryParams();
+    $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
+
+    $imageLink = $mapper->getFirstThumbLink();
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
