@@ -15,6 +15,7 @@ private mysqli $db;
 private array $params;
 private bool $errorOccurred;
 private string $baseURL = 'https://services.jacq.org/jacq-services/oai/';
+private string $identifierPrefixJacq = "oai:jacq.org:";
 private array $setsAllowed = [1, 5];
 private XMLWriter $xml;
 
@@ -96,7 +97,7 @@ private function identify(): void
         $this->xml->writeElement('earliestDatestamp', '2004-11-01T00:00:00Z');
         $this->xml->writeElement('deletedRecord', 'no');
         $this->xml->writeElement('granularity', 'YYYY-MM-DDThh:mm:ssZ');
-        $this->xml->writeElement('adminEmail', 'info@jacq.org');
+        $this->xml->writeElement('adminEmail', 'office@ap4net.at');//'info@jacq.org');
     $this->xml->endElement();
 }
 
@@ -130,17 +131,17 @@ private function listMetadataFormats(): void
  */
 private function listSets(): void
 {
-    $sets = $this->db->query("SELECT source_id_fk, img_coll_short 
-                              FROM tbl_img_definition 
-                              WHERE source_id_fk IN (" . implode(',', $this->setsAllowed) . ")");
+    $sets = $this->db->query("SELECT MetadataID, OwnerOrganizationName 
+                              FROM metadata 
+                              WHERE MetadataID IN (" . implode(',', $this->setsAllowed) . ")");
 
     $this->request();
 
     $this->xml->startElement('ListSets');
     foreach ($sets as $set) {
         $this->xml->startElement('set');
-            $this->xml->writeElement('setSpec', "source_{$set['source_id_fk']}");
-            $this->xml->writeElement('setName', $set['img_coll_short']);
+            $this->xml->writeElement('setSpec', "source_{$set['MetadataID']}");
+            $this->xml->writeElement('setName', $set['OwnerOrganizationName']);
         $this->xml->endElement();
     }
     $this->xml->endElement();
@@ -217,7 +218,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $this->xml->startElement('ListIdentifiers');
         foreach ($rows as $row) {
             $this->xml->startElement('header');
-                $this->xml->writeElement('identifier', "oai:jacq.org:{$row['specimen_ID']}");
+                $this->xml->writeElement('identifier', $this->identifierPrefixJacq . $row['specimen_ID']);
                 $this->xml->writeElement('datestamp', $this->changeTimeZone($row['aktualdatum'], 'Europe/Vienna', 'UTC'));
                 $this->xml->writeElement('setSpec', "source_{$row['source_id']}");
             $this->xml->endElement();
@@ -253,8 +254,8 @@ private function getRecord(): void
     if ($this->params['metadataPrefix'] != 'oai_dc' && $this->params['metadataPrefix'] != 'oai_edm') {
         $this->error('cannotDisseminateFormat', "The metadata format '{$this->params['metadataPrefix']}' is not supported by this repository.");
     }
-    $specimen = new SpecimenMapper($this->db, intval(substr($this->params['identifier'], 13)));
-    if (!str_starts_with($this->params['identifier'], 'oai:jacq.org:') || !$specimen->isValid()) {
+    $specimen = new SpecimenMapper($this->db, intval(substr($this->params['identifier'], strlen($this->identifierPrefixJacq))));
+    if (!str_starts_with($this->params['identifier'], $this->identifierPrefixJacq) || !$specimen->isValid()) {
         $this->error('idDoesNotExist', "The identifier '{$this->params['identifier']}' does not exist.");
         return;
     }
@@ -276,7 +277,7 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
 {
     $this->xml->startElement('record');
         $this->xml->startElement('header');
-            $this->xml->writeElement('identifier', "oai:jacq.org:{$specimen->getSpecimenID()}");
+            $this->xml->writeElement('identifier', $this->identifierPrefixJacq . $specimen->getSpecimenID());
             $this->xml->writeElement('datestamp', $this->changeTimeZone($specimen->getProperty('aktualdatum'), 'Europe/Vienna', 'UTC'));
             $this->xml->writeElement('setSpec', "source_" . $specimen->getProperty('source_id'));
         $this->xml->endElement();
@@ -328,6 +329,7 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
                         $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['edm:isShownAt']);
                         $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['edm:isShownBy']);
                         $this->xmlWriteEdmElement('edm:rights', $specimenEdm['edm:rights']);
+                        $this->xmlWriteEdmElement('edm:object', $specimenEdm['edm:object']);
                     $this->xml->endElement();
                     $this->xml->startElement('edm:ProvidedCHO');
                         $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:aggregatedCHO']);

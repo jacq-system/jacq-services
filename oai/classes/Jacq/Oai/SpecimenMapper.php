@@ -282,14 +282,12 @@ class SpecimenMapper
     public function getDC(): array
     {
         if ($this->isValid) {
-            $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
-
             return array(
                 'dc:title'       => $this->properties['scientificName'],
-                'dc:description' => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by " . $this->collapseCollectorTeam(),
+                'dc:description' => $this->getDescription(),
                 'dc:creator'     => $this->properties['collectorTeam'],
                 'dc:created'     => $this->properties['created'],
-                'dc:type'        => $basisOfRecord);
+                'dc:type'        => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen");
         } else {
             return array();
         }
@@ -331,7 +329,6 @@ class SpecimenMapper
     public function getEDM(): array
     {
         if ($this->isValid) {
-            $basisOfRecord = ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen";
             $shownAt = "https://www.jacq.org/detail.php?ID=" . $this->specimenID;
 
             return array(
@@ -342,18 +339,19 @@ class SpecimenMapper
                 'edm:aggregatedCHO' => "$shownAt#CHO",
                 'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],   // TODO: check, if this is correct
                 'edm:isShownAt'     => $shownAt,                                     // TODO: check, if this is correct
-                'edm:isShownBy'     => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1",
+                'edm:isShownBy'     => $this->baseURL . "/images/download/" . $this->specimenID . "?withredirect=1",
                 'edm:rights'        => $this->properties['LicenseURI'],              // TODO: check, if this is correct
+                'edm:object'        => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1",
 
                 // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-kulturgut
                 // edm:ProvidedCHO, about = edm:aggregatedCHO
                 'dc:title'          => $this->properties['scientificName'],
-                'dc:description'    => "A $basisOfRecord of " . $this->properties['scientificName'] . " collected by " . $this->collapseCollectorTeam(),
+                'dc:description'    => $this->getDescription(),
                 'dc:identifier'     => $this->properties['stableIdentifier'],        // TODO: check, if this is correct
                 //'dc:language'     unused
                 'edm:type'          => 'IMAGE',                                      // TODO: check, if this is correct
                 //'dc:subject'      unused
-                'dc:type'           => $basisOfRecord,
+                'dc:type'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
                 //dcterms:spatial   unused
                 //dcterms:temporal  unused
                 'dcterms:created'   => $this->properties['created'],
