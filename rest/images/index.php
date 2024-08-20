@@ -134,7 +134,7 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getFirstImageShowLink();
+    $imageLink = $mapper->getShowLink();
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
@@ -176,7 +176,7 @@ $app->get('/download/{specimenID}', function (Request $request, Response $respon
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getFirstImageDownloadLink();
+    $imageLink = $mapper->getDownloadLink();
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
@@ -218,7 +218,7 @@ $app->get('/europeana/{specimenID}', function (Request $request, Response $respo
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getFirstImageEuropeanaLink();
+    $imageLink = $mapper->getEuropeanaLink();
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
@@ -260,7 +260,7 @@ $app->get('/thumb/{specimenID}', function (Request $request, Response $response,
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getFirstThumbLink();
+    $imageLink = $mapper->getThumbLink();
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {

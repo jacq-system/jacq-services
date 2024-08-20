@@ -39,27 +39,27 @@ public function __construct(mysqli $db, int $specimenID)
     }
 }
 
-public function getFirstImageShowLink()
+public function getShowLink(int $nr = 0): mixed
 {
-    return $this->imageLinks[0] ?? '';
+    return $this->imageLinks[$nr] ?? $this->imageLinks[0] ?? '';
 }
 
-public function getFirstImageDownloadLink()
+public function getDownloadLink(int $nr = 0): mixed
 {
-    return $this->fileLinks['full'][0] ?? '';
+    return $this->fileLinks['full'][$nr] ?? $this->fileLinks['full'][0] ?? '';
 }
 
-public function getFirstImageEuropeanaLink()
+public function getEuropeanaLink(int $nr = 0): mixed
 {
-    return $this->fileLinks['europeana'][0] ?? '';
+    return $this->fileLinks['europeana'][$nr] ?? $this->fileLinks['europeana'][0] ?? '';
 }
 
-public function getFirstThumbLink()
+public function getThumbLink(int $nr = 0): mixed
 {
-    return $this->fileLinks['thumb'][0] ?? '';
+    return $this->fileLinks['thumb'][$nr] ?? $this->fileLinks['thumb'][0] ?? '';
 }
 
-public function getList()
+public function getList(): array
 {
     return array('show'     => $this->imageLinks,
                  'download' => $this->fileLinks);
