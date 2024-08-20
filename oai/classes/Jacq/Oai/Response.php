@@ -97,7 +97,8 @@ private function identify(): void
         $this->xml->writeElement('earliestDatestamp', '2004-11-01T00:00:00Z');
         $this->xml->writeElement('deletedRecord', 'no');
         $this->xml->writeElement('granularity', 'YYYY-MM-DDThh:mm:ssZ');
-        $this->xml->writeElement('adminEmail', 'office@ap4net.at');//'info@jacq.org');
+        $this->xml->writeElement('adminEmail', 'info@jacq.org');
+        $this->xml->writeElement('adminEmail', 'office@ap4net.at');
     $this->xml->endElement();
 }
 
