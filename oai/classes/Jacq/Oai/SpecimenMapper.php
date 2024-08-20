@@ -23,30 +23,45 @@ class SpecimenMapper
      * class constructor. Prepares properties to be returned by the specific methods
      *
      * @param mysqli $db instance of mysqli-database
-     * @param int $specimenID ID of specimen
+     * @param mixed $id either specimen-ID (int) or stable Identifier (string)
      */
-    public function __construct(mysqli $db, int $specimenID)
+    public function __construct(mysqli $db, mixed $id)
     {
         $this->db = $db;
 
-        if ($specimenID == 0) {
+        if (empty($id)) {
             return;  // nothing to look for, so just stop
         }
 
-        /**
-         * first get the stable identifier
-         */
-        $row_sid = $this->db->query("SELECT specimen_ID, stableIdentifier
-                                 FROM tbl_specimens_stblid
-                                 WHERE specimen_ID = $specimenID
-                                 ORDER BY timestamp DESC
-                                 LIMIT 1")
-                            ->fetch_assoc();
+        if (is_numeric($id)) {
+            $this->specimenID = intval($id);
+            //get the latest stable identifier
+            $row_sid = $this->db->query("SELECT stableIdentifier
+                                     FROM tbl_specimens_stblid
+                                     WHERE specimen_ID = $this->specimenID
+                                     ORDER BY timestamp DESC
+                                     LIMIT 1")
+                                ->fetch_assoc();
+            if (empty($row_sid['stableIdentifier'])) {
+                return;  // no stable identifier exists
+            } else {
+                $this->properties['stableIdentifier'] = $row_sid['stableIdentifier'];
+            }
+        } else {
+            $row_sid = $this->db->query("SELECT specimen_ID
+                                     FROM tbl_specimens_stblid
+                                     WHERE stableIdentifier = '$id'")
+                                ->fetch_assoc();
+            if (empty($row_sid['specimen_ID'])) {
+                return;  // no stable identifier exists
+            } else {
+                $this->specimenID = $row_sid['specimen_ID'];
+                $this->properties['stableIdentifier'] = $id;
+            }
+        }
 
-        $this->properties['stableIdentifier'] = $row_sid['stableIdentifier'] ?? '';
-
         /**
-         * then get all other properties of the specimen if it is accessible
+         * get all other properties of the specimen if it is accessible
          */
         $row = $this->db->query("SELECT herbar_view.GetScientificName(s.taxonID, 0) AS sciName, tf.family, tg.genus, te.epithet,
                               s.HerbNummer, s.CollNummer, s.observation, s.Datum, s.Datum2, s.taxon_alt, s.Fundort, s.Nummer, s.alt_number,
@@ -57,7 +72,7 @@ class SpecimenMapper
                               md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI, md.LicensesDetails,
                               mc.source_id,
                               ss.series,
-                              gn.nation_engl, gn.iso_alpha_3_code
+                              gn.nation_engl, gn.iso_alpha_3_code, gp.provinz
                              FROM tbl_specimens s
                               LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
                               LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID
@@ -70,13 +85,13 @@ class SpecimenMapper
                               LEFT JOIN tbl_tax_genera tg             ON tg.genID        = ts.genID
                               LEFT JOIN tbl_tax_families tf           ON tf.familyID     = tg.familyID
                               LEFT JOIN tbl_geo_nation gn             ON gn.nationID     = s.NationID
-                             WHERE s.specimen_ID = $specimenID
+                              LEFT JOIN tbl_geo_province gp           ON gp.provinceID   = s.provinceID
+                             WHERE s.specimen_ID = $this->specimenID
                               AND s.`accessible` != '0'")
                         ->fetch_assoc();
 
-        if (!empty($row) && !empty($this->properties['stableIdentifier'])) {  // only use specimens with a valid stable identifier !!
-            $this->specimenID = $specimenID;
-            $this->isValid    = true;  // we have found valid data
+        if (!empty($row)) {
+            $this->isValid = true;  // we have found valid data
             /**
              * do any neccessary calculations
              */
@@ -135,6 +150,14 @@ class SpecimenMapper
                 $verbatimLongitude = '';
             }
 
+            $spatial = trim($row['nation_engl']);
+            if (!empty(trim($row['provinz']))) {
+                $spatial .= (($spatial) ? ', ' : '') . trim($row['provinz']);
+            }
+            if (!empty(trim($row['Fundort']))) {
+                $spatial .= (($spatial) ? ', ' : '') . trim($row['Fundort']);
+            }
+
             if (!empty($row['digital_image']) || !empty($row['digital_image_obs'])) {
                 $firstImageLink = $this->baseURL . "/images/show/$this->specimenID";
                 $firstImageDownloadLink = $this->baseURL . "/images/download/$this->specimenID";
@@ -177,6 +200,7 @@ class SpecimenMapper
             $this->properties['LicensesDetails']         = $row['LicensesDetails'] ?? '';
             $this->properties['nation_engl']             = $row['nation_engl'];
             $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
+            $this->properties['spatial']                 = $spatial;
             $this->properties['aktualdatum']             = $row['aktualdatum'];
             $this->properties['image']                   = $firstImageLink;
             $this->properties['downloadImage']           = $firstImageDownloadLink;
@@ -302,26 +326,27 @@ class SpecimenMapper
     public function getDWC(): array
     {
         if ($this->isValid) {
-            return array('dwc:materialSampleID' => $this->properties['stableIdentifier'],
-                'dwc:basisOfRecord' => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
-                'dwc:collectionCode' => $this->properties['OwnerOrganizationAbbrev'],
-                'dwc:catalogNumber' => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
-                'dwc:scientificName' => $this->properties['scientificName'],
+            return array(
+                'dwc:materialSampleID'        => $this->properties['stableIdentifier'],
+                'dwc:basisOfRecord'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
+                'dwc:collectionCode'          => $this->properties['OwnerOrganizationAbbrev'],
+                'dwc:catalogNumber'           => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
+                'dwc:scientificName'          => $this->properties['scientificName'],
                 'dwc:previousIdentifications' => $this->properties['taxon_alt'],
-                'dwc:family' => $this->properties['family'],
-                'dwc:genus' => $this->properties['genus'],
-                'dwc:specificEpithet' => $this->properties['epithet'],
-                'dwc:country' => $this->properties['nation_engl'],
-                'dwc:countryCode' => $this->properties['iso_alpha_3_code'],
-                'dwc:locality' => $this->properties['Fundort'],
-                'dwc:decimalLatitude' => $this->properties['decimalLatitude'],
-                'dwc:decimalLongitude' => $this->properties['decimalLongitude'],
-                'dwc:verbatimLatitude' => $this->properties['verbatimLatitude'],
-                'dwc:verbatimLongitude' => $this->properties['verbatimLongitude'],
-                'dwc:eventDate' => $this->properties['created'],
-                'dwc:recordNumber' => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
-                'dwc:recordedBy' => $this->properties['collectorTeam'],
-                'dwc:fieldNumber' => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
+                'dwc:family'                  => $this->properties['family'],
+                'dwc:genus'                   => $this->properties['genus'],
+                'dwc:specificEpithet'         => $this->properties['epithet'],
+                'dwc:country'                 => $this->properties['nation_engl'],
+                'dwc:countryCode'             => $this->properties['iso_alpha_3_code'],
+                'dwc:locality'                => $this->properties['Fundort'],
+                'dwc:decimalLatitude'         => $this->properties['decimalLatitude'],
+                'dwc:decimalLongitude'        => $this->properties['decimalLongitude'],
+                'dwc:verbatimLatitude'        => $this->properties['verbatimLatitude'],
+                'dwc:verbatimLongitude'       => $this->properties['verbatimLongitude'],
+                'dwc:eventDate'               => $this->properties['created'],
+                'dwc:recordNumber'            => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
+                'dwc:recordedBy'              => $this->properties['collectorTeam'],
+                'dwc:fieldNumber'             => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
         } else {
             return array();
         }
@@ -353,7 +378,7 @@ class SpecimenMapper
                 //'dc:subject'      unused
                 'dc:type'           => ($this->properties['observation'] > 0) ? "http://rs.tdwg.org/dwc/terms/HumanObservation"
                                                                               : "http://rs.tdwg.org/dwc/terms/PreservedSpecimen",
-                //dcterms:spatial     TODO: Nation Province Fundort
+                'dcterms:spatial'   => $this->properties['spatial'],
                 //dcterms:temporal  unused
                 'dc:date'           => $this->properties['created'],                // dcterms:created would be wrong
                 'dc:creator'        => $this->collapseCollectorTeam(),

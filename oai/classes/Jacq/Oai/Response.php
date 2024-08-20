@@ -190,21 +190,33 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
     if ($arguments['set']) {
         $constraintParts[] = "mc.source_id = " . intval(substr($arguments['set'], strlen('source_')));
     }
-    $constraint = " WHERE s.`accessible` = 1 AND s.`digital_image` = 1 AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ") AND s.collectionID = 5 ";
+    $constraint = " WHERE ss.visible = 1 
+                     AND s.`accessible` = 1 
+                     AND s.`digital_image` = 1 
+                     AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ") 
+                     AND s.collectionID = 5 ";
     if (!empty($constraintParts)) {
         $constraint .= " AND " . implode(' AND ', $constraintParts);
     }
     $blocksize = ($identifiersOnly) ? 1000 : 20;
-    $rows = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, mc.source_id
-                              FROM tbl_specimens s
-                               LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
+    $rows = $this->db->query("SELECT ss.specimen_ID, ss.stableIdentifier, s.aktualdatum, mc.source_id
+                              FROM tbl_specimens_stblid ss
+                               JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
+                                     FROM tbl_specimens_stblid 
+                                     GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
+                               JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
+                               JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
                               $constraint
                               ORDER BY s.specimen_ID
                               LIMIT {$arguments['start']}, $blocksize")
                      ->fetch_all(MYSQLI_ASSOC);
     $numRows = $this->db->query("SELECT COUNT(*) 
-                                 FROM tbl_specimens s
-                                  LEFT JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
+                                 FROM tbl_specimens_stblid ss
+                                  JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
+                                        FROM tbl_specimens_stblid 
+                                        GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
+                                  JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
+                                  JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
                                  $constraint")
                         ->fetch_row()[0];
 
@@ -338,14 +350,15 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
                         $this->xml->writeElement('dc:identifier', $specimenEdm['edm:ProvidedCHO']['dc:identifier']);
                         $this->xml->writeElement('edm:type', $specimenEdm['edm:ProvidedCHO']['edm:type']);
                         $this->xml->writeElement('dc:type', $specimenEdm['edm:ProvidedCHO']['dc:type']);
-                        $this->xml->writeElement('dc:date', $specimenEdm['edm:ProvidedCHO']['dc:date']);
-                        $this->xml->writeElement('dc:creator', $specimenEdm['edm:ProvidedCHO']['dc:creator']);
+                        $this->xmlWriteNonemptyElement('dcterms:spatial', $specimenEdm['edm:ProvidedCHO']['dcterms:spatial']);
+                        $this->xmlWriteNonemptyElement('dc:date', $specimenEdm['edm:ProvidedCHO']['dc:date']);
+                        $this->xmlWriteNonemptyElement('dc:creator', $specimenEdm['edm:ProvidedCHO']['dc:creator']);
                     $this->xml->endElement();
                     foreach ($specimenEdm['edm:WebResource'] as $webResource) {
                         $this->xml->startElement('edm:WebResource');
                             $this->xml->writeAttribute('rdf:about', $webResource['rdf:about']);
-                            if (!empty($webResource['dc:rights'])) { $this->xml->writeElement('dc:rights', $webResource['dc:rights']); }
-                            if (!empty($webResource['edm:rights'])) { $this->xml->writeElement('edm:rights', $webResource['edm:rights']); }
+                            $this->xmlWriteNonemptyElement('dc:rights', $webResource['dc:rights']);
+                            $this->xmlWriteNonemptyElement('edm:rights', $webResource['edm:rights']);
                         $this->xml->endElement();
                     }
                 $this->xml->endElement();
@@ -540,6 +553,19 @@ private function xmlWriteEdmElement(string $elementName, string $attributeValue)
     $this->xml->startElement($elementName);
     $this->xml->writeAttribute('rdf:resource', $attributeValue);
     $this->xml->endElement();
+}
+
+/**
+ * check if the value of an element is not empty and only writeElement if yes
+ *
+ * @param string $elementName    name of the element
+ * @param string $attributeValue value of the element
+ */
+private function xmlWriteNonemptyElement(string $elementName, string|null $attributeValue): void
+{
+    if (!empty($attributeValue)) {
+        $this->xml->writeElement($elementName, $attributeValue);
+    }
 }
 
 }
