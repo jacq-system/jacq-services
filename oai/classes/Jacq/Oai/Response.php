@@ -324,22 +324,30 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
                     $this->xml->writeAttribute('xmlns:europeana', 'http://www.europeana.eu/schemas/ese/');
                     $this->xml->writeAttribute('xsi:schemaLocation', 'http://www.w3.org/1999/02/22-rdf-syntax-ns# https://gams.uni-graz.at/edm/2017-08/EDM.xsd');
                     $this->xml->startElement('ore:Aggregation');
-                        $this->xmlWriteEdmElement('edm:aggregatedCHO', $specimenEdm['edm:aggregatedCHO']);
-                        $this->xml->writeElement('edm:dataProvider', $specimenEdm['edm:dataProvider']);
-                        $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['edm:isShownAt']);
-                        $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['edm:isShownBy']);
-                        $this->xmlWriteEdmElement('edm:rights', $specimenEdm['edm:rights']);
-                        $this->xmlWriteEdmElement('edm:object', $specimenEdm['edm:object']);
+                        $this->xmlWriteEdmElement('edm:aggregatedCHO', $specimenEdm['ore:Aggregation']['edm:aggregatedCHO']);
+                        $this->xml->writeElement('edm:dataProvider', $specimenEdm['ore:Aggregation']['edm:dataProvider']);
+                        $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['ore:Aggregation']['edm:isShownAt']);
+                        $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['ore:Aggregation']['edm:isShownBy']);
+                        $this->xmlWriteEdmElement('edm:rights', $specimenEdm['ore:Aggregation']['edm:rights']);
+                        $this->xmlWriteEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
                     $this->xml->endElement();
                     $this->xml->startElement('edm:ProvidedCHO');
-                        $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:aggregatedCHO']);
-                        $this->xml->writeElement('dc:title', $specimenEdm['dc:title']);
-                        $this->xml->writeElement('dc:description', $specimenEdm['dc:description']);
-                        $this->xml->writeElement('dc:identifier', $specimenEdm['dc:identifier']);
+                        $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:ProvidedCHO']['rdf:about']);
+                        $this->xml->writeElement('dc:title', $specimenEdm['edm:ProvidedCHO']['dc:title']);
+                        $this->xml->writeElement('dc:description', $specimenEdm['edm:ProvidedCHO']['dc:description']);
+                        $this->xml->writeElement('dc:identifier', $specimenEdm['edm:ProvidedCHO']['dc:identifier']);
+                        $this->xml->writeElement('edm:type', $specimenEdm['edm:ProvidedCHO']['edm:type']);
+                        $this->xml->writeElement('dc:type', $specimenEdm['edm:ProvidedCHO']['dc:type']);
+                        $this->xml->writeElement('dc:date', $specimenEdm['edm:ProvidedCHO']['dc:date']);
+                        $this->xml->writeElement('dc:creator', $specimenEdm['edm:ProvidedCHO']['dc:creator']);
                     $this->xml->endElement();
-                    $this->xml->startElement('edm:WebResource');
-                        $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:isShownBy']);
-                    $this->xml->endElement();
+                    foreach ($specimenEdm['edm:WebResource'] as $webResource) {
+                        $this->xml->startElement('edm:WebResource');
+                            $this->xml->writeAttribute('rdf:about', $webResource['rdf:about']);
+                            if (!empty($webResource['dc:rights'])) { $this->xml->writeElement('dc:rights', $webResource['dc:rights']); }
+                            if (!empty($webResource['edm:rights'])) { $this->xml->writeElement('edm:rights', $webResource['edm:rights']); }
+                        $this->xml->endElement();
+                    }
                 $this->xml->endElement();
             }
         $this->xml->endElement();

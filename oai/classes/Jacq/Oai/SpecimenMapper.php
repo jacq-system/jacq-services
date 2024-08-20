@@ -54,7 +54,7 @@ class SpecimenMapper
                               s.digital_image, s.digital_image_obs,
                               s.aktualdatum,
                               c.Sammler, c.WIKIDATA_ID, c.HUH_ID, c.VIAF_ID, c.ORCID, c2.Sammler_2,
-                              md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI,
+                              md.OwnerOrganizationName, md.OwnerOrganizationAbbrev, md.OwnerLogoURI, md.LicenseURI, md.LicensesDetails,
                               mc.source_id,
                               ss.series,
                               gn.nation_engl, gn.iso_alpha_3_code
@@ -74,7 +74,7 @@ class SpecimenMapper
                               AND s.`accessible` != '0'")
                         ->fetch_assoc();
 
-        if (!empty($row)) {
+        if (!empty($row) && !empty($this->properties['stableIdentifier'])) {  // only use specimens with a valid stable identifier !!
             $this->specimenID = $specimenID;
             $this->isValid    = true;  // we have found valid data
             /**
@@ -174,6 +174,7 @@ class SpecimenMapper
             $this->properties['OwnerOrganizationAbbrev'] = $row['OwnerOrganizationAbbrev'];
             $this->properties['OwnerLogoURI']            = $row['OwnerLogoURI'] ?? '';
             $this->properties['LicenseURI']              = $row['LicenseURI'] ?? '';
+            $this->properties['LicensesDetails']         = $row['LicensesDetails'] ?? '';
             $this->properties['nation_engl']             = $row['nation_engl'];
             $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
             $this->properties['aktualdatum']             = $row['aktualdatum'];
@@ -329,38 +330,53 @@ class SpecimenMapper
     public function getEDM(): array
     {
         if ($this->isValid) {
-            $shownAt = "https://www.jacq.org/detail.php?ID=" . $this->specimenID;
+            // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/kurzreferenz-edm-pflichtfelder
 
-            return array(
-                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/kurzreferenz-edm-pflichtfelder
-
-                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
-                // ore:Aggregation
-                'edm:aggregatedCHO' => "$shownAt#CHO",
-                'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],   // TODO: check, if this is correct
-                'edm:isShownAt'     => $shownAt,                                     // TODO: check, if this is correct
+            // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
+            $edm['ore:Aggregation'] = array(
+                'edm:aggregatedCHO' => $this->properties['stableIdentifier'] . '#CHO',
+                'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],
+                'edm:isShownAt'     => $this->properties['stableIdentifier'],
                 'edm:isShownBy'     => $this->baseURL . "/images/download/" . $this->specimenID . "?withredirect=1",
-                'edm:rights'        => $this->properties['LicenseURI'],              // TODO: check, if this is correct
+                'edm:rights'        => $this->properties['LicenseURI'],
                 'edm:object'        => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1",
+            );
 
-                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-kulturgut
-                // edm:ProvidedCHO, about = edm:aggregatedCHO
+            // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-kulturgut
+            $edm['edm:ProvidedCHO'] = array(
+                'rdf:about'         => $edm['ore:Aggregation']['edm:aggregatedCHO'],
                 'dc:title'          => $this->properties['scientificName'],
                 'dc:description'    => $this->getDescription(),
-                'dc:identifier'     => $this->properties['stableIdentifier'],        // TODO: check, if this is correct
+                'dc:identifier'     => $this->properties['stableIdentifier'],
                 //'dc:language'     unused
-                'edm:type'          => 'IMAGE',                                      // TODO: check, if this is correct
+                'edm:type'          => 'IMAGE',
                 //'dc:subject'      unused
-                'dc:type'           => ($this->properties['observation'] > 0) ? "HumanObservation" : "PreservedSpecimen",
-                //dcterms:spatial   unused
+                'dc:type'           => ($this->properties['observation'] > 0) ? "http://rs.tdwg.org/dwc/terms/HumanObservation"
+                                                                              : "http://rs.tdwg.org/dwc/terms/PreservedSpecimen",
+                //dcterms:spatial     TODO: Nation Province Fundort
                 //dcterms:temporal  unused
-                'dcterms:created'   => $this->properties['created'],
-                'dc:creator'        => $this->properties['collectorTeam'],
-
-                // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
-                // edm:WebResource
-                'dc:rights'         => '',                                           // TODO: fill with data
+                'dc:date'           => $this->properties['created'],                // dcterms:created would be wrong
+                'dc:creator'        => $this->collapseCollectorTeam(),
             );
+
+            // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
+            $edm['edm:WebResource'] = array(
+                array(
+                    'rdf:about'         => $edm['ore:Aggregation']['edm:isShownAt'],
+                ),
+                array(
+                    'rdf:about'         => $edm['ore:Aggregation']['edm:isShownBy'],
+                    'dc:rights'         => $this->properties['OwnerOrganizationName'],
+                    'edm:rights'        => $this->properties['LicensesDetails'],
+                ),
+                array(
+                    'rdf:about'         => $edm['ore:Aggregation']['edm:object'],
+                    'dc:rights'         => $this->properties['OwnerOrganizationName'],
+                    'edm:rights'        => $this->properties['LicensesDetails'],
+                ),
+            );
+
+            return $edm;
         } else {
             return array();
         }
