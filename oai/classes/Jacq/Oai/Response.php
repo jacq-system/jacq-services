@@ -16,7 +16,8 @@ private array $params;
 private bool $errorOccurred;
 private string $baseURL = 'https://services.jacq.org/jacq-services/oai/';
 private string $identifierPrefixJacq = "oai:jacq.org:";
-private array $setsAllowed = [1, 5];
+private array $setsAllowed = [1, 4, 5, 6];
+private array $setsAllowedGbif = [10001, 10002];
 private XMLWriter $xml;
 
 /**
@@ -133,8 +134,14 @@ private function listMetadataFormats(): void
 private function listSets(): void
 {
     $sets = $this->db->query("SELECT MetadataID, OwnerOrganizationName 
-                              FROM metadata 
-                              WHERE MetadataID IN (" . implode(',', $this->setsAllowed) . ")");
+                               FROM metadata
+                               WHERE MetadataID IN (" . implode(',', $this->setsAllowed) . ")
+                              UNION
+                              SELECT source_id AS MetadataID, OwnerOrganizationName 
+                               FROM gbif_cache.sources
+                               WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
+                              ORDER BY MetadataID")
+                     ->fetch_all(MYSQLI_ASSOC);
 
     $this->request();
 
@@ -181,49 +188,92 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         return;
     }
 
-    $constraintParts = array();
+    $constraint = '';
     if ($arguments['from']) {
-        $constraintParts[] = "s.aktualdatum >= '" . $this->changeTimeZone($arguments['from'], 'UTC', 'Europe/Vienna') . "'";
+        $constraint .= " AND s.aktualdatum >= '" . $this->changeTimeZone($arguments['from'], 'UTC', 'Europe/Vienna') . "'";
     }
     if ($arguments['until']) {
-        $constraintParts[] = "s.aktualdatum <= '" . $this->changeTimeZone($arguments['until'], 'UTC', 'Europe/Vienna') . "'";
+        $constraint .= " AND s.aktualdatum <= '" . $this->changeTimeZone($arguments['until'], 'UTC', 'Europe/Vienna') . "'";
     }
     if ($arguments['set']) {
-        $constraintParts[] = "mc.source_id = " . intval(substr($arguments['set'], strlen('source_')));
+        $constraintSourceG = " AND source_id = " . intval(substr($arguments['set'], strlen('source_')));
+        $constraintSourceJ = " AND mc.source_id = " . intval(substr($arguments['set'], strlen('source_')));
+    } else {
+        $constraintSourceG = $constraintSourceJ = '';
     }
-    $constraint = " WHERE ss.visible = 1 
-                     AND s.`accessible` = 1 
-                     AND s.`digital_image` = 1 
-                     AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ") 
-                     AND s.collectionID = 5 ";
-    if (!empty($constraintParts)) {
-        $constraint .= " AND " . implode(' AND ', $constraintParts);
-    }
-    $blocksize = ($identifiersOnly) ? 1000 : 20;
-    $rows = $this->db->query("SELECT ss.specimen_ID, ss.stableIdentifier, s.aktualdatum, mc.source_id
-                              FROM tbl_specimens_stblid ss
-                               JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
-                                     FROM tbl_specimens_stblid 
-                                     GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
-                               JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
-                               JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
-                              $constraint
-                              ORDER BY s.specimen_ID
-                              LIMIT {$arguments['start']}, $blocksize")
-                     ->fetch_all(MYSQLI_ASSOC);
-    $numRows = $this->db->query("SELECT COUNT(*) 
-                                 FROM tbl_specimens_stblid ss
-                                  JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
-                                        FROM tbl_specimens_stblid 
-                                        GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
-                                  JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
-                                  JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
-                                 $constraint")
-                        ->fetch_row()[0];
-
+    $numRowsJ = $this->db->query("SELECT COUNT(*) 
+                                         FROM tbl_specimens_stblid ss
+                                         JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
+                                               FROM tbl_specimens_stblid 
+                                               GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
+                                         JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
+                                         JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
+                                         WHERE ss.visible = 1 
+                                          AND s.`accessible` = 1 
+                                          AND s.`digital_image` = 1 
+                                          AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ")
+                                          $constraint
+                                          $constraintSourceJ")
+                         ->fetch_row()[0];
+    $numRowsG = $this->db->query("SELECT COUNT(*) 
+                                         FROM gbif_cache.specimens s
+                                         WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
+                                          $constraint
+                                          $constraintSourceG")
+                         ->fetch_row()[0];
+    $numRows = $numRowsJ + $numRowsG;
     if ($numRows == 0) {
         $this->error('noRecordsMatch', "The combination of the given values results in an empty list.");
         return;
+    }
+
+    $blocksize = ($identifiersOnly) ? 1000 : 20;
+    if ($arguments['start'] < $numRowsJ) {
+        if ($arguments['start'] <= $numRowsJ - $blocksize) {
+            $startJ = $arguments['start'];
+            $limitJ = $blocksize;
+            $startG = $limitG = 0;
+        } else {
+            $startJ = $arguments['start'];
+            $limitJ = $numRowsJ - $startJ;
+            $startG = 0;
+            $limitG = $blocksize - $limitJ;
+        }
+    } else {
+        $startJ = $limitJ = 0;
+        $startG = $arguments['start'] - $numRowsJ;
+        $limitG = $blocksize;
+    }
+    if ($limitJ) {
+        $rows = $this->db->query("SELECT ss.specimen_ID, s.aktualdatum, mc.source_id
+                                  FROM tbl_specimens_stblid ss
+                                   JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
+                                         FROM tbl_specimens_stblid 
+                                         GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
+                                   JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
+                                   JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
+                                  WHERE ss.visible = 1 
+                                   AND s.`accessible` = 1 
+                                   AND s.`digital_image` = 1 
+                                   AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ") 
+                                   $constraint
+                                   $constraintSourceJ
+                                  ORDER BY mc.source_id, s.specimen_ID
+                                  LIMIT $startJ, $limitJ")
+                         ->fetch_all(MYSQLI_ASSOC);
+    } else {
+        $rows = array();
+    }
+    if ($limitG) {
+        $rowsG = $this->db->query("SELECT specimen_ID, aktualdatum, source_id
+                                   FROM gbif_cache.specimens
+                                   WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
+                                    $constraint
+                                    $constraintSourceG
+                                   ORDER BY source_id, specimen_ID
+                                   LIMIT $startG, $limitG")
+                          ->fetch_all(MYSQLI_ASSOC);
+        $rows = array_merge($rows, $rowsG);
     }
 
     $this->request();
@@ -231,7 +281,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $this->xml->startElement('ListIdentifiers');
         foreach ($rows as $row) {
             $this->xml->startElement('header');
-                $this->xml->writeElement('identifier', $this->identifierPrefixJacq . $row['specimen_ID']);
+                $this->xml->writeElement('identifier', $this->identifierPrefixJacq . (($row['source_id'] > 10000) ? 'g' : '') . $row['specimen_ID']);
                 $this->xml->writeElement('datestamp', $this->changeTimeZone($row['aktualdatum'], 'Europe/Vienna', 'UTC'));
                 $this->xml->writeElement('setSpec', "source_{$row['source_id']}");
             $this->xml->endElement();
@@ -239,7 +289,11 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
     } else {
         $this->xml->startElement('ListRecords');
         foreach ($rows as $row) {
-            $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
+            if ($row['source_id'] > 10000) {
+                $specimen = new SpecimenGbifMapper($this->db, $row['specimen_ID']);
+            } else {
+                $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
+            }
             $this->exportRecord($specimen, $arguments['metadataPrefix']);
         }
     }
@@ -267,7 +321,12 @@ private function getRecord(): void
     if ($this->params['metadataPrefix'] != 'oai_dc' && $this->params['metadataPrefix'] != 'oai_edm') {
         $this->error('cannotDisseminateFormat', "The metadata format '{$this->params['metadataPrefix']}' is not supported by this repository.");
     }
-    $specimen = new SpecimenMapper($this->db, intval(substr($this->params['identifier'], strlen($this->identifierPrefixJacq))));
+    $id = substr($this->params['identifier'], strlen($this->identifierPrefixJacq));
+    if (substr($id, 0, 1) == 'g') {
+        $specimen = new SpecimenGbifMapper($this->db, intval(substr($id, 1)));
+    } else {
+        $specimen = new SpecimenMapper($this->db, intval($id));
+    }
     if (!str_starts_with($this->params['identifier'], $this->identifierPrefixJacq) || !$specimen->isValid()) {
         $this->error('idDoesNotExist', "The identifier '{$this->params['identifier']}' does not exist.");
         return;
@@ -282,11 +341,11 @@ private function getRecord(): void
 /**
  * do the actual xml-work for a given specimen
  *
- * @param SpecimenMapper $specimen a specimen represented ba a SpecimenMapper-Class
+ * @param SpecimenMapper|SpecimenGbifMapper $specimen a specimen represented ba a SpecimenMapper-Class
  * @param string $metadataPrefix the metadataPrefix that is to be used
  * @return void
  */
-private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix): void
+private function exportRecord(SpecimenMapper|SpecimenGbifMapper $specimen, string $metadataPrefix): void
 {
     $this->xml->startElement('record');
         $this->xml->startElement('header');
@@ -342,7 +401,9 @@ private function exportRecord(SpecimenMapper $specimen, string $metadataPrefix):
                         $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['ore:Aggregation']['edm:isShownAt']);
                         $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['ore:Aggregation']['edm:isShownBy']);
                         $this->xmlWriteEdmElement('edm:rights', $specimenEdm['ore:Aggregation']['edm:rights']);
-                        $this->xmlWriteEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
+                        if (!empty($specimenEdm['ore:Aggregation']['edm:object'])) {
+                            $this->xmlWriteEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
+                        }
                     $this->xml->endElement();
                     $this->xml->startElement('edm:ProvidedCHO');
                         $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:ProvidedCHO']['rdf:about']);
@@ -454,7 +515,7 @@ private function checkArguments(array $allowedList = array()): void
  */
 private function parseResumptionToken(): array
 {
-    $result = array('from' => '', 'until' => '', 'start' => 0, 'metadataPrefix' => '');
+    $result = array('from' => '', 'until' => '', 'start' => 0, 'metadataPrefix' => '', 'set' => '');
     foreach (explode('|', $this->params['resumptionToken']) as $chunk) {
         $tokenParam = explode("=", $chunk);
         if (count($tokenParam) == 2) {
@@ -483,6 +544,13 @@ private function parseResumptionToken(): array
                 case 'metadataPrefix':
                     if ($tokenParam[1] == 'oai_dc' || $tokenParam[1] == 'oai_edm') {
                         $result['metadataPrefix'] = $tokenParam[1];
+                    } else {
+                        $this->error('badResumptionToken', "The resumptionToken '{$this->params['resumptionToken']}' is faulty.");
+                    }
+                    break;
+                case 'set':
+                    if (preg_match("/^source_\d+$/", $tokenParam[1])) {
+                        $result['set'] = $tokenParam[1];
                     } else {
                         $this->error('badResumptionToken', "The resumptionToken '{$this->params['resumptionToken']}' is faulty.");
                     }
