@@ -197,7 +197,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $constraint .= " AND s.aktualdatum <= '" . $this->changeTimeZone($arguments['until'], 'UTC', 'Europe/Vienna') . "'";
     }
     if ($arguments['set']) {
-        $constraintSourceG = " AND source_id = " . intval(substr($arguments['set'], strlen('source_')));
+        $constraintSourceG = " AND s.source_id = " . intval(substr($arguments['set'], strlen('source_')));
         $constraintSourceJ = " AND mc.source_id = " . intval(substr($arguments['set'], strlen('source_')));
     } else {
         $constraintSourceG = $constraintSourceJ = '';
@@ -234,9 +234,9 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $offset = $arguments['off'];
     }
     if ($limitG) {
-        $rowsG = $this->db->query("SELECT specimen_ID, aktualdatum, source_id
-                                   FROM gbif_cache.specimens
-                                   WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
+        $rowsG = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, s.source_id
+                                   FROM gbif_cache.specimens s
+                                   WHERE s.source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
                                     $constraint
                                     $constraintSourceG
                                    LIMIT $startG, $limitG")
