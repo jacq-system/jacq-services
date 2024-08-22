@@ -180,6 +180,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $arguments['set'] = $this->params['set'] ?? '';
         $arguments['metadataPrefix'] = $this->params['metadataPrefix'] ?? '';
         $arguments['start'] = 0;
+        $arguments['off'] = 0;
     }
     if ($arguments['metadataPrefix'] != 'oai_dc' && $arguments['metadataPrefix'] != 'oai_edm') {
         $this->error('cannotDisseminateFormat', "The metadata format '{$arguments['metadataPrefix']}' is not supported by this repository.");
@@ -201,68 +202,36 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
     } else {
         $constraintSourceG = $constraintSourceJ = '';
     }
-    $numRowsJ = $this->db->query("SELECT COUNT(*) 
-                                         FROM tbl_specimens_stblid ss
-                                         JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
-                                               FROM tbl_specimens_stblid 
-                                               GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
-                                         JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
-                                         JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
-                                         WHERE ss.visible = 1 
-                                          AND s.`accessible` = 1 
-                                          AND s.`digital_image` = 1 
-                                          AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ")
-                                          $constraint
-                                          $constraintSourceJ")
-                         ->fetch_row()[0];
-    $numRowsG = $this->db->query("SELECT COUNT(*) 
-                                         FROM gbif_cache.specimens s
-                                         WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
-                                          $constraint
-                                          $constraintSourceG")
-                         ->fetch_row()[0];
-    $numRows = $numRowsJ + $numRowsG;
-    if ($numRows == 0) {
-        $this->error('noRecordsMatch', "The combination of the given values results in an empty list.");
-        return;
-    }
+    $blocksize = ($identifiersOnly) ? 1000 : 100;
 
-    $blocksize = ($identifiersOnly) ? 1000 : 20;
-    if ($arguments['start'] < $numRowsJ) {
-        if ($arguments['start'] <= $numRowsJ - $blocksize) {
-            $startJ = $arguments['start'];
-            $limitJ = $blocksize;
-            $startG = $limitG = 0;
-        } else {
-            $startJ = $arguments['start'];
-            $limitJ = $numRowsJ - $startJ;
-            $startG = 0;
-            $limitG = $blocksize - $limitJ;
-        }
-    } else {
-        $startJ = $limitJ = 0;
-        $startG = $arguments['start'] - $numRowsJ;
-        $limitG = $blocksize;
-    }
-    if ($limitJ) {
-        $rows = $this->db->query("SELECT ss.specimen_ID, s.aktualdatum, mc.source_id
-                                  FROM tbl_specimens_stblid ss
-                                   JOIN (SELECT specimen_ID, MIN(`timestamp`) AS min_time 
-                                         FROM tbl_specimens_stblid 
-                                         GROUP BY specimen_ID) ss2 ON ss.`timestamp` = ss2.min_time AND ss.specimen_ID = ss2.specimen_ID
-                                   JOIN tbl_specimens s ON s.specimen_ID = ss.specimen_ID 
-                                   JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID 
-                                  WHERE ss.visible = 1 
-                                   AND s.`accessible` = 1 
-                                   AND s.`digital_image` = 1 
-                                   AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ") 
+    if ($arguments['off'] == 0) {
+        $rows = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, mc.source_id
+                                  FROM tbl_specimens s
+                                   JOIN (SELECT specimen_ID
+                                         FROM tbl_specimens_stblid
+                                         WHERE visible = 1
+                                         GROUP BY specimen_ID) ss ON ss.specimen_ID = s.specimen_ID
+                                   JOIN tbl_management_collections mc ON mc.collectionID = s.collectionID
+                                  WHERE s.`accessible` = 1
+                                   AND s.`digital_image` = 1
+                                   AND s.HerbNummer IS NOT NULL
+                                   AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ")
                                    $constraint
                                    $constraintSourceJ
-                                  ORDER BY mc.source_id, s.specimen_ID
-                                  LIMIT $startJ, $limitJ")
+                                  LIMIT {$arguments['start']}, $blocksize")
                          ->fetch_all(MYSQLI_ASSOC);
+        if (count($rows) < $blocksize) {
+            $startG = 0;
+            $limitG = $blocksize - count($rows);
+            $offset = $arguments['start'] + count($rows);
+        } else {
+            $startG = $limitG = $offset = 0;
+        }
     } else {
         $rows = array();
+        $startG = $arguments['start'] - $arguments['off'];
+        $limitG = $blocksize;
+        $offset = $arguments['off'];
     }
     if ($limitG) {
         $rowsG = $this->db->query("SELECT specimen_ID, aktualdatum, source_id
@@ -270,10 +239,14 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
                                    WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
                                     $constraint
                                     $constraintSourceG
-                                   ORDER BY source_id, specimen_ID
                                    LIMIT $startG, $limitG")
                           ->fetch_all(MYSQLI_ASSOC);
         $rows = array_merge($rows, $rowsG);
+    }
+
+    if (count($rows) == 0) {
+        $this->error('noRecordsMatch', "The combination of the given values results in an empty list.");
+        return;
     }
 
     $this->request();
@@ -294,17 +267,19 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
             } else {
                 $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
             }
-            $this->exportRecord($specimen, $arguments['metadataPrefix']);
+            if ($specimen->isValid()) {
+                $this->exportRecord($specimen, $arguments['metadataPrefix']);
+            }
         }
     }
-    if ($numRows > $arguments['start'] + $blocksize) {
+    if (count($rows) == $blocksize) {
         $this->xml->startElement('resumptionToken');
             $this->xml->writeAttribute('cursor', $arguments['start']);
-            $this->xml->writeAttribute('completeListSize', $numRows);
             $this->xml->text("start=" . ($arguments['start'] + $blocksize)
                             . (($arguments['from']) ? "|from={$arguments['from']}" : '')
                             . (($arguments['until']) ? "|until={$arguments['until']}" : '')
                             . (($arguments['set']) ? "|set={$arguments['set']}" : '')
+                            . (($offset) ? "|off=$offset" : '')
                             . "|metadataPrefix={$arguments['metadataPrefix']}");
         $this->xml->endElement();
     }
@@ -515,7 +490,7 @@ private function checkArguments(array $allowedList = array()): void
  */
 private function parseResumptionToken(): array
 {
-    $result = array('from' => '', 'until' => '', 'start' => 0, 'metadataPrefix' => '', 'set' => '');
+    $result = array('from' => '', 'until' => '', 'start' => 0, 'metadataPrefix' => '', 'set' => '', 'off' => 0);
     foreach (explode('|', $this->params['resumptionToken']) as $chunk) {
         $tokenParam = explode("=", $chunk);
         if (count($tokenParam) == 2) {
@@ -553,6 +528,11 @@ private function parseResumptionToken(): array
                         $result['set'] = $tokenParam[1];
                     } else {
                         $this->error('badResumptionToken', "The resumptionToken '{$this->params['resumptionToken']}' is faulty.");
+                    }
+                    break;
+                case 'off':
+                    if (intval($tokenParam[1]) > 0) {
+                        $result['off'] = intval($tokenParam[1]);
                     }
                     break;
                 default:
