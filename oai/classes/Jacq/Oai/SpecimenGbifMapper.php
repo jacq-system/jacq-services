@@ -38,7 +38,7 @@ class SpecimenGbifMapper
         /**
          * get all properties of the specimen
          */
-        $row = $this->db->query("SELECT s.json, so.source_id, so.OwnerOrganizationName, so.LicenseURI, so.LicensesDetails
+        $row = $this->db->query("SELECT s.aktualdatum, s.json, so.source_id, so.OwnerOrganizationName, so.LicenseURI, so.LicensesDetails
                                  FROM gbif_cache.specimens s 
                                   JOIN gbif_cache.sources so ON so.source_id = s.source_id
                                  WHERE s.specimen_ID = $this->specimenID")
@@ -49,6 +49,7 @@ class SpecimenGbifMapper
             $this->properties = json_decode($row['json'], true);
 
             $this->properties['specimenID']            = $this->specimenID;
+            $this->properties['aktualdatum']           = $row['aktualdatum'];
             $this->properties['source_id']             = $row['source_id'];
             $this->properties['OwnerOrganizationName'] = $row['OwnerOrganizationName'];
             $this->properties['LicenseURI']            = $row['LicenseURI'];
