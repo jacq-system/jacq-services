@@ -154,6 +154,7 @@ class SpecimenGbifMapper
                 //dcterms:spatial   unused
                 //dcterms:temporal  unused
                 'dc:date'           => $this->properties['eventDate'],
+                'dc:creator'        => $this->properties['recordedBy'],
             );
 
             // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
@@ -165,10 +166,22 @@ class SpecimenGbifMapper
                     'rdf:about'         => $edm['ore:Aggregation']['edm:isShownBy'],
                     'dc:rights'         => $this->properties['OwnerOrganizationName'],
                     'edm:rights'        => $this->properties['LicensesDetails'],
+                    'dc:type'           => $this->properties['media'][0]['type'],
                 ),
             );
 
-            return $edm;
+            if (count($this->properties['media']) > 1) {
+                for ($i = 2; $i < count($this->properties['media']); $i++) {
+                    $edm['ore:Aggregation']['edm:hasView'][] = $this->properties['media'][$i]['identifier'];
+                    $edm['edm:WebResource'][] = array(
+                        'rdf:about'  => $this->properties['media'][$i]['identifier'],
+                        'dc:rights'  => $this->properties['OwnerOrganizationName'],
+                        'edm:rights' => $this->properties['LicensesDetails'],
+                        'dc:type'    => $this->properties['media'][$i]['type'],
+                    );
+                }
+            }
+                return $edm;
         } else {
             return array();
         }

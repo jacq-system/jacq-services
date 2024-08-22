@@ -379,6 +379,11 @@ private function exportRecord(SpecimenMapper|SpecimenGbifMapper $specimen, strin
                         if (!empty($specimenEdm['ore:Aggregation']['edm:object'])) {
                             $this->xmlWriteEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
                         }
+                        if (!empty($specimenEdm['ore:Aggregation']['edm:hasView'])) {
+                            foreach ($specimenEdm['ore:Aggregation']['edm:hasView'] as $view) {
+                                $this->xmlWriteEdmElement('edm:hasView', $view);
+                            }
+                        }
                     $this->xml->endElement();
                     $this->xml->startElement('edm:ProvidedCHO');
                         $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:ProvidedCHO']['rdf:about']);
@@ -396,6 +401,7 @@ private function exportRecord(SpecimenMapper|SpecimenGbifMapper $specimen, strin
                             $this->xml->writeAttribute('rdf:about', $webResource['rdf:about']);
                             $this->xmlWriteNonemptyElement('dc:rights', $webResource['dc:rights']);
                             $this->xmlWriteNonemptyElement('edm:rights', $webResource['edm:rights']);
+                            $this->xmlWriteNonemptyElement('dc:type', $webResource['dc:type']);
                         $this->xml->endElement();
                     }
                 $this->xml->endElement();
