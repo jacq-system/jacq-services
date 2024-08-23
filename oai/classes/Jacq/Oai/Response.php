@@ -295,6 +295,7 @@ private function getRecord(): void
 {
     if ($this->params['metadataPrefix'] != 'oai_dc' && $this->params['metadataPrefix'] != 'oai_edm') {
         $this->error('cannotDisseminateFormat', "The metadata format '{$this->params['metadataPrefix']}' is not supported by this repository.");
+        return;
     }
     $id = substr($this->params['identifier'], strlen($this->identifierPrefixJacq));
     if (substr($id, 0, 1) == 'g') {

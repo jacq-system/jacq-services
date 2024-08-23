@@ -87,7 +87,8 @@ class SpecimenMapper implements SpecimenInterface
                               LEFT JOIN tbl_geo_nation gn             ON gn.nationID     = s.NationID
                               LEFT JOIN tbl_geo_province gp           ON gp.provinceID   = s.provinceID
                              WHERE s.specimen_ID = $this->specimenID
-                              AND s.`accessible` != '0'")
+                              AND s.`accessible` = 1
+                              AND s.`digital_image` = 1")
                         ->fetch_assoc();
 
         if (!empty($row)) {
