@@ -166,7 +166,6 @@ class SpecimenMapper implements SpecimenInterface
                 $firstImageLink = $firstImageDownloadLink = '';
             }
 
-
             /**
              * store all properties
              */
@@ -197,7 +196,7 @@ class SpecimenMapper implements SpecimenInterface
             $this->properties['OwnerOrganizationName']   = $row['OwnerOrganizationName'];
             $this->properties['OwnerOrganizationAbbrev'] = $row['OwnerOrganizationAbbrev'];
             $this->properties['OwnerLogoURI']            = $row['OwnerLogoURI'] ?? '';
-            $this->properties['LicenseURI']              = $row['LicenseURI'] ?? '';
+            $this->properties['LicenseURI']              = str_replace('https://', 'http://', $row['LicenseURI'] ?? '');
             $this->properties['LicensesDetails']         = $row['LicensesDetails'] ?? '';
             $this->properties['nation_engl']             = $row['nation_engl'];
             $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
@@ -327,6 +326,7 @@ class SpecimenMapper implements SpecimenInterface
 
             // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
             $edm['ore:Aggregation'] = array(
+                'rdf:about'         => $this->properties['stableIdentifier'],
                 'edm:aggregatedCHO' => $this->properties['stableIdentifier'] . '#CHO',
                 'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],
                 'edm:isShownAt'     => $this->properties['stableIdentifier'],

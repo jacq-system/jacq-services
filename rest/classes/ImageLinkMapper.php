@@ -277,7 +277,7 @@ private function djatoka()
     if (!empty($images)) {
         foreach ($images as $image) {
             $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
-            $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download&format=jpeg2000';
+            $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download';
             $this->fileLinks['europeana'][] = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
             $this->fileLinks['thumb'][] = 'https://www.jacq.org/image.php?' . $image . '&method=thumb';
         }

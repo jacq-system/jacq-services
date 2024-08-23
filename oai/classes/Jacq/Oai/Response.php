@@ -372,10 +372,12 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
                     $this->xml->writeAttribute('xmlns:europeana', 'http://www.europeana.eu/schemas/ese/');
                     $this->xml->writeAttribute('xsi:schemaLocation', 'http://www.w3.org/1999/02/22-rdf-syntax-ns# https://gams.uni-graz.at/edm/2017-08/EDM.xsd');
                     $this->xml->startElement('ore:Aggregation');
+                        $this->xml->writeAttribute('rdf:about', $specimenEdm['ore:Aggregation']['rdf:about']);
                         $this->xmlWriteEdmElement('edm:aggregatedCHO', $specimenEdm['ore:Aggregation']['edm:aggregatedCHO']);
                         $this->xml->writeElement('edm:dataProvider', $specimenEdm['ore:Aggregation']['edm:dataProvider']);
                         $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['ore:Aggregation']['edm:isShownAt']);
                         $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['ore:Aggregation']['edm:isShownBy']);
+                        $this->xml->writeElement('edm:provider', 'Kulturpool');
                         $this->xmlWriteEdmElement('edm:rights', $specimenEdm['ore:Aggregation']['edm:rights']);
                         if (!empty($specimenEdm['ore:Aggregation']['edm:object'])) {
                             $this->xmlWriteEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);

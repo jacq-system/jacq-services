@@ -134,6 +134,7 @@ class SpecimenGbifMapper implements SpecimenInterface
 
             // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-digitalen-objekt
             $edm['ore:Aggregation'] = array(
+                'rdf:about'         => $this->properties['occurrenceID'],
                 'edm:aggregatedCHO' => $this->properties['occurrenceID'] . '#CHO',
                 'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],
                 'edm:isShownAt'     => $this->properties['occurrenceID'],
@@ -165,7 +166,7 @@ class SpecimenGbifMapper implements SpecimenInterface
                 array(
                     'rdf:about'         => $edm['ore:Aggregation']['edm:isShownBy'],
                     'dc:rights'         => $this->properties['OwnerOrganizationName'],
-                    'edm:rights'        => $this->properties['LicensesDetails'],
+                    'edm:rights'        => $this->properties['LicenseURI'],
                     'dc:type'           => $this->properties['media'][0]['type'],
                 ),
             );
