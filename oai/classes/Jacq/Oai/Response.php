@@ -379,9 +379,7 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
                         $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['ore:Aggregation']['edm:isShownBy']);
                         $this->xml->writeElement('edm:provider', 'Kulturpool');
                         $this->xmlWriteEdmElement('edm:rights', $specimenEdm['ore:Aggregation']['edm:rights']);
-                        if (!empty($specimenEdm['ore:Aggregation']['edm:object'])) {
-                            $this->xmlWriteEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
-                        }
+                        $this->xmlWriteNonemptyEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
                         if (!empty($specimenEdm['ore:Aggregation']['edm:hasView'])) {
                             foreach ($specimenEdm['ore:Aggregation']['edm:hasView'] as $view) {
                                 $this->xmlWriteEdmElement('edm:hasView', $view);
@@ -403,9 +401,7 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
                         $this->xml->startElement('edm:WebResource');
                             $this->xml->writeAttribute('rdf:about', $webResource['rdf:about']);
                             $this->xmlWriteNonemptyElement('dc:rights', $webResource['dc:rights']);
-                            if (!empty($webResource['edm:rights'])) {
-                                $this->xmlWriteEdmElement('edm:rights', $webResource['edm:rights']);
-                            }
+                            $this->xmlWriteNonemptyEdmElement('edm:rights', $webResource['edm:rights']);
                             $this->xmlWriteNonemptyElement('dc:type', $webResource['dc:type']);
                         $this->xml->endElement();
                     }
@@ -625,6 +621,19 @@ private function xmlWriteNonemptyElement(string $elementName, string|null $attri
 {
     if (!empty($attributeValue)) {
         $this->xml->writeElement($elementName, $attributeValue);
+    }
+}
+
+/**
+ * check if the value of an edm-element is not empty and only writeElement if yes
+ *
+ * @param string $elementName    name of the element
+ * @param string $attributeValue value of the element
+ */
+private function xmlWriteNonemptyEdmElement(string $elementName, string|null $attributeValue): void
+{
+    if (!empty($attributeValue)) {
+        $this->xmlWriteEdmElement($elementName, $attributeValue);
     }
 }
 
