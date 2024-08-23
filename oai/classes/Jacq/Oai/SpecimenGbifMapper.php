@@ -176,7 +176,7 @@ class SpecimenGbifMapper implements SpecimenInterface
                     $edm['edm:WebResource'][] = array(
                         'rdf:about'  => $this->properties['media'][$i]['identifier'],
                         'dc:rights'  => $this->properties['OwnerOrganizationName'],
-                        'edm:rights' => $this->properties['LicensesDetails'],
+                        'edm:rights' => $this->properties['LicenseURI'],
                         'dc:type'    => $this->properties['media'][$i]['type'],
                     );
                 }

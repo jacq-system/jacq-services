@@ -401,7 +401,9 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
                         $this->xml->startElement('edm:WebResource');
                             $this->xml->writeAttribute('rdf:about', $webResource['rdf:about']);
                             $this->xmlWriteNonemptyElement('dc:rights', $webResource['dc:rights']);
-                            $this->xmlWriteNonemptyElement('edm:rights', $webResource['edm:rights']);
+                            if (!empty($webResource['edm:rights'])) {
+                                $this->xmlWriteEdmElement('edm:rights', $webResource['edm:rights']);
+                            }
                             $this->xmlWriteNonemptyElement('dc:type', $webResource['dc:type']);
                         $this->xml->endElement();
                     }

@@ -360,12 +360,12 @@ class SpecimenMapper implements SpecimenInterface
                 array(
                     'rdf:about'         => $edm['ore:Aggregation']['edm:isShownBy'],
                     'dc:rights'         => $this->properties['OwnerOrganizationName'],
-                    'edm:rights'        => $this->properties['LicensesDetails'],
+                    'edm:rights'        => $this->properties['LicenseURI'],
                 ),
                 array(
                     'rdf:about'         => $edm['ore:Aggregation']['edm:object'],
                     'dc:rights'         => $this->properties['OwnerOrganizationName'],
-                    'edm:rights'        => $this->properties['LicensesDetails'],
+                    'edm:rights'        => $this->properties['LicenseURI'],
                 ),
             );
 
