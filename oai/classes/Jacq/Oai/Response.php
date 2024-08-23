@@ -316,11 +316,11 @@ private function getRecord(): void
 /**
  * do the actual xml-work for a given specimen
  *
- * @param SpecimenMapper|SpecimenGbifMapper $specimen a specimen represented ba a SpecimenMapper-Class
+ * @param SpecimenInterface $specimen a specimen represented ba a SpecimenMapper- or SpecimenGbifMapper-Class
  * @param string $metadataPrefix the metadataPrefix that is to be used
  * @return void
  */
-private function exportRecord(SpecimenMapper|SpecimenGbifMapper $specimen, string $metadataPrefix): void
+private function exportRecord(SpecimenInterface $specimen, string $metadataPrefix): void
 {
     $this->xml->startElement('record');
         $this->xml->startElement('header');

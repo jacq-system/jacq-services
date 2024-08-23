@@ -4,13 +4,12 @@ namespace Jacq\Oai;
 
 use mysqli;
 
-class SpecimenGbifMapper
+class SpecimenGbifMapper implements SpecimenInterface
 {
 
     protected mysqli $db;
     protected int $specimenID = 0;
     protected bool $isValid = false;
-    private string $baseURL = 'https://services.jacq.org/jacq-services/rest';
 
     /**
      * holds the specimen properties

@@ -4,7 +4,7 @@ namespace Jacq\Oai;
 
 use mysqli;
 
-class SpecimenMapper
+class SpecimenMapper implements SpecimenInterface
 {
 
     protected mysqli $db;
@@ -260,46 +260,6 @@ class SpecimenMapper
     }
 
     /**
-     * get the label of this specimen
-     *
-     * @return string label
-     */
-    public function getLabel(): string
-    {
-        return $this->properties['scientificName'];
-    }
-
-    /**
-     * get the attribution of this specimen
-     *
-     * @return string attribution
-     */
-    public function getAttribution(): string
-    {
-        return $this->properties['LicenseURI'];
-    }
-
-    /**
-     * get the logo URI of this specimen
-     *
-     * @return string logo URI
-     */
-    public function getLogoURI(): string
-    {
-        return $this->properties['OwnerLogoURI'];
-    }
-
-    /**
-     * get the stable identifier of this specimen
-     *
-     * @return string stable identifier
-     */
-    public function getStableIdentifier(): string
-    {
-        return $this->properties['stableIdentifier'];
-    }
-
-    /**
      * get the properties of this specimen with Dublin Core Names (dc:...)
      *
      * @return array dc-data
@@ -352,8 +312,15 @@ class SpecimenMapper
         }
     }
 
+    /**
+     * get the properties of this specimen according to the Europeana Data Model
+     *
+     * @return array
+     */
     public function getEDM(): array
     {
+        $edm = array();
+
         if ($this->isValid) {
             // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/kurzreferenz-edm-pflichtfelder
 
@@ -401,25 +368,9 @@ class SpecimenMapper
                 ),
             );
 
-            return $edm;
-        } else {
-            return array();
-        }
-    }
-
-    /**
-     * get the properties of this specimen with JACQ Names (jacq:...)
-     *
-     * @return array jacq-data
-     */
-    public function getJACQ(): array
-    {
-        $result = array();
-        foreach ($this->properties as $key => $value) {
-            $result["jacq:$key"] = $value;
         }
 
-        return $result;
+        return $edm;
     }
 
 // ---------------------------------------
