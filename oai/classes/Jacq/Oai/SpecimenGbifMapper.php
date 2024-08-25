@@ -154,7 +154,7 @@ public function getEDM(): array
             'dc:title'          => $this->properties['scientificName'],
             'dc:description'    => $this->getDescription(),
             'dc:identifier'     => $this->properties['occurrenceID'],
-            //'dc:language'     unused
+            'dc:language'       => 'und',   // language in dataset is undetermined
             'edm:type'          => 'IMAGE',
             //'dc:subject'      unused
             'dc:type'           => "http://rs.tdwg.org/dwc/terms/PreservedSpecimen",

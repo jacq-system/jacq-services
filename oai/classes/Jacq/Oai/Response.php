@@ -389,8 +389,12 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
                     $this->xml->startElement('edm:ProvidedCHO');
                         $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:ProvidedCHO']['rdf:about']);
                         $this->xml->writeElement('dc:title', $specimenEdm['edm:ProvidedCHO']['dc:title']);
-                        $this->xml->writeElement('dc:description', $specimenEdm['edm:ProvidedCHO']['dc:description']);
+                        $this->xml->startElement('dc:description');
+                            $this->xml->writeAttribute('xml:lang', 'en');
+                            $this->xml->text($specimenEdm['edm:ProvidedCHO']['dc:description']);
+                        $this->xml->endElement();
                         $this->xml->writeElement('dc:identifier', $specimenEdm['edm:ProvidedCHO']['dc:identifier']);
+                        $this->xml->writeElement('dc:language', $specimenEdm['edm:ProvidedCHO']['dc:language']);
                         $this->xml->writeElement('edm:type', $specimenEdm['edm:ProvidedCHO']['edm:type']);
                         $this->xml->writeElement('dc:type', $specimenEdm['edm:ProvidedCHO']['dc:type']);
                         $this->xmlWriteNonemptyElement('dcterms:spatial', $specimenEdm['edm:ProvidedCHO']['dcterms:spatial']);
