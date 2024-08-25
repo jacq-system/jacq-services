@@ -356,16 +356,21 @@ public function getEDM(): array
         $edm['edm:WebResource'] = array(
             array(
                 'rdf:about'         => $edm['ore:Aggregation']['edm:isShownAt'],
+                'dc:rights'         => '',  //unused
+                'edm:rights'        => '',  //unused
+                'dc:type'           => '',  //unused
             ),
             array(
                 'rdf:about'         => $edm['ore:Aggregation']['edm:isShownBy'],
                 'dc:rights'         => $this->properties['OwnerOrganizationName'],
                 'edm:rights'        => $this->properties['LicenseURI'],
+                'dc:type'           => '',  //unused
             ),
             array(
                 'rdf:about'         => $edm['ore:Aggregation']['edm:object'],
                 'dc:rights'         => $this->properties['OwnerOrganizationName'],
                 'edm:rights'        => $this->properties['LicenseURI'],
+                'dc:type'           => '',  //unused
             ),
         );
 

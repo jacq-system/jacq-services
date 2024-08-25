@@ -145,6 +145,7 @@ public function getEDM(): array
             'edm:isShownAt'     => $this->properties['occurrenceID'],
             'edm:isShownBy'     => $this->properties['media'][0]['identifier'],
             'edm:rights'        => $this->properties['LicenseURI'],
+            'edm:object'        => '',  //unused
         );
 
         // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-kulturgut
@@ -157,7 +158,7 @@ public function getEDM(): array
             'edm:type'          => 'IMAGE',
             //'dc:subject'      unused
             'dc:type'           => "http://rs.tdwg.org/dwc/terms/PreservedSpecimen",
-            //dcterms:spatial   unused
+            'dcterms:spatial'   => '',  //unused
             //dcterms:temporal  unused
             'dc:date'           => $this->properties['eventDate'],
             'dc:creator'        => $this->properties['recordedBy'],
@@ -167,6 +168,9 @@ public function getEDM(): array
         $edm['edm:WebResource'] = array(
             array(
                 'rdf:about'         => $edm['ore:Aggregation']['edm:isShownAt'],
+                'dc:rights'         => '',  //unused
+                'edm:rights'        => '',  //unused
+                'dc:type'           => '',  //unused
             ),
             array(
                 'rdf:about'         => $edm['ore:Aggregation']['edm:isShownBy'],

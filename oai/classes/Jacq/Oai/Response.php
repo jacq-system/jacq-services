@@ -438,37 +438,41 @@ private function request(bool $baseUrlOnly = false): void
  */
 private function validateParameters(): bool
 {
-    switch ($this->params['verb']) {
-        case 'Identify':
-        case 'ListSets':
-            $this->checkArguments();
-            break;
-        case 'ListMetadataFormats':
-            $this->checkArguments(['identifier']);
-            break;
-        case 'ListIdentifiers':
-        case 'ListRecords':
-            if (isset($this->params['resumptionToken'])) {
-                if (count($this->params) > 2) {
-                    $this->error('badArgument', 'The usage of resumptionToken as an argument allows no other arguments.');
+    if (isset($this->params['verb'])) {
+        switch ($this->params['verb']) {
+            case 'Identify':
+            case 'ListSets':
+                $this->checkArguments();
+                break;
+            case 'ListMetadataFormats':
+                $this->checkArguments(['identifier']);
+                break;
+            case 'ListIdentifiers':
+            case 'ListRecords':
+                if (isset($this->params['resumptionToken'])) {
+                    if (count($this->params) > 2) {
+                        $this->error('badArgument', 'The usage of resumptionToken as an argument allows no other arguments.');
+                    }
+                } elseif (!array_key_exists('metadataPrefix', $this->params)) {
+                    $this->error('badArgument', "The required argument 'metadataPrefix' is missing in the request.");
+                } else {
+                    $this->checkArguments(['from', 'until', 'metadataPrefix', 'set']);
                 }
-            } elseif (!array_key_exists('metadataPrefix', $this->params)) {
-                $this->error('badArgument', "The required argument 'metadataPrefix' is missing in the request.");
-            } else {
-                $this->checkArguments(['from', 'until', 'metadataPrefix', 'set']);
-            }
-            break;
-        case 'GetRecord':
-            if (!array_key_exists('identifier', $this->params)) {
-                $this->error('badArgument', "The required argument 'identifier' is missing in the request.");
-            }
-            if (!array_key_exists('metadataPrefix', $this->params)) {
-                $this->error('badArgument', "The required argument 'metadataPrefix' is missing in the request.");
-            }
-            $this->checkArguments(['identifier', 'metadataPrefix']);
-            break;
-        default:
-            $this->error('badVerb', "The verb '{$this->params['verb']}' provided in the request is illegal.");
+                break;
+            case 'GetRecord':
+                if (!array_key_exists('identifier', $this->params)) {
+                    $this->error('badArgument', "The required argument 'identifier' is missing in the request.");
+                }
+                if (!array_key_exists('metadataPrefix', $this->params)) {
+                    $this->error('badArgument', "The required argument 'metadataPrefix' is missing in the request.");
+                }
+                $this->checkArguments(['identifier', 'metadataPrefix']);
+                break;
+            default:
+                $this->error('badVerb', "The verb '{$this->params['verb']}' provided in the request is illegal.");
+        }
+    } else {
+        $this->error('badVerb', "The verb is missing in the request.");
     }
 
     return !$this->errorOccurred;
@@ -533,7 +537,7 @@ private function parseResumptionToken(): array
                 case 'set':
                     if (preg_match("/^source_\d+$/", $tokenParam[1])) {
                         $result['set'] = $tokenParam[1];
-                    } else {
+                    } elseif ($tokenParam[1] != 'null') { // metis-sandbox.europeana.eu sometimes sends this, if no set is chosen
                         $this->error('badResumptionToken', "The resumptionToken '{$this->params['resumptionToken']}' is faulty.");
                     }
                     break;
@@ -617,7 +621,7 @@ private function xmlWriteEdmElement(string $elementName, string $attributeValue)
  * @param string $elementName    name of the element
  * @param string $attributeValue value of the element
  */
-private function xmlWriteNonemptyElement(string $elementName, string|null $attributeValue): void
+private function xmlWriteNonemptyElement(string $elementName, string $attributeValue): void
 {
     if (!empty($attributeValue)) {
         $this->xml->writeElement($elementName, $attributeValue);
@@ -630,7 +634,7 @@ private function xmlWriteNonemptyElement(string $elementName, string|null $attri
  * @param string $elementName    name of the element
  * @param string $attributeValue value of the element
  */
-private function xmlWriteNonemptyEdmElement(string $elementName, string|null $attributeValue): void
+private function xmlWriteNonemptyEdmElement(string $elementName, string $attributeValue): void
 {
     if (!empty($attributeValue)) {
         $this->xmlWriteEdmElement($elementName, $attributeValue);
