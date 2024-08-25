@@ -172,8 +172,12 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         if (isset($this->params['until']) && !preg_match("/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/", $this->params['until'])) {
             $this->error('badArgument', "The until format of '{$this->params['until']}' is wrong.");
         }
-        if (isset($this->params['set']) && !preg_match("/^source_\d+$/", $this->params['set'])) {
-            $this->error('badArgument', "The set format of '{$this->params['set']}' is wrong.");
+        if (isset($this->params['set'])) {
+            if ($this->params['set'] == 'null') {   // metis-sandbox.europeana.eu sometimes sends this, if no set is chosen
+                unset($this->params['set']);
+            } elseif (!preg_match("/^source_\d+$/", $this->params['set'])) {
+                $this->error('badArgument', "The set format of '{$this->params['set']}' is wrong.");
+            }
         }
         $arguments['from'] = $this->params['from'] ?? '';
         $arguments['until'] = $this->params['until'] ?? '';
