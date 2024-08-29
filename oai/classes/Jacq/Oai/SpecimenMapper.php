@@ -159,12 +159,18 @@ public function __construct(mysqli $db, mixed $id)
             $spatial .= (($spatial) ? ', ' : '') . trim($row['Fundort']);
         }
 
-        if (!empty($row['digital_image']) || !empty($row['digital_image_obs'])) {
-            $firstImageLink = $this->baseURL . "/images/show/$this->specimenID";
-            $firstImageDownloadLink = $this->baseURL . "/images/download/$this->specimenID";
-        } else {
-            $firstImageLink = $firstImageDownloadLink = '';
+        $rowImages = $this->db->query("SELECT COUNT(*) AS nr
+                                       FROM herbar_pictures.djatoka_images
+                                       WHERE specimen_ID = $this->specimenID")
+                              ->fetch_assoc();
+        $nrOfImages = $rowImages['nr'] ?? 1;
+        $media[] = array('download'  => $this->baseURL . "/images/download/" . $this->specimenID . "?withredirect=1",
+                         'europeana' => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1");
+        for ($i = 1; $i < $nrOfImages; $i++) {
+            $media[] = array('download'  => $this->baseURL . "/images/download/" . $this->specimenID . "/$i?withredirect=1",
+                             'europeana' => $this->baseURL . "/images/europeana/" . $this->specimenID . "/$i?withredirect=1");
         }
+
 
         /**
          * store all properties
@@ -202,8 +208,7 @@ public function __construct(mysqli $db, mixed $id)
         $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
         $this->properties['spatial']                 = $spatial;
         $this->properties['aktualdatum']             = $row['aktualdatum'];
-        $this->properties['image']                   = $firstImageLink;
-        $this->properties['downloadImage']           = $firstImageDownloadLink;
+        $this->properties['media']                   = $media;
     }
 }
 
@@ -330,9 +335,9 @@ public function getEDM(): array
             'edm:aggregatedCHO' => $this->properties['stableIdentifier'] . '#CHO',
             'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],
             'edm:isShownAt'     => $this->properties['stableIdentifier'],
-            'edm:isShownBy'     => $this->baseURL . "/images/download/" . $this->specimenID . "?withredirect=1",
+            'edm:isShownBy'     => $this->properties['media'][0]['download'],
             'edm:rights'        => $this->properties['LicenseURI'],
-            'edm:object'        => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1",
+            'edm:object'        => $this->properties['media'][0]['europeana'],
         );
 
         // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/pflichtfelder-zum-kulturgut
@@ -374,6 +379,17 @@ public function getEDM(): array
             ),
         );
 
+        if (count($this->properties['media']) > 1) {
+            for ($i = 1; $i < count($this->properties['media']); $i++) {
+                $edm['ore:Aggregation']['edm:hasView'][] = $this->properties['media'][$i]['download'];
+                $edm['edm:WebResource'][] = array(
+                    'rdf:about'  => $this->properties['media'][$i]['download'],
+                    'dc:rights'  => $this->properties['OwnerOrganizationName'],
+                    'edm:rights' => $this->properties['LicenseURI'],
+                    'dc:type'    => '',  //unused
+                );
+            }
+        }
     }
 
     return $edm;

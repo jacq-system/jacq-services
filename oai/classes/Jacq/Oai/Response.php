@@ -77,9 +77,9 @@ public function getXml(): XMLOaiWriter
     return $this->xml;
 }
 
-// ---------------------------------------
-// ---------- private functions ----------
-// ---------------------------------------
+// ------------------------------------
+// ---------- verb functions ----------
+// ------------------------------------
 
 /**
  * process the verb Identify
@@ -316,6 +316,10 @@ private function getRecord(): void
         $this->exportRecord($specimen, $this->params['metadataPrefix']);
     $this->xml->endElement();
 }
+
+// ---------------------------------------
+// ---------- private functions ----------
+// ---------------------------------------
 
 /**
  * do the actual xml-work for a given specimen

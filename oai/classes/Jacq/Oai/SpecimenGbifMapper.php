@@ -183,7 +183,7 @@ public function getEDM(): array
         );
 
         if (count($this->properties['media']) > 1) {
-            for ($i = 2; $i < count($this->properties['media']); $i++) {
+            for ($i = 1; $i < count($this->properties['media']); $i++) {
                 $edm['ore:Aggregation']['edm:hasView'][] = $this->properties['media'][$i]['identifier'];
                 $edm['edm:WebResource'][] = array(
                     'rdf:about'  => $this->properties['media'][$i]['identifier'],

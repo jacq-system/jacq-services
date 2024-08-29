@@ -2,7 +2,9 @@
 
 namespace Jacq\Oai;
 
-class XMLOaiWriter extends \XMLWriter
+use XMLWriter;
+
+class XMLOaiWriter extends XMLWriter
 {
     /**
      * write an element with the single attribute 'rdf:resource' and optional text
