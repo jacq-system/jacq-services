@@ -6,7 +6,6 @@ use DateTime;
 use DateTimeZone;
 use Exception;
 use mysqli;
-use XMLWriter;
 
 class Response
 {
@@ -18,7 +17,7 @@ private string $baseURL = 'https://services.jacq.org/jacq-services/oai/';
 private string $identifierPrefixJacq = "oai:jacq.org:";
 private array $setsAllowed = [1, 4, 5, 6];
 private array $setsAllowedGbif = [10001, 10002];
-private XMLWriter $xml;
+private XMLOaiWriter $xml;
 
 /**
  * class constructor. Validate all parameters and prepare the xml.
@@ -32,7 +31,7 @@ public function __construct(mysqli $db, array $params)
     $this->params        = $params;
     $this->errorOccurred = false;
 
-    $this->xml = new XMLWriter();
+    $this->xml = new XMLOaiWriter();
     $this->xml->openMemory();
     $this->xml->setIndent(true);
     $this->xml->setIndentString('    ');
@@ -71,9 +70,9 @@ public function __construct(mysqli $db, array $params)
 /**
  * return the prepared xml
  *
- * @return XMLWriter the prepared xml als XMLWriter-class
+ * @return XMLOaiWriter the prepared xml als XMLWriter-class
  */
-public function getXml(): XMLWriter
+public function getXml(): XMLOaiWriter
 {
     return $this->xml;
 }
@@ -377,40 +376,51 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
                     $this->xml->writeAttribute('xsi:schemaLocation', 'http://www.w3.org/1999/02/22-rdf-syntax-ns# https://gams.uni-graz.at/edm/2017-08/EDM.xsd');
                     $this->xml->startElement('ore:Aggregation');
                         $this->xml->writeAttribute('rdf:about', $specimenEdm['ore:Aggregation']['rdf:about']);
-                        $this->xmlWriteEdmElement('edm:aggregatedCHO', $specimenEdm['ore:Aggregation']['edm:aggregatedCHO']);
+                        $this->xml->writeElementWithResource('edm:aggregatedCHO', $specimenEdm['ore:Aggregation']['edm:aggregatedCHO']);
                         $this->xml->writeElement('edm:dataProvider', $specimenEdm['ore:Aggregation']['edm:dataProvider']);
-                        $this->xmlWriteEdmElement('edm:isShownAt', $specimenEdm['ore:Aggregation']['edm:isShownAt']);
-                        $this->xmlWriteEdmElement('edm:isShownBy', $specimenEdm['ore:Aggregation']['edm:isShownBy']);
+                        $this->xml->writeElementWithResource('edm:isShownAt', $specimenEdm['ore:Aggregation']['edm:isShownAt']);
+                        $this->xml->writeElementWithResource('edm:isShownBy', $specimenEdm['ore:Aggregation']['edm:isShownBy']);
                         $this->xml->writeElement('edm:provider', 'Kulturpool');
-                        $this->xmlWriteEdmElement('edm:rights', $specimenEdm['ore:Aggregation']['edm:rights']);
-                        $this->xmlWriteNonemptyEdmElement('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
+                        $this->xml->writeElementWithResource('edm:rights', $specimenEdm['ore:Aggregation']['edm:rights']);
+                        $this->xml->writeNonemptyElementWithResource('edm:object', $specimenEdm['ore:Aggregation']['edm:object']);
                         if (!empty($specimenEdm['ore:Aggregation']['edm:hasView'])) {
                             foreach ($specimenEdm['ore:Aggregation']['edm:hasView'] as $view) {
-                                $this->xmlWriteEdmElement('edm:hasView', $view);
+                                $this->xml->writeElementWithResource('edm:hasView', $view);
                             }
                         }
                     $this->xml->endElement();
                     $this->xml->startElement('edm:ProvidedCHO');
                         $this->xml->writeAttribute('rdf:about', $specimenEdm['edm:ProvidedCHO']['rdf:about']);
                         $this->xml->writeElement('dc:title', $specimenEdm['edm:ProvidedCHO']['dc:title']);
-                        $this->xml->startElement('dc:description');
-                            $this->xml->writeAttribute('xml:lang', 'en');
-                            $this->xml->text($specimenEdm['edm:ProvidedCHO']['dc:description']);
-                        $this->xml->endElement();
+                        $this->xml->writeElementWithLang('dc:description', 'en', $specimenEdm['edm:ProvidedCHO']['dc:description']);
                         $this->xml->writeElement('dc:identifier', $specimenEdm['edm:ProvidedCHO']['dc:identifier']);
                         $this->xml->writeElement('dc:language', $specimenEdm['edm:ProvidedCHO']['dc:language']);
                         $this->xml->writeElement('edm:type', $specimenEdm['edm:ProvidedCHO']['edm:type']);
-                        $this->xml->writeElement('dc:type', $specimenEdm['edm:ProvidedCHO']['dc:type']);
-                        $this->xmlWriteNonemptyElement('dcterms:spatial', $specimenEdm['edm:ProvidedCHO']['dcterms:spatial']);
-                        $this->xmlWriteNonemptyElement('dc:date', $specimenEdm['edm:ProvidedCHO']['dc:date']);
-                        $this->xmlWriteNonemptyElement('dc:creator', $specimenEdm['edm:ProvidedCHO']['dc:creator']);
+                        $this->xml->writeElementWithResource('dc:type', $specimenEdm['edm:ProvidedCHO']['dc:type']);
+                        $this->xml->writeNonemptyElement('dcterms:spatial', $specimenEdm['edm:ProvidedCHO']['dcterms:spatial']);
+                        $this->xml->writeNonemptyElement('dc:date', $specimenEdm['edm:ProvidedCHO']['dc:date']);
+                        $this->xml->writeNonemptyElement('dc:creator', $specimenEdm['edm:ProvidedCHO']['dc:creator']);
                     $this->xml->endElement();
                     foreach ($specimenEdm['edm:WebResource'] as $webResource) {
                         $this->xml->startElement('edm:WebResource');
                             $this->xml->writeAttribute('rdf:about', $webResource['rdf:about']);
-                            $this->xmlWriteNonemptyElement('dc:rights', $webResource['dc:rights']);
-                            $this->xmlWriteNonemptyEdmElement('edm:rights', $webResource['edm:rights']);
-                            $this->xmlWriteNonemptyElement('dc:type', $webResource['dc:type']);
+                            $this->xml->writeNonemptyElement('dc:rights', $webResource['dc:rights']);
+                            $this->xml->writeNonemptyElementWithResource('edm:rights', $webResource['edm:rights']);
+                            $this->xml->writeNonemptyElement('dc:type', $webResource['dc:type']);
+                        $this->xml->endElement();
+                    }
+                    if ($specimenEdm['edm:ProvidedCHO']['dc:type'] == 'http://rs.tdwg.org/dwc/terms/PreservedSpecimen') {
+                        $this->xml->startElement('skos:Concept');
+                            $this->xml->writeAttribute('rdf:about', 'http://rs.tdwg.org/dwc/terms/PreservedSpecimen');
+                            $this->xml->writeElementWithLang('skos:prefLabel', 'en', 'Preserved Specimen');
+                            $this->xml->writeElementWithLang('skos:altLabel', 'en', 'Preserved Specimen');
+                        $this->xml->endElement();
+                    }
+                    if ($specimenEdm['edm:ProvidedCHO']['dc:type'] == 'http://rs.tdwg.org/dwc/terms/HumanObservation') {
+                        $this->xml->startElement('skos:Concept');
+                            $this->xml->writeAttribute('rdf:about', 'http://rs.tdwg.org/dwc/terms/HumanObservation');
+                            $this->xml->writeElementWithLang('skos:prefLabel', 'en', 'Human Observation');
+                            $this->xml->writeElementWithLang('skos:altLabel', 'en', 'Human Observation');
                         $this->xml->endElement();
                     }
                 $this->xml->endElement();
@@ -608,45 +618,6 @@ private function changeTimeZone(string $dateString, string $timeZoneSource, stri
         error_log($e->getMessage());
     }
     return $result;
-}
-
-/**
- * insert an EDM-Element with a single attribute, the attribute-name is always 'rdf:resource'
- *
- * @param string $elementName    name of the element
- * @param string $attributeValue value of the attribute
- */
-private function xmlWriteEdmElement(string $elementName, string $attributeValue): void
-{
-    $this->xml->startElement($elementName);
-    $this->xml->writeAttribute('rdf:resource', $attributeValue);
-    $this->xml->endElement();
-}
-
-/**
- * check if the value of an element is not empty and only writeElement if yes
- *
- * @param string $elementName    name of the element
- * @param string $attributeValue value of the element
- */
-private function xmlWriteNonemptyElement(string $elementName, string $attributeValue): void
-{
-    if (!empty($attributeValue)) {
-        $this->xml->writeElement($elementName, $attributeValue);
-    }
-}
-
-/**
- * check if the value of an edm-element is not empty and only writeElement if yes
- *
- * @param string $elementName    name of the element
- * @param string $attributeValue value of the element
- */
-private function xmlWriteNonemptyEdmElement(string $elementName, string $attributeValue): void
-{
-    if (!empty($attributeValue)) {
-        $this->xmlWriteEdmElement($elementName, $attributeValue);
-    }
 }
 
 }

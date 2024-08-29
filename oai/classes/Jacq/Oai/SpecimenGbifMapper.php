@@ -134,6 +134,8 @@ public function getDC(): array
  */
 public function getEDM(): array
 {
+    $edm = array();
+
     if ($this->isValid) {
         // see https://wissen.kulturpool.at/books/europeana-data-model-edm/page/kurzreferenz-edm-pflichtfelder
 
@@ -191,10 +193,9 @@ public function getEDM(): array
                 );
             }
         }
-            return $edm;
-    } else {
-        return array();
     }
+
+    return $edm;
 }
 
 // ---------------------------------------
