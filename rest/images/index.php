@@ -118,6 +118,13 @@ $app->add(function (Request $request, Response $response, $next)
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
+ *      name="imageNr",
+ *      in="path",
+ *      description="image number (defaults to 0=first image)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
+ *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
@@ -127,14 +134,14 @@ $app->add(function (Request $request, Response $response, $next)
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/show/{specimenID}', function (Request $request, Response $response, array $args)
+$app->get('/show/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called show ");
 
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getShowLink();
+    $imageLink = $mapper->getShowLink(intval($args['imageNr']));
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
@@ -159,6 +166,13 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
+ *  @OA\Parameter(
+ *      name="imageNr",
+ *      in="path",
+ *      description="image number (defaults to 0=first image)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
  *      @OA\Parameter(
  *      name="withredirect",
  *      in="query",
@@ -169,14 +183,14 @@ $app->get('/show/{specimenID}', function (Request $request, Response $response, 
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/download/{specimenID}', function (Request $request, Response $response, array $args)
+$app->get('/download/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called download ");
 
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getDownloadLink();
+    $imageLink = $mapper->getDownloadLink(intval($args['imageNr']));
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
@@ -201,6 +215,13 @@ $app->get('/download/{specimenID}', function (Request $request, Response $respon
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
+ *  @OA\Parameter(
+ *      name="imageNr",
+ *      in="path",
+ *      description="image number (defaults to 0=first image)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
  *      @OA\Parameter(
  *      name="withredirect",
  *      in="query",
@@ -211,14 +232,14 @@ $app->get('/download/{specimenID}', function (Request $request, Response $respon
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/europeana/{specimenID}', function (Request $request, Response $response, array $args)
+$app->get('/europeana/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called europeana ");
 
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getEuropeanaLink();
+    $imageLink = $mapper->getEuropeanaLink(intval($args['imageNr']));
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
@@ -243,6 +264,13 @@ $app->get('/europeana/{specimenID}', function (Request $request, Response $respo
  *      required=true,
  *      @OA\Schema(type="integer")
  *  ),
+ *  @OA\Parameter(
+ *      name="imageNr",
+ *      in="path",
+ *      description="image number (defaults to 0=first image)",
+ *      example="1",
+ *      @OA\Schema(type="integer")
+ *  ),
  *      @OA\Parameter(
  *      name="withredirect",
  *      in="query",
@@ -253,14 +281,14 @@ $app->get('/europeana/{specimenID}', function (Request $request, Response $respo
  *  @OA\Response(response="200", description="successful operation"),
  * )
  */
-$app->get('/thumb/{specimenID}', function (Request $request, Response $response, array $args)
+$app->get('/thumb/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
 //    $this->logger->addInfo("called thumb ");
 
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getThumbLink();
+    $imageLink = $mapper->getThumbLink(intval($args['imageNr']));
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
