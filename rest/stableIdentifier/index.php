@@ -134,7 +134,7 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
  *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
- *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of "200", defaults to 0 (no redirect)",
+ *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
  *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
