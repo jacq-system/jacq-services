@@ -158,6 +158,8 @@ $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, a
     }
     if (!empty($params['withredirect']) && !empty($data['stableIdentifierLatest']['link'])) {
         return $response->withJson($data)->withRedirect($data['stableIdentifierLatest']['link'], 303);
+    } elseif (empty($data)) {
+        return $response->withStatus(404, "Stable Identifier does not exist.");
     } else {
         return $response->withJson($data);
     }
