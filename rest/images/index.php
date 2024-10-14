@@ -239,7 +239,7 @@ $app->get('/europeana/{specimenID}[/{imageNr}]', function (Request $request, Res
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getEuropeanaLink(intval($args['imageNr']));
+    $imageLink = $mapper->getEuropeanaLink(intval($args['imageNr'] ?? 0));
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
