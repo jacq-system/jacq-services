@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>JACQ webservices</title>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
+    <link rel="stylesheet" type="text/css" href="../css/description.css">
+  </head>
+  <body>
+    <h3><a href="../description/index.php">JACQ Webservices</a></h3>
+    <span class="rectangleLink"><a href="../JACQscinames/description.html">scinames</a></span>
+    <span class="rectangleLink"><a href="../autocomplete/description.html">autocomplete</a></span>
+    <span class="rectangleLink"><a href="../classification/description.html">classification</a></span>
+    <span class="rectangle">stable Identifier</span>
+    <span class="rectangleLink"><a href="../iiif/description.html">iiif</a></span>
+    <span class="rectangleLink"><a href="../objects/description.html">objects</a></span>
+
+    <h1>JACQ stable Identifier Webservice</h1>
+    <h2 id="section_sid">GET sid/{specimenID}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get specimen-id, valid stable identifier and all stable identifiers of a given specimen-id</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "specimenID":             ID of specimen</pre><br>
+          <pre> "stableIdentifierLatest": latest stable identifier</pre><br>
+          <pre>     {</pre><br>
+          <pre>      "stableIdentifier":  stable identifier</pre><br>
+          <pre>      "timestamp":         and its timestamp</pre><br>
+          <pre>     }</pre><br>
+          <pre> "stableIdentifierList":   list of all found stable identifiers, ordered by timestamp</pre><br>
+          <pre>     [</pre><br>
+          <pre>      {</pre><br>
+          <pre>       "stableIdentifier": stable identifier</pre><br>
+          <pre>       "timestamp":        and its timestamp</pre><br>
+          <pre>      },&hellip;</pre><br>
+          <pre>     ]</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="sid/6830" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/sid/6830</a><br>
+            look for specimen ID and stable identifiers of specimen-ID 6830
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="section_resolve">GET resolve/{sid}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get specimen-id, valid stable identifier and all stable identifiers of a given stable idnetifier.<br>
+            Answers with 303 instead of 200 if parameter "withredirect" is given</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "specimenID":             ID of specimen</pre><br>
+          <pre> "stableIdentifierLatest": latest stable identifier</pre><br>
+          <pre>     {</pre><br>
+          <pre>      "stableIdentifier":  stable identifier</pre><br>
+          <pre>      "timestamp":         and its timestamp</pre><br>
+          <pre>      "link":              link to details-page of JACQ (for convenience)</pre><br>
+          <pre>     }</pre><br>
+          <pre> "stableIdentifierList":   list of all found stable identifiers, ordered by timestamp</pre><br>
+          <pre>     [</pre><br>
+          <pre>      {</pre><br>
+          <pre>       "stableIdentifier": stable identifier</pre><br>
+          <pre>       "timestamp":        and its timestamp</pre><br>
+          <pre>      },&hellip;</pre><br>
+          <pre>     ]</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="resolve/https://wu.jacq.org/WU-0000264" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/resolve/https://wu.jacq.org/WU-0000264</a><br>
+            look for specimen ID and stable identifiers of stable identifier https://wu.jacq.org/WU-0000264
+        </td>
+      </tr><tr>
+        <td></td>
+        <td><a href="resolve/https://wu.jacq.org/WU-0000264?withredirect=1" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/resolve/https://wu.jacq.org/WU-0000264?withredirect=1</a><br>
+          same as above, but with redirect (303)
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="section_errors">GET errors</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>get a list of all errors which prevent the generation of stable identifiers</td>
+      </tr><tr>
+      <td class="type">API-description</td>
+      <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+    </tr><tr>
+      <td class="type">Response</td>
+      <td class="response">
+        <pre> {</pre><br>
+        <pre>  "total":        total number of records found</pre><br>
+        <pre>  "result":       List of found entries</pre><br>
+        <pre>      [</pre><br>
+        <pre>       {</pre><br>
+        <pre>        "specimenID":             ID of specimen</pre><br>
+        <pre>        "link":                   link to details-page of JACQ (for convenience)</pre><br>
+        <pre>        "errorList":              List of errors and existing stable identifiers (if any) for this specimen-ID</pre><br>
+        <pre>            [</pre><br>
+        <pre>             {</pre><br>
+        <pre>              "stableIdentifier": stable identifier (if it exists) or null</pre><br>
+        <pre>              "timestamp":        timestamp of creation</pre><br>
+        <pre>              "error":            and the error</pre><br>
+        <pre>              "link":             link to details-page of JACQ of the blocking specimen (if present) (for convenience)</pre><br>
+        <pre>             },&hellip;</pre><br>
+        <pre>            ]</pre><br>
+        <pre>       },&hellip;</pre><br>
+        <pre>      ]</pre><br>
+        <pre> },&hellip;</pre><br>
+      </td>
+    </tr><tr>
+      <td class="type">Example</td>
+      <td><a href="errors" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/errors</a><br>
+        get a list of all errors which prevented the generation of stable identifiers
+      </td>
+    </tr><tr>
+      <td class="type">Example</td>
+      <td><a href="errors?sourceID=1" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/errors?sourceID=1</a><br>
+        get a list of all errors from source-ID 1 (WU) which prevented the generation of stable identifiers for this source
+      </td>
+    </tr>
+    </table>
+
+    <h2 id="section_multi">GET multi</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get all entries with more than one stable identifier per specimen-ID</td>
+      </tr><tr>
+      <td class="type">API-description</td>
+      <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+    </tr><tr>
+      <td class="type">Response</td>
+      <td class="response">
+        <pre> {</pre><br>
+        <pre>  "page":         page displayed</pre><br>
+        <pre>  "previousPage": link to previous page</pre><br>
+        <pre>  "nextPage":     link to next page</pre><br>
+        <pre>  "firstPage":    link to first page</pre><br>
+        <pre>  "lastPage":     link to last page</pre><br>
+        <pre>  "totalPages":   total number of pages</pre><br>
+        <pre>  "total":        total number of records found</pre><br>
+        <pre>  "result":       List of found entries</pre><br>
+        <pre>      [</pre><br>
+        <pre>       {</pre><br>
+        <pre>        "specimenID":             ID of specimen</pre><br>
+        <pre>        "numberOfEntries":        # of records found for this ID</pre><br>
+        <pre>        "stableIdentifierList":   List of stable identifiers for this ID</pre><br>
+        <pre>            [</pre><br>
+        <pre>             {</pre><br>
+        <pre>              "stableIdentifier": stable identifier</pre><br>
+        <pre>              "timestamp":        and its timestamp</pre><br>
+        <pre>             },&hellip;</pre><br>
+        <pre>            ]</pre><br>
+        <pre>       },&hellip;</pre><br>
+        <pre>      ]</pre><br>
+        <pre> },&hellip;</pre><br>
+      </td>
+    </tr><tr>
+      <td class="type">Example</td>
+      <td><a href="multi" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/multi</a><br>
+        get the first 50 entries of specimen-IDs with more than one stable identifier
+      </td>
+    </tr><tr>
+      <td class="type">Example</td>
+      <td><a href="multi?page2&entriesPerPage=100" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/multi?page2&entriesPerPage=100</a><br>
+        get the third 100 entries of specimen-IDs with more than one stable identifier
+      </td>
+    </tr><tr>
+      <td class="type">Example</td>
+      <td><a href="multi?sourceID=1" target="_blank">https://services.jacq.org/jacq-services/rest/stableIdentifier/multi?sourceID=1</a><br>
+        get all entries of source WU (ID 1) with more than one stable identifier
+      </td>
+    </tr>
+    </table>
+  </body>
+</html>

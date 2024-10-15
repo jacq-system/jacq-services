@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>JACQ webservices</title>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
+    <link rel="stylesheet" type="text/css" href="../css/description.css">
+  </head>
+  <body>
+    <h3><a href="../description/index.php">JACQ Webservices</a></h3>
+    <span class="rectangle">scinames</span>
+    <span class="rectangleLink"><a href="../autocomplete/description.html">autocomplete</a></span>
+    <span class="rectangleLink"><a href="../classification/description.html">classification</a></span>
+    <span class="rectangleLink"><a href="../stableIdentifier/description.html">stable Identifier</a></span>
+    <span class="rectangleLink"><a href="../iiif/description.html">iiif</a></span>
+    <span class="rectangleLink"><a href="../objects/description.html">objects</a></span>
+
+    <h1>JACQ scinames Webservice</h1>
+    <h2 id="section_uuid">GET uuid/{taxonID}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get uuid, uuid-url and scientific name of a given taxonID</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "uuid":           Universally Unique Identifier</pre><br>
+          <pre> "url":            url for uuid request resolver</pre><br>
+          <pre> "taxonID":        ID of scientific name</pre><br>
+          <pre> "scientificName": scientific name</pre><br>
+          <pre> "taxonName":      scientific name without hybrids</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="uuid/249254" target="_blank">https://services.jacq.org/jacq-services/rest/JACQscinames/uuid/249254</a><br>
+            look for uuid and scientific name of taxon-ID 249254
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="section_name">GET name/{taxonID}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get scientific name, uuid and uuid-url of a given taxonID</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "uuid":           Universally Unique Identifier</pre><br>
+          <pre> "url":            url for uuid request resolver</pre><br>
+          <pre> "taxonID":        ID of scientific name</pre><br>
+          <pre> "scientificName": scientific name</pre><br>
+          <pre> "taxonName":      scientific name without hybrids</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="name/249254" target="_blank">https://services.jacq.org/jacq-services/rest/JACQscinames/name/249254</a><br>
+            look for scientific name and uuid of taxon-ID 249254
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="section_search">GET find/{term}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>do a fulltext search for scientific names and taxon names and also get their taxonIDs; all parts of the search term are mandatory for the search</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          [<br>
+          <pre> {</pre><br>
+          <pre>  "taxonID":        ID of scientific name</pre><br>
+          <pre>  "scientificName": scientific name</pre><br>
+          <pre>  "taxonName":      scientific name without hybrids</pre><br>
+          <pre> },&hellip;</pre><br>
+          ]
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="find/prunus aviu* martens" target="_blank">https://services.jacq.org/jacq-services/rest/JACQscinames/find/prunus aviu* martens</a><br>
+            look for all scientific names which have "prunus" and "martens" in it and something beginning with "aviu"
+        </td>
+      </tr>
+    </table>
+
+    <h2 id="section_resolve">GET resolve/{uuid}</h2>
+    <table>
+      <tr>
+        <td class="type">summary</td>
+        <td>Get scientific name, uuid-url and taxon-ID of a given uuid</td>
+      </tr><tr>
+        <td class="type">API-description</td>
+        <td><a href="openapi" target="_blank">OpenAPI JSON</a></td>
+      </tr><tr>
+        <td class="type">Response</td>
+        <td class="response">
+          {<br>
+          <pre> "uuid":           Universally Unique Identifier</pre><br>
+          <pre> "url":            url for uuid request resolver</pre><br>
+          <pre> "taxonID":        ID of scientific name</pre><br>
+          <pre> "scientificName": scientific name</pre><br>
+          <pre> "taxonName":      scientific name without hybrids</pre><br>
+          }
+        </td>
+      </tr><tr>
+        <td class="type">Example</td>
+        <td><a href="resolve/86d5ecb1-c631-11e4-89a5-005056a41758" target="_blank">https://services.jacq.org/jacq-services/rest/JACQscinames/resolve/86d5ecb1-c631-11e4-89a5-005056a41758</a><br>
+            look for taxon-ID and scientific name of uuid 86d5ecb1-c631-11e4-89a5-005056a41758
+        </td>
+      </tr>
+
+    </table>
+  </body>
+</html>

@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>JACQ webservices</title>
+    <meta charset="UTF-8">
+    <link rel="shortcut icon" href="JACQ_LOGO.png"/>
+    <link rel="stylesheet" type="text/css" href="../css/description.css">
+  </head>
+  <body>
+    <h3>JACQ Webservices</h3>
+    <h1>JACQ IIIF Webservice - Configuration</h1>
+    The webservice is configured by using the table "iiif_definition" of the database "herbar_pictures".
+    With the columns "manifest_uri" and "manifest_backend", the two main methods are controlled.
+    Both accept text and several tokens, enclosed with "<>". Subtokens, seperated by colons, are sometimes optional, sometimes mandatory, depending on the token.<br>
+    <br>
+    These tokens are recognized:
+    <ul>
+      <li>
+        <i>specimenID</i><br>
+        replaced by the speicmen-ID
+      </li>
+      <li style="padding-top : 10px;">
+        <i>stableIdentifier</i><br>
+        replaced by the stable identifier<br>
+        one optional subtoken is allowed:
+        <ul>
+          <li>
+            <i>:last</i><br>
+            only use the part after the last "/"
+          </li>
+          <li>
+            <i>:https</i><br>
+            replace "http://" by "https://"
+          </li>
+        </ul>
+      </li>
+      <li style="padding-top : 10px;">
+        <i>fromDB</i><br>
+        replaced by the query result from a table in database "herbar_pictures".
+        The where-clause is always the stable identifier and its column must be named "stableIdentifier".<br>
+        two mandatory subtokens:
+        <ol>
+          <li>
+            <i>:table_name</i><br>
+            the name of the table to be used
+          </li>
+          <li>
+            <i>:column_name</i><br>
+            the column name to use for the result
+          </li>
+        </ol>
+      </li>
+    </ul>
+
+
+
+
+  </body>
+</html>
