@@ -53,6 +53,10 @@ public function __construct(mysqli $db, int $id)
         $this->properties['OwnerOrganizationName'] = $row['OwnerOrganizationName'];
         $this->properties['LicenseURI']            = $row['LicenseURI'];
         $this->properties['LicensesDetails']       = $row['LicensesDetails'];
+
+        if (empty($row['eventDate'])) {
+            $this->properties['eventDate'] = '';    // in case eventDate does not exist in the answer of gbif
+        }
     }
 }
 
