@@ -57,6 +57,9 @@ public function __construct(mysqli $db, int $id)
         if (empty($this->properties['eventDate'])) {
             $this->properties['eventDate'] = '';    // in case eventDate does not exist in the answer of gbif
         }
+        if (!str_starts_with($this->properties['occurrenceID'], 'http://') && !str_starts_with($this->properties['occurrenceID'], 'https://')) {
+            $this->properties['occurrenceID'] = "https://www.gbif.org/occurrence/$this->specimenID";
+        }
     }
 }
 
