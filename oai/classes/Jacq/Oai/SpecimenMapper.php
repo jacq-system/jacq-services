@@ -335,7 +335,7 @@ public function getEDM(): array
             'edm:aggregatedCHO' => $this->properties['stableIdentifier'] . '#CHO',
             'edm:dataProvider'  => $this->properties['OwnerOrganizationName'],
             'edm:isShownAt'     => $this->properties['stableIdentifier'],
-            'edm:isShownBy'     => $this->properties['media'][0]['download'],
+            'edm:isShownBy'     => $this->properties['media'][0]['europeana'],
             'edm:rights'        => $this->properties['LicenseURI'],
             'edm:object'        => $this->properties['media'][0]['europeana'],
         );
@@ -371,19 +371,20 @@ public function getEDM(): array
                 'edm:rights'        => $this->properties['LicenseURI'],
                 'dc:type'           => '',  //unused
             ),
-            array(
-                'rdf:about'         => $edm['ore:Aggregation']['edm:object'],
-                'dc:rights'         => $this->properties['OwnerOrganizationName'],
-                'edm:rights'        => $this->properties['LicenseURI'],
-                'dc:type'           => '',  //unused
-            ),
+// same as $edm['ore:Aggregation']['edm:isShownBy']
+//            array(
+//                'rdf:about'         => $edm['ore:Aggregation']['edm:object'],
+//                'dc:rights'         => $this->properties['OwnerOrganizationName'],
+//                'edm:rights'        => $this->properties['LicenseURI'],
+//                'dc:type'           => '',  //unused
+//            ),
         );
 
         if (count($this->properties['media']) > 1) {
             for ($i = 1; $i < count($this->properties['media']); $i++) {
-                $edm['ore:Aggregation']['edm:hasView'][] = $this->properties['media'][$i]['download'];
+                $edm['ore:Aggregation']['edm:hasView'][] = $this->properties['media'][$i]['europeana'];
                 $edm['edm:WebResource'][] = array(
-                    'rdf:about'  => $this->properties['media'][$i]['download'],
+                    'rdf:about'  => $this->properties['media'][$i]['europeana'],
                     'dc:rights'  => $this->properties['OwnerOrganizationName'],
                     'edm:rights' => $this->properties['LicenseURI'],
                     'dc:type'    => '',  //unused
