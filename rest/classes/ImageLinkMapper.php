@@ -175,12 +175,18 @@ private function djatoka()
 {
     $specimen = $this->db->query("SELECT s.`HerbNummer`, 
                                    id.imgserver_url, id.`HerbNummerNrDigits`, id.`key`,
-                                   mc.`coll_short_prj`, mc.`picture_filename`, mc.`source_id`
+                                   mc.`coll_short_prj`, mc.`picture_filename`, mc.`source_id`,
+                                   ei.filesize
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                    LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
+                                   LEFT JOIN gbif_pilot.europeana_images ei  ON ei.specimen_ID = s.specimen_ID
                                   WHERE s.`specimen_ID` = $this->specimenID")
                          ->fetch_assoc();
+    $sourceCode = $this->db->query("SELECT source_code 
+                                    FROM meta 
+                                    WHERE source_id = {$specimen['source_id']}")
+                           ->fetch_array()['source_code'];
 
     $HerbNummer = str_replace('-', '', $specimen['HerbNummer']);
     if (!empty($specimen['picture_filename'])) {   // special treatment for this collection is necessary
@@ -278,7 +284,11 @@ private function djatoka()
         foreach ($images as $image) {
             $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
             $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download';
-            $this->fileLinks['europeana'][] = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
+            if (($specimen['filesize'] ?? 0) > 1500) {  // use europeana-cache only for images without errors
+                $this->fileLinks['europeana'][] = "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
+            } else {
+                $this->fileLinks['europeana'][] = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
+            }
             $this->fileLinks['thumb'][] = 'https://www.jacq.org/image.php?' . $image . '&method=thumb';
         }
     }

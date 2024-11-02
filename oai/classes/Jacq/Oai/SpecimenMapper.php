@@ -371,7 +371,7 @@ public function getEDM(): array
                 'edm:rights'        => $this->properties['LicenseURI'],
                 'dc:type'           => '',  //unused
             ),
-// same as $edm['ore:Aggregation']['edm:isShownBy']
+// identical to $edm['ore:Aggregation']['edm:isShownBy']
 //            array(
 //                'rdf:about'         => $edm['ore:Aggregation']['edm:object'],
 //                'dc:rights'         => $this->properties['OwnerOrganizationName'],
