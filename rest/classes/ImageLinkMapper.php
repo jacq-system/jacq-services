@@ -5,6 +5,7 @@ class ImageLinkMapper extends Mapper
     protected int $specimenID = 0;
     protected array $imageLinks = array();
     protected array $fileLinks = array();
+    protected bool $linksActive = false;
 
 public function __construct(mysqli $db, int $specimenID)
 {
@@ -14,53 +15,48 @@ public function __construct(mysqli $db, int $specimenID)
         return;  // nothing to look for, so just stop
     }
     $this->specimenID = $specimenID;
-
-    $specimen = $this->db->query("SELECT s.digital_image, s.digital_image_obs, 
-                                   id.`imgserver_type`, id.iiif_capable, 
-                                   pc.specimenID as phaidra_sid
-                                  FROM `tbl_specimens` s
-                                   LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
-                                   LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
-                                   LEFT JOIN `herbar_pictures`.`phaidra_cache` pc ON pc.specimenID = s.specimen_ID
-                                  WHERE s.`specimen_ID` = $this->specimenID")
-                         ->fetch_assoc();
-
-    if (!empty($specimen['digital_image']) || !empty($specimen['digital_image_obs'])) {
-        if ($specimen['phaidra_sid']) {
-            // for now, special treatment for phaidra is needed when wu has images
-            $this->phaidra();
-        } elseif ($specimen['iiif_capable']) {
-            $this->iiif();
-        } elseif ($specimen['imgserver_type'] == 'bgbm') {
-            $this->bgbm();
-        } elseif ($specimen['imgserver_type'] == 'djatoka') {
-            $this->djatoka();
-        }
-    }
 }
 
 public function getShowLink(int $nr = 0): mixed
 {
+    $this->linkbuilder();
     return $this->imageLinks[$nr] ?? $this->imageLinks[0] ?? '';
 }
 
 public function getDownloadLink(int $nr = 0): mixed
 {
+    $this->linkbuilder();
     return $this->fileLinks['full'][$nr] ?? $this->fileLinks['full'][0] ?? '';
 }
 
 public function getEuropeanaLink(int $nr = 0): mixed
 {
+    if ($nr < 1) { // only do this, if it's the first (main) image
+        $filesize = $this->db->query("SELECT filesize
+                                  FROM gbif_pilot.europeana_images
+                                  WHERE `specimen_ID` = $this->specimenID")
+                             ->fetch_assoc();
+        if (($filesize['filesize'] ?? 0) > 1500) {  // use europeana-cache only for images without errors
+            $sourceCode = $this->db->query("SELECT source_code 
+                                            FROM meta 
+                                            WHERE source_id = $this->specimenID")
+                                   ->fetch_array()['source_code'];
+            return "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
+        }
+    }
+    $this->linkbuilder();
     return $this->fileLinks['europeana'][$nr] ?? $this->fileLinks['europeana'][0] ?? '';
 }
 
 public function getThumbLink(int $nr = 0): mixed
 {
+    $this->linkbuilder();
     return $this->fileLinks['thumb'][$nr] ?? $this->fileLinks['thumb'][0] ?? '';
 }
 
 public function getList(): array
 {
+    $this->linkbuilder();
     return array('show'     => $this->imageLinks,
                  'download' => $this->fileLinks);
 }
@@ -69,6 +65,39 @@ public function getList(): array
 // ---------- private functions ----------
 // ---------------------------------------
 
+/**
+ * check if builder has run already and only build links if not
+ *
+ * @return void
+ */
+private function linkbuilder()
+{
+    if (!$this->linksActive) {
+        $specimen = $this->db->query("SELECT s.digital_image, s.digital_image_obs, 
+                                   id.`imgserver_type`, id.iiif_capable, 
+                                   pc.specimenID as phaidra_sid
+                                  FROM `tbl_specimens` s
+                                   LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
+                                   LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
+                                   LEFT JOIN `herbar_pictures`.`phaidra_cache` pc ON pc.specimenID = s.specimen_ID
+                                  WHERE s.`specimen_ID` = $this->specimenID")
+                             ->fetch_assoc();
+
+        if (!empty($specimen['digital_image']) || !empty($specimen['digital_image_obs'])) {
+            if ($specimen['phaidra_sid']) {
+                // for now, special treatment for phaidra is needed when wu has images
+                $this->phaidra();
+            } elseif ($specimen['iiif_capable']) {
+                $this->iiif();
+            } elseif ($specimen['imgserver_type'] == 'bgbm') {
+                $this->bgbm();
+            } elseif ($specimen['imgserver_type'] == 'djatoka') {
+                $this->djatoka();
+            }
+        }
+        $this->linksActive = true;
+    }
+}
 /**
  * parse text into parts and tokens (text within '<>')
  *
@@ -183,10 +212,6 @@ private function djatoka()
                                    LEFT JOIN gbif_pilot.europeana_images ei  ON ei.specimen_ID = s.specimen_ID
                                   WHERE s.`specimen_ID` = $this->specimenID")
                          ->fetch_assoc();
-    $sourceCode = $this->db->query("SELECT source_code 
-                                    FROM meta 
-                                    WHERE source_id = {$specimen['source_id']}")
-                           ->fetch_array()['source_code'];
 
     $HerbNummer = str_replace('-', '', $specimen['HerbNummer']);
     if (!empty($specimen['picture_filename'])) {   // special treatment for this collection is necessary
@@ -281,15 +306,21 @@ private function djatoka()
     }
 
     if (!empty($images)) {
+        $firstImage = true;
         foreach ($images as $image) {
             $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
             $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download';
-            if (($specimen['filesize'] ?? 0) > 1500) {  // use europeana-cache only for images without errors
+            if (($specimen['filesize'] ?? 0) > 1500 && $firstImage) {  // use europeana-cache only for images without errors and only for the first image
+                $sourceCode = $this->db->query("SELECT source_code 
+                                                FROM meta 
+                                                WHERE source_id = $this->specimenID")
+                                       ->fetch_array()['source_code'];
                 $this->fileLinks['europeana'][] = "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
             } else {
                 $this->fileLinks['europeana'][] = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
             }
             $this->fileLinks['thumb'][] = 'https://www.jacq.org/image.php?' . $image . '&method=thumb';
+            $firstImage = false;
         }
     }
 }
