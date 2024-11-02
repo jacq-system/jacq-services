@@ -37,9 +37,11 @@ public function getEuropeanaLink(int $nr = 0): mixed
                                   WHERE `specimen_ID` = $this->specimenID")
                              ->fetch_assoc();
         if (($filesize['filesize'] ?? 0) > 1500) {  // use europeana-cache only for images without errors
-            $sourceCode = $this->db->query("SELECT source_code 
-                                            FROM meta 
-                                            WHERE source_id = $this->specimenID")
+            $sourceCode = $this->db->query("SELECT m.source_code 
+                                            FROM `tbl_specimens` s
+                                             LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
+                                             LEFT JOIN `meta` m ON m.source_id = mc.source_id 
+                                            WHERE s.`specimen_ID` = $this->specimenID")
                                    ->fetch_array()['source_code'];
             return "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
         }
@@ -311,9 +313,11 @@ private function djatoka()
             $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
             $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download';
             if (($specimen['filesize'] ?? 0) > 1500 && $firstImage) {  // use europeana-cache only for images without errors and only for the first image
-                $sourceCode = $this->db->query("SELECT source_code 
-                                                FROM meta 
-                                                WHERE source_id = $this->specimenID")
+                $sourceCode = $this->db->query("SELECT m.source_code 
+                                                FROM `tbl_specimens` s
+                                                 LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
+                                                 LEFT JOIN `meta` m ON m.source_id = mc.source_id 
+                                                WHERE s.`specimen_ID` = $this->specimenID")
                                        ->fetch_array()['source_code'];
                 $this->fileLinks['europeana'][] = "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
             } else {
