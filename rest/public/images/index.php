@@ -190,7 +190,7 @@ $app->get('/download/{specimenID}[/{imageNr}]', function (Request $request, Resp
     $params = $request->getQueryParams();
     $mapper = new ImageLinkMapper($this->db, intval(filter_var($args['specimenID'], FILTER_SANITIZE_NUMBER_INT)));
 
-    $imageLink = $mapper->getDownloadLink(intval($args['imageNr']));
+    $imageLink = $mapper->getDownloadLink(intval($args['imageNr']) ?? 0);
     if ($imageLink) {
         $data = array('link' => $imageLink);
         if (!empty($params['withredirect'])) {
