@@ -1,15 +1,15 @@
 <?php
+
+use Jacq\Settings;
+
 require __DIR__ . '/vendor/autoload.php';
 
-/************************
- * include all settings *
- ************************/
-include __DIR__ . '/inc/variables.php';
+$settings = Settings::Load();
 
-$dbLink = new mysqli($_CONFIG['DATABASES']['HERBARINPUT']['host'],
-                     $_CONFIG['DATABASES']['HERBARINPUT']['user'],
-                     $_CONFIG['DATABASES']['HERBARINPUT']['pass'],
-                     $_CONFIG['DATABASES']['HERBARINPUT']['db']);
+$dbLink = new mysqli($settings->get('DATABASES', 'HERBARINPUT', 'host'),
+                     $settings->get('DATABASES', 'HERBARINPUT', 'user'),
+                     $settings->get('DATABASES', 'HERBARINPUT', 'pass'),
+                     $settings->get('DATABASES', 'HERBARINPUT', 'db'));
 $dbLink->set_charset('utf8');
 
 $params = array();
