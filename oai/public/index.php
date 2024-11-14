@@ -6,17 +6,10 @@ require __DIR__ . '/../vendor/autoload.php';
 
 $settings = Settings::Load();
 
-error_log(var_export($settings->get('DATABASES', 'HERBARINPUT', 'host'), true));
-
-$host = $settings->get('DATABASES', 'HERBARINPUT', 'host');
-$user = $settings->get('DATABASES', 'HERBARINPUT', 'user');
-$pass = $settings->get('DATABASES', 'HERBARINPUT', 'pass');
-$db   = $settings->get('DATABASES', 'HERBARINPUT', 'db');
-
-$dbLink = new mysqli($host,
-                     $user,
-                     $pass,
-                     $db);
+$dbLink = new mysqli($settings->get('DATABASES', 'HERBARINPUT', 'host'),
+                     $settings->get('DATABASES', 'HERBARINPUT', 'user'),
+                     $settings->get('DATABASES', 'HERBARINPUT', 'pass'),
+                     $settings->get('DATABASES', 'HERBARINPUT', 'db'));
 $dbLink->set_charset('utf8');
 
 $params = array();
