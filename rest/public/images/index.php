@@ -3,13 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: images", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -108,27 +102,27 @@ $app->add(function (Request $request, Response $response, $next)
  *******************/
 /**
  * @OA\Get(
- *  path="/show/{specimenID}",
+ *  path="/images/show/{specimenID}",
+ *  tags={"images"},
  *  summary="get the uri to show the first image of a given specimen-ID with a redirect (303)",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="imageNr",
  *      in="path",
  *      description="image number (defaults to 0=first image)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -157,27 +151,27 @@ $app->get('/show/{specimenID}[/{imageNr}]', function (Request $request, Response
 
 /**
  * @OA\Get(
- *  path="/download/{specimenID}",
+ *  path="/images/download/{specimenID}",
+ *  tags={"images"},
  *  summary="get the uri to download the first image of a given specimen-ID with a redirect (303)",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="imageNr",
  *      in="path",
  *      description="image number (defaults to 0=first image)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
- *      @OA\Parameter(
+ *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -206,27 +200,27 @@ $app->get('/download/{specimenID}[/{imageNr}]', function (Request $request, Resp
 
 /**
  * @OA\Get(
- *  path="/europeana/{specimenID}",
+ *  path="/images/europeana/{specimenID}",
+ *  tags={"images"},
  *  summary="get the uri to download the first image of a given specimen-ID with resolution 1200,x with a redirect (303)",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="imageNr",
  *      in="path",
  *      description="image number (defaults to 0=first image)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
- *      @OA\Parameter(
+ *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -255,27 +249,27 @@ $app->get('/europeana/{specimenID}[/{imageNr}]', function (Request $request, Res
 
 /**
  * @OA\Get(
- *  path="/thumb/{specimenID}",
+ *  path="/images/thumb/{specimenID}",
+ *  tags={"images"},
  *  summary="get the uri to download the first image of a given specimen-ID with resolution 160,x with a redirect (303)",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="imageNr",
  *      in="path",
  *      description="image number (defaults to 0=first image)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
- *      @OA\Parameter(
+ *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
- *      example="1",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -304,13 +298,15 @@ $app->get('/thumb/{specimenID}[/{imageNr}]', function (Request $request, Respons
 
 /**
  * @OA\Get(
- *  path="/list/{specimenID}",
+ *  path="/images/list/{specimenID}",
+ *  tags={"images"},
  *  summary="get a list of all image-uris of a given specimen-ID",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -327,30 +323,6 @@ $app->get('/list/{specimenID}', function (Request $request, Response $response, 
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function (Request $request, Response $response) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
-    return $jsonResponse;
-});
-
-//$app->get('/description', function(Request $request, Response $response)
-//{
-//    return file_get_contents('description.html');
-//});
-//
-//$app->get('/', function(Request $request, Response $response)
-//{
-//    return file_get_contents('description.html');
-//});
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match
 // this route has to be defined as last route

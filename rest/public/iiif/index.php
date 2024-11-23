@@ -3,17 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(
- *     title="JACQ Webservices: iiif",
- *     version="0.1"
- * )
- */
-include __DIR__ . '/../../inc/openApiServer.php';
 
 /************************
  * include all settings *
@@ -113,15 +103,17 @@ $app->add(function (Request $request, Response $response, $next)
 /**
  * @OA\Get(
  *  path="/iiif/manifestUri/{specimenID}",
+ *  tags={"iiif"},
  *  summary="get the manifest URI for a given specimen-ID",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="200", description="successful operation"),
  * )
  */
 $app->get('/manifestUri/{specimenID}', function (Request $request, Response $response, array $args)
@@ -140,15 +132,20 @@ $app->get('/manifestUri/{specimenID}', function (Request $request, Response $res
 /**
  * @OA\Get(
  *  path="/iiif/manifest/{specimenID}",
+ *  tags={"iiif"},
  *  summary="get the manifest for a given specimen-ID",
+ *  description="act as a proxy and get the manifest for a given specimen-ID from a backend, supplemented by some additional information.\
+   If no backend is configured, the webservice returns HTTP 303 with the actual target-uri. ",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=1739342,
  *      @OA\Schema(type="integer")
  *  ),
-*  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="404", description="no manifest available"),
  * )
  */
 $app->get('/manifest/{specimenID}', function (Request $request, Response $response, array $args)
@@ -169,24 +166,28 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
 });
 
 /**
- * @OA\Get(
- *  path="/iiif/createManifest/{serverID}/{imageFilename}",
- *  summary="create a manifest for an image server with a given image filename",
- *  @OA\Parameter(
+ * ********** UNDER CONSTRUCTION **********
+ *
+ * OA\Get(
+ *  path="/iiif/createManifest/{serverID}/{imageIdentifier}",
+ *  tags={"iiif"},
+ *  summary="create a manifest for an image server with a given image identifier",
+ *  OA\Parameter(
  *      name="serverID",
  *      in="path",
  *      description="ID of image server",
  *      required=true,
- *      @OA\Schema(type="integer")
+ *      OA\Schema(type="integer")
  *  ),
- *  @OA\Parameter(
+ *  OA\Parameter(
  *      name="imageIdentifier",
  *      in="path",
  *      description="image identifier",
  *      required=true,
- *      @OA\Schema(type="string")
+ *      OA\Schema(type="string")
  *  ),
- *  @OA\Response(response="200", description="successful operation"),
+ *  OA\Response(response="200", description="successful operation"),
+ *  OA\Response(response="404", description="no manifest available"),
  * )
  */
 $app->get('/createManifest/{serverID}/{imageIdentifier}', function (Request $request, Response $response, array $args)
@@ -204,22 +205,6 @@ $app->get('/createManifest/{serverID}/{imageIdentifier}', function (Request $req
         $handler = $this->notFoundHandler; // handle using the default Slim page not found handler
         return $handler($request, $response);
     }
-});
-
-/**
- * @OA\Get(
- *     path="/iiif/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function (Request $request, Response $response)
-{
-//    $swagger = scan(__DIR__);
-    $swagger = \OpenApi\Generator::scan([__DIR__, __DIR__ . '/../inc']);
-    $jsonResponse = $response->withJson($swagger);
-    return $jsonResponse;
 });
 
 $app->get('/description', function(Request $request, Response $response) {

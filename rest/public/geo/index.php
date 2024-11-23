@@ -3,18 +3,12 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
 use PHPCoord\CoordinateReferenceSystem\Geographic2D;
 use PHPCoord\Point\GeographicPoint;
 use PHPCoord\Point\UTMPoint;
 use PHPCoord\UnitOfMeasure\Angle\Degree;
 use PHPCoord\UnitOfMeasure\Length\Metre;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: geographical", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -105,21 +99,26 @@ $app->add(function (Request $request, Response $response, $next)
 
 /**
  * @OA\Get(
- *  path="/convert",
+ *  path="/geo/convert",
+ *  tags={"geo"},
  *  summary="convert one system (e.g. Coordinates) into another (e.g. UTM), using WGS 84",
+ *  description="possible conversions:
+ *     Lat/Lon -> UTM
+ *     UTM -> Lat/Lon
+ *     MGRS -> UTM and Lat/Lon",
  *  @OA\Parameter(
  *      name="lat",
  *      in="query",
  *      description="convert from latitude/longitude. This is latitude, parameter 'lon' is now mandatory",
  *      example="48.21",
- *      @OA\Schema(type="float")
+ *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
  *      name="lon",
  *      in="query",
  *      description="convert from latitude/longitude. This is longitude, parameter 'lat' is now mandatory",
  *      example="16.37",
- *      @OA\Schema(type="float")
+ *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
  *      name="utm",
@@ -162,7 +161,8 @@ $app->get('/convert', function (Request $request, Response $response)
 
 /**
  * @OA\Get(
- *  path="/checkBoundaries",
+ *  path="/geo/checkBoundaries",
+ *  tags={"geo"},
  *  summary="check if lat/lon coordinates are within boundaries of a given nation",
  *  @OA\Parameter(
  *      name="lat",
@@ -170,7 +170,7 @@ $app->get('/convert', function (Request $request, Response $response)
  *      description="Latitude",
  *      required=true,
  *      example="48.21",
- *      @OA\Schema(type="float")
+ *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
  *      name="lon",
@@ -178,7 +178,7 @@ $app->get('/convert', function (Request $request, Response $response)
  *      description="Longitude",
  *      required=true,
  *      example="16.37",
- *      @OA\Schema(type="float")
+ *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
  *      name="nationID",
@@ -214,20 +214,6 @@ $app->get('/checkBoundaries', function (Request $request, Response $response)
     $data['error'] = (empty($data)) ? "nothing to do" : null;
 
     $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function (Request $request, Response $response) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 

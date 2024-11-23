@@ -141,15 +141,9 @@ private function phaidra()
         foreach ($manifest['sequences'] as $sequence) {
             foreach ($sequence['canvases'] as $canvas) {
                 foreach ($canvas['images'] as $image) {
-                    $this->fileLinks['full'][] = 'https://www.jacq.org/downloadPhaidra.php?filename='
-                                               . sprintf("WU%0" . $specimen['HerbNummerNrDigits'] . ".0f", str_replace('-', '', $specimen['HerbNummer']))
-                                               . ".jpg&url=" . $image['resource']['service']['@id'] . "/full/full/0/default.jpg";
-                    $this->fileLinks['europeana'][] = 'https://www.jacq.org/downloadPhaidra.php?filename='
-                                                    . sprintf("WU%0" . $specimen['HerbNummerNrDigits'] . ".0f", str_replace('-', '', $specimen['HerbNummer']))
-                                                    . ".jpg&url=" . $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
-                    $this->fileLinks['thumb'][] = 'https://www.jacq.org/downloadPhaidra.php?filename='
-                        . sprintf("WU%0" . $specimen['HerbNummerNrDigits'] . ".0f", str_replace('-', '', $specimen['HerbNummer']))
-                        . ".jpg&url=" . $image['resource']['service']['@id'] . "/full/160,/0/default.jpg";
+                    $this->fileLinks['full'][]      = $image['resource']['service']['@id'] . "/full/full/0/default.jpg";
+                    $this->fileLinks['europeana'][] = $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
+                    $this->fileLinks['thumb'][]     = $image['resource']['service']['@id'] . "/full/160,/0/default.jpg";
                 }
             }
         }
@@ -177,9 +171,9 @@ private function iiif()
         foreach ($manifest['sequences'] as $sequence) {
             foreach ($sequence['canvases'] as $canvas) {
                 foreach ($canvas['images'] as $image) {
-                    $this->fileLinks['full'][] = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
+                    $this->fileLinks['full'][]      = $image['resource']['service']['@id'] . "/full/max/0/default.jpg";
                     $this->fileLinks['europeana'][] = $image['resource']['service']['@id'] . "/full/1200,/0/default.jpg";
-                    $this->fileLinks['thumb'][] = $image['resource']['service']['@id'] . "/full/160,/0/default.jpg";
+                    $this->fileLinks['thumb'][]     = $image['resource']['service']['@id'] . "/full/160,/0/default.jpg";
                 }
             }
         }

@@ -3,13 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: livingplants", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -100,7 +94,8 @@ $app->add(function (Request $request, Response $response, $next)
 
 /**
  * @OA\Get(
- *  path="/derivatives",
+ *  path="/lp/derivatives",
+ *  tags={"livingplants"},
  *  summary="find all derivatives which fit given criteria",
  *  @OA\Parameter(
  *      name="org",
@@ -149,29 +144,6 @@ $app->get('/derivatives', function (Request $request, Response $response)
     return $jsonResponse;
     // https://www.convertcsv.com/json-to-csv.htm
 });
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function (Request $request, Response $response) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
-    return $jsonResponse;
-});
-
-//$app->get('/description', function(Request $request, Response $response) {
-//    return file_get_contents('description.html');
-//});
-//
-//$app->get('/', function(Request $request, Response $response)
-//{
-//    return file_get_contents('description.html');
-//});
 
 // Catch-all route to serve a 404 Not Found page if none of the routes match
 // this route has to be defined as last route

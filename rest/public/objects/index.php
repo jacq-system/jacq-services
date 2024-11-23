@@ -7,13 +7,7 @@ use Monolog\Processor\UidProcessor;
 use Slim\App;
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: objects", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -105,18 +99,31 @@ $app->add(function (Request $request, Response $response, $next)
  * Register routes *
  *******************/
 /**
- * @OA\Post(
- *  path="/specimens/fromList",
+ *  ********** UNDER CONSTRUCTION **********
+ *
+ * OA\Post(
+ *  path="/objects/specimens/fromList",
+ *  tags={"objects"},
  *  summary="return all specimens from a given list of specimen-IDs or Unit-IDs or Stable Identifiers",
- *  @OA\Parameter(
+ *  OA\Parameter(
  *      name="fieldgroups",
  *      in="query",
  *      description="optional fieldgroups to return as comma-seperated list; possible are jacq, dc and dwc, defaults to dc,dwc,jacq",
  *      example="jacq,dc",
- *      @OA\Schema(type="string")
+ *      OA\Schema(type="string")
  *  ),
-
- *  @OA\Response(response="200", description="successful operation"),
+ *  OA\RequestBody(
+ *     OA\MediaType(
+ *         mediaType="application/json",
+ *         OA\Schema(
+ *             OA\Property(
+ *                 type="array"
+ *             ),
+ *             example={"00400","W20050021049_a.jpg","http://w.jacq.org/W20050021048","https://w.jacq.org/W20050021049","W056052.jpg","WU0020000",1739342,2000000,435533,10000}
+ *         )
+ *     )
+ *  ),
+ *  OA\Response(response="200", description="successful operation"),
  * )
  */
 
@@ -160,14 +167,16 @@ $app->get('/specimens/search', function (Request $request, Response $response)
 
 /**
  * @OA\Get(
- *  path="/specimens/{specimenID}",
+ *  path="/objects/specimens/{specimenID}",
+ *  tags={"objects"},
  *  summary="get the properties of a specimen",
  *  @OA\Parameter(
- *      name="specimenID",
- *      in="path",
- *      description="ID of specimen",
- *      required=true,
- *      @OA\Schema(type="integer")
+ *     name="specimenID",
+ *     in="path",
+ *     description="ID of specimen",
+ *     required=true,
+ *     example=1739342,
+ *     @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
@@ -186,7 +195,8 @@ $app->get('/specimens/{specimenID}', function (Request $request, Response $respo
 
 /**
  * @OA\Get(
- *  path="/specimens",
+ *  path="/objects/specimens",
+ *  tags={"objects"},
  *  summary="search for all specimens which fit given criteria",
  *  @OA\Parameter(
  *      name="p",
@@ -271,21 +281,6 @@ $app->get('/specimens', function (Request $request, Response $response)
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 })->setName('specimens_root');
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function (Request $request, Response $response)
-{
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
-    return $jsonResponse;
-});
 
 $app->get('/description', function(Request $request, Response $response)
 {

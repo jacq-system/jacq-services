@@ -3,13 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: statistics", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -86,13 +80,15 @@ $container['phpErrorHandler'] = function ($container) {
  *******************/
 /**
  * @OA\Get(
- *  path="/results/{periodStart}/{periodEnd}/{updated}/{type}/{interval}",
+ *  path="/statistics/results/{periodStart}/{periodEnd}/{updated}/{type}/{interval}",
+ *  tags={"statistics"},
  *  summary="Get statistics result for given type, interval and period",
  *  @OA\Parameter(
  *      name="periodStart",
  *      in="path",
  *      description="start of period (yyyy-mm-dd)",
  *      required=true,
+ *      example="2020-01-01",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Parameter(
@@ -100,6 +96,7 @@ $container['phpErrorHandler'] = function ($container) {
  *      in="path",
  *      description="end of period (yyyy-mm-dd)",
  *      required=true,
+ *      example="2021-01-31",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Parameter(
@@ -107,6 +104,7 @@ $container['phpErrorHandler'] = function ($container) {
  *      in="path",
  *      description="new (0) or updated (1) types only",
  *      required=true,
+ *      example=0,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -114,6 +112,7 @@ $container['phpErrorHandler'] = function ($container) {
  *      in="path",
  *      description="type of statistics analysis",
  *      required=true,
+ *      example="specimens",
  *      @OA\Schema(
  *          type="string",
  *          enum={"names", "citations", "names_citations", "specimens", "type_specimens", "names_type_specimens", "types_name", "synonyms"}
@@ -124,6 +123,7 @@ $container['phpErrorHandler'] = function ($container) {
  *      in="path",
  *      description="resolution of statistics analysis",
  *      required=true,
+ *      example="month",
  *      @OA\Schema(
  *          type="string",
  *          enum={"day", "week", "month", "year"}
@@ -143,20 +143,6 @@ $app->get('/results/{periodStart}/{periodEnd}/{updated}/{type}/{interval}', func
                                  trim(filter_var($args['type'], FILTER_SANITIZE_STRING)),
                                  trim(filter_var($args['interval'], FILTER_SANITIZE_STRING)));
     $jsonResponse = $response->withJson($names);
-    return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function ($request, $response, $args) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 

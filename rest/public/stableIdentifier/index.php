@@ -3,17 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(
- *     title="JACQ Webservices: stableIdentifier",
- *     version="0.1"
- * )
- */
-include __DIR__ . '/../../inc/openApiServer.php';
 
 /************************
  * include all settings *
@@ -91,12 +81,14 @@ $container['phpErrorHandler'] = function ($container) {
 /**
  * @OA\Get(
  *  path="/stableIdentifier/sid/{specimenID}",
+ *  tags={"stableIdentifier"},
  *  summary="Get specimen-id, valid stable identifier and all stable identifiers of a given specimen-id",
  *  @OA\Parameter(
  *      name="specimenID",
  *      in="path",
  *      description="ID of specimen",
  *      required=true,
+ *      example=6830,
  *      @OA\Schema(type="integer")
  *  ),
 *  @OA\Response(response="200", description="successful operation"),
@@ -123,19 +115,21 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
 /**
  * @OA\Get(
  *  path="/stableIdentifier/resolve/{sid}",
+ *  tags={"stableIdentifier"},
  *  summary="Get specimen-id, valid stable identifier and all stable identifiers of a given stable idnetifier. Answers with 303 instead of 200 if parameter withredirect is given",
  *  @OA\Parameter(
  *      name="sid",
  *      in="path",
  *      description="stable identifier of specimen",
  *      required=true,
+ *      style="form",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
- *      example="1",
+ *      example="0",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -168,6 +162,7 @@ $app->get('/resolve/{sid:.*}', function (Request $request, Response $response, a
 /**
  * @OA\Get(
  *  path="/stableIdentifier/multi",
+ *  tags={"stableIdentifier"},
  *  summary="Get all entries with more than one stable identifier per specimen-ID",
  *  @OA\Parameter(
  *      name="page",
@@ -208,6 +203,7 @@ $app->get('/multi', function (Request $request, Response $response, array $args)
 /**
  * @OA\Get(
  *  path="/stableIdentifier/errors",
+ *  tags={"stableIdentifier"},
  *  summary="get a list of all errors which prevent the generation of stable identifier",
  *  @OA\Parameter(
  *      name="sourceID",
@@ -225,22 +221,6 @@ $app->get('/errors', function (Request $request, Response $response, array $args
     $mapper = new StableIdentifierMapper($this->db);
     $data = $mapper->getEntriesWithErrors(intval($request->getQueryParam('sourceID')));
     $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *     path="/stableIdentifier/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function ($request, $response, $args)
-{
-//    $swagger = scan(__DIR__);
-    $swagger = \OpenApi\Generator::scan([__DIR__, __DIR__ . '/../inc']);
-    $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 

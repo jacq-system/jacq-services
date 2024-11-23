@@ -3,13 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: externalScinames", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -86,7 +80,8 @@ $container['phpErrorHandler'] = function ($container) {
  *******************/
 /**
  * @OA\Get(
- *  path="/find/{term}",
+ *  path="/externalScinames/find/{term}",
+ *  tags={"externalScinames"},
  *  summary="search for scientific names; get IDs and scientific names of search result",
  *  @OA\Parameter(
  *      name="term",
@@ -107,25 +102,6 @@ $app->get('/find/{term}', function (Request $request, Response $response, array 
     $data = $scanner->searchAll($args['term']);
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function ($request, $response, $args) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
-    return $jsonResponse;
-});
-
-$app->get('/description', function($request, $response, $args)
-{
-    return file_get_contents('description.html');
 });
 
 $app->get('/', function(Request $request, Response $response)

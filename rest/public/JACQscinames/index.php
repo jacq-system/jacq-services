@@ -3,13 +3,7 @@ require __DIR__ . '/../../vendor/autoload.php';
 
 use Slim\Http\Request;
 use Slim\Http\Response;
-use function OpenApi\scan;
-//        "zircote/swagger-php": "^3.1"
 
-
-/**
- * @OA\Info(title="JACQ Webservices: JACQscinames", version="0.1")
- */
 
 /************************
  * include all settings *
@@ -90,13 +84,15 @@ $container['phpErrorHandler'] = function ($container) {
  *******************/
 /**
  * @OA\Get(
- *  path="/uuid/{taxonID}",
+ *  path="/JACQscinames/uuid/{taxonID}",
+ *  tags={"JACQscinames"},
  *  summary="Get uuid, uuid-url and scientific name of a given taxonID",
-  *  @OA\Parameter(
+ *  @OA\Parameter(
  *      name="taxonID",
  *      in="path",
  *      description="ID of taxon name",
  *      required=true,
+ *      example=249254,
  *      @OA\Schema(type="integer")
  *  ),
 *  @OA\Response(response="200", description="successful operation"),
@@ -120,13 +116,15 @@ $app->get('/uuid/{taxonID}', function (Request $request, Response $response, arr
 
 /**
  * @OA\Get(
- *  path="/name/{taxonID}",
+ *  path="/JACQscinames/name/{taxonID}",
+ *  tags={"JACQscinames"},
  *  summary="Get scientific name, uuid and uuid-url of a given taxonID",
  *  @OA\Parameter(
  *      name="taxonID",
  *      in="path",
  *      description="ID of taxon name",
  *      required=true,
+ *      example=249254,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -150,14 +148,15 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
 
 /**
  * @OA\Get(
- *  path="/find/{term}",
- *  summary="search for scientific names; get taxonIDs and scientific names of search result",
+ *  path="/JACQscinames/find/{term}",
+ *  tags={"JACQscinames"},
+ *  summary="do a fulltext search for scientific names and taxon names and also get their taxonIDs; all parts of 'term' are mandatory",
  *  @OA\Parameter(
  *      name="term",
  *      in="path",
  *      description="search term, use * as wildcard",
  *      required=true,
- *      example="prunus aviu*",
+ *      example="prunus aviu* martens",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -176,13 +175,15 @@ $app->get('/find/{term}', function (Request $request, Response $response, array 
 
 /**
  * @OA\Get(
- *  path="/resolve/{uuid}",
+ *  path="/JACQscinames/resolve/{uuid}",
+ *  tags={"JACQscinames"},
  *  summary="Get scientific name, uuid-url and taxon-ID of a given uuid",
  *  @OA\Parameter(
  *      name="uuid",
  *      in="path",
  *      description="uuid of taxon name",
  *      required=true,
+ *      example="86d5ecb1-c631-11e4-89a5-005056a41758",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -202,20 +203,6 @@ $app->get('/resolve/{uuid}', function (Request $request, Response $response, arr
                   'scientificName' => $mapper->getScientificName($taxonID),
                   'taxonName'      => $mapper->getTaxonName($taxonID));
     $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function ($request, $response, $args) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 

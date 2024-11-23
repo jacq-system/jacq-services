@@ -8,7 +8,7 @@ use function OpenApi\scan;
 
 
 /**
- * @OA\Info(title="JACQ Webservices: classification", version="0.1")
+ * OA\Info(title="JACQ Webservices: classification", version="0.1")
  */
 
 /************************
@@ -103,24 +103,47 @@ $app->add(function (Request $request, Response $response, $next)
  *******************/
 /**
  * @OA\Get(
- *  path="/references/{referenceType}[/{referenceID}]",
- *  summary="Fetch a list of all references (which have a classification attached) or a single reference",
+ *  path="/classification/references/{referenceType}",
+ *  tags={"classification"},
+ *  summary="Fetch a list of all references (which have a classification attached)",
  *  @OA\Parameter(
  *      name="referenceType",
  *      in="path",
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
  *      example="periodical",
- *      @OA\Schema(type="string")
- *  ),
- *  @OA\Parameter(
- *      name="referenceID",
- *      in="path",
- *      description="ID of reference",
- *      @OA\Schema(type="integer")
+ *      @OA\Schema(
+ *          type="string",
+ *          enum={"citation", "person", "service", "specimen", "periodical"}
+ *      )
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
+ * @OA\Get(
+ *   path="/classification/references/{referenceType}/{referenceID}",
+ *   tags={"classification"},
+ *   summary="Fetch a single reference",
+ *   @OA\Parameter(
+ *       name="referenceType",
+ *       in="path",
+ *       description="Type of reference (citation, person, service, specimen, periodical)",
+ *       required=true,
+ *       example="periodical",
+ *      @OA\Schema(
+ *          type="string",
+ *          enum={"citation", "person", "service", "specimen", "periodical"}
+ *      )
+ *   ),
+ *   @OA\Parameter(
+ *       name="referenceID",
+ *       in="path",
+ *       description="ID of reference",
+ *       required=true,
+ *       example=70,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Response(response="200", description="successful operation"),
+ *  )
  */
 $app->get('/references/{referenceType}[/{referenceID}]', function (Request $request, Response $response, array $args)
 {
@@ -139,7 +162,8 @@ $app->get('/references/{referenceType}[/{referenceID}]', function (Request $requ
 
 /**
  * @OA\Get(
- *  path="/nameReferences/{taxonID}",
+ *  path="/classification/nameReferences/{taxonID}",
+ *  tags={"classification"},
  *  summary="Return (other) references for this name which include them in their classification",
  *  @OA\Parameter(
  *      name="taxonID",
@@ -179,7 +203,8 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
 
 /**
  * @OA\Get(
- *  path="/children/{referenceType}/{referenceId}",
+ *  path="/classification/children/{referenceType}/{referenceId}",
+ *  tags={"classification"},
  *  summary="Get classification children of a given taxonID according to a given reference",
  *  @OA\Parameter(
  *      name="referenceType",
@@ -187,21 +212,24 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
  *      example="citation",
- *      @OA\Schema(type="string")
+ *      @OA\Schema(
+ *          type="string",
+ *          enum={"citation", "person", "service", "specimen", "periodical"}
+ *      )
  *  ),
  *  @OA\Parameter(
  *      name="referenceId",
  *      in="path",
  *      description="ID of reference",
  *      required=true,
- *      example="31070",
+ *      example="13265",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="taxonID",
  *      in="query",
  *      description="optional ID of taxon name",
- *      example="233647",
+ *      example="235443",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -228,20 +256,26 @@ $app->get('/children/{referenceType}/{referenceId}', function (Request $request,
 
 /**
  * @OA\Get(
- *  path="/synonyms/{referenceType}/{referenceId}/{taxonID}",
+ *  path="/classification/synonyms/{referenceType}/{referenceId}/{taxonID}",
+ *  tags={"classification"},
  *  summary="fetch synonyms (and basionym) for a given taxonID, according to a given reference",
  *  @OA\Parameter(
  *      name="referenceType",
  *      in="path",
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
- *      @OA\Schema(type="string")
+ *      example="citation",
+ *      @OA\Schema(
+ *          type="string",
+ *          enum={"citation", "person", "service", "specimen", "periodical"}
+ *      )
  *  ),
  *  @OA\Parameter(
  *      name="referenceId",
  *      in="path",
  *      description="ID of reference",
  *      required=true,
+ *      example="31070",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -249,6 +283,7 @@ $app->get('/children/{referenceType}/{referenceId}', function (Request $request,
  *      in="path",
  *      description="ID of taxon name",
  *      required=true,
+ *      example=46183,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -275,20 +310,26 @@ $app->get('/synonyms/{referenceType}/{referenceId}/{taxonID}', function (Request
 
 /**
  * @OA\Get(
- *  path="/parent/{referenceType}/{referenceId}/{taxonID}",
+ *  path="/classification/parent/{referenceType}/{referenceId}/{taxonID}",
+ *  tags={"classification"},
  *  summary="Get the parent entry of a given reference",
  *  @OA\Parameter(
  *      name="referenceType",
  *      in="path",
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
- *      @OA\Schema(type="string")
+ *      example="citation",
+ *      @OA\Schema(
+ *          type="string",
+ *          enum={"citation", "person", "service", "specimen", "periodical"}
+ *      )
  *  ),
  *  @OA\Parameter(
  *      name="referenceId",
  *      in="path",
  *      description="ID of reference",
  *      required=true,
+ *      example="31070",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -296,6 +337,7 @@ $app->get('/synonyms/{referenceType}/{referenceId}/{taxonID}', function (Request
  *      in="path",
  *      description="ID of taxon name",
  *      required=true,
+ *      example=46183,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -315,19 +357,22 @@ $app->get('/parent/{referenceType}/{referenceId}/{taxonID}', function (Request $
 
 /**
  * @OA\Get(
- *  path="/numberOfChildrenWithChildrenCitation/{referenceId}",
+ *  path="/classification/numberOfChildrenWithChildrenCitation/{referenceId}",
+ *  tags={"classification"},
  *  summary="Get number of classification children who have children themselves of a given taxonID according to a given reference of type citation",
  *  @OA\Parameter(
  *      name="referenceId",
  *      in="path",
  *      description="ID of reference",
  *      required=true,
+ *      example="31070",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="taxonID",
  *      in="query",
  *      description="optional ID of taxon name",
+ *      example="235443",
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -345,13 +390,15 @@ $app->get('/numberOfChildrenWithChildrenCitation/{referenceId}', function (Reque
 
 /**
  * @OA\Get(
- *  path="/periodicalStatistics/{referenceId}",
+ *  path="/classification/periodicalStatistics/{referenceId}",
+ *  tags={"classification"},
  *  summary="Get statistics information of a given reference",
  *  @OA\Parameter(
  *      name="referenceId",
  *      in="path",
  *      description="ID of reference",
  *      required=true,
+ *      example=13265,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
@@ -369,26 +416,33 @@ $app->get('/periodicalStatistics/{referenceId}', function (Request $request, Res
 
 /**
  * @OA\Get(
- *  path="/download/{referenceType}/{referenceId}",
+ *  path="/classification/download/{referenceType}/{referenceId}",
+ *  tags={"classification"},
  *  summary="Get an array, filled with header and data for download",
  *  @OA\Parameter(
  *      name="referenceType",
  *      in="path",
  *      description="Type of reference (citation, person, service, specimen, periodical)",
  *      required=true,
- *      @OA\Schema(type="string")
+ *      example="citation",
+ *      @OA\Schema(
+ *          type="string",
+ *          enum={"citation", "person", "service", "specimen", "periodical"}
+ *      )
  *  ),
  *  @OA\Parameter(
  *      name="referenceId",
  *      in="path",
  *      description="ID of reference",
  *      required=true,
+ *      example=31070,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="scientificNameId",
  *      in="query",
  *      description="optional ID of scientific name",
+ *      example=363825,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -412,20 +466,6 @@ $app->get('/download/{referenceType}/{referenceId}', function (Request $request,
                                     intval($request->getQueryParam('scientificNameId')),
                                     filter_var($request->getQueryParam('hideScientificNameAuthors'), FILTER_SANITIZE_STRING));
     $jsonResponse = $response->withJson($data);
-    return $jsonResponse;
-});
-
-/**
- * @OA\Get(
- *     path="/openapi",
- *     tags={"documentation"},
- *     summary="OpenAPI JSON File that describes the API",
- *     @OA\Response(response="200", description="OpenAPI Description File"),
- * )
- */
-$app->get('/openapi', function ($request, $response, $args) {
-    $swagger = scan(__DIR__);
-    $jsonResponse = $response->withJson($swagger);
     return $jsonResponse;
 });
 
