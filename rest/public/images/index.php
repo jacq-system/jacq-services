@@ -114,12 +114,6 @@ $app->add(function (Request $request, Response $response, $next)
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
- *      name="imageNr",
- *      in="path",
- *      description="image number (defaults to 0=first image)",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
@@ -127,6 +121,34 @@ $app->add(function (Request $request, Response $response, $next)
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
+ * @OA\Get(
+ *   path="/images/show/{specimenID}{imageNr}",
+ *   tags={"images"},
+ *   summary="get the uri to show image number 'imageNr' of a given specimen-ID with a redirect (303)",
+ *   @OA\Parameter(
+ *       name="specimenID",
+ *       in="path",
+ *       description="ID of specimen",
+ *       required=true,
+ *       example=1739342,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="imageNr",
+ *       in="path",
+ *       description="image number (0=first image)",
+ *       required=true,
+ *       example=0,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="withredirect",
+ *       in="query",
+ *       description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Response(response="200", description="successful operation"),
+ *  )
  */
 $app->get('/show/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
@@ -163,12 +185,6 @@ $app->get('/show/{specimenID}[/{imageNr}]', function (Request $request, Response
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
- *      name="imageNr",
- *      in="path",
- *      description="image number (defaults to 0=first image)",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
@@ -176,6 +192,34 @@ $app->get('/show/{specimenID}[/{imageNr}]', function (Request $request, Response
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
+ * @OA\Get(
+ *   path="/images/download/{specimenID}{imageNr}",
+ *   tags={"images"},
+ *   summary="get the uri to download image number 'imageNr' of a given specimen-ID with a redirect (303)",
+ *   @OA\Parameter(
+ *       name="specimenID",
+ *       in="path",
+ *       description="ID of specimen",
+ *       required=true,
+ *       example=1739342,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="imageNr",
+ *       in="path",
+ *       description="image number (0=first image)",
+ *       required=true,
+ *       example=0,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="withredirect",
+ *       in="query",
+ *       description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Response(response="200", description="successful operation"),
+ *  )
  */
 $app->get('/download/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
@@ -212,12 +256,6 @@ $app->get('/download/{specimenID}[/{imageNr}]', function (Request $request, Resp
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
- *      name="imageNr",
- *      in="path",
- *      description="image number (defaults to 0=first image)",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
@@ -225,6 +263,34 @@ $app->get('/download/{specimenID}[/{imageNr}]', function (Request $request, Resp
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
+ * @OA\Get(
+ *   path="/images/europeana/{specimenID}{imageNr}",
+ *   tags={"images"},
+ *   summary="get the uri to download image number 'imageNr' of a given specimen-ID with resolution 1200,x with a redirect (303)",
+ *   @OA\Parameter(
+ *       name="specimenID",
+ *       in="path",
+ *       description="ID of specimen",
+ *       required=true,
+ *       example=1739342,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="imageNr",
+ *       in="path",
+ *       description="image number (0=first image)",
+ *       required=true,
+ *       example=0,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="withredirect",
+ *       in="query",
+ *       description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Response(response="200", description="successful operation"),
+ *  )
  */
 $app->get('/europeana/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {
@@ -261,12 +327,6 @@ $app->get('/europeana/{specimenID}[/{imageNr}]', function (Request $request, Res
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
- *      name="imageNr",
- *      in="path",
- *      description="image number (defaults to 0=first image)",
- *      @OA\Schema(type="integer")
- *  ),
- *  @OA\Parameter(
  *      name="withredirect",
  *      in="query",
  *      description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
@@ -274,6 +334,34 @@ $app->get('/europeana/{specimenID}[/{imageNr}]', function (Request $request, Res
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
  * )
+ * @OA\Get(
+ *   path="/images/thumb/{specimenID}{imageNr}",
+ *   tags={"images"},
+ *   summary="get the uri to download image number 'imageNr' of a given specimen-ID with resolution 160,x with a redirect (303)",
+ *   @OA\Parameter(
+ *       name="specimenID",
+ *       in="path",
+ *       description="ID of specimen",
+ *       required=true,
+ *       example=1739342,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="imageNr",
+ *       in="path",
+ *       description="image number (0=first image)",
+ *       required=true,
+ *       example=0,
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Parameter(
+ *       name="withredirect",
+ *       in="query",
+ *       description="optional switch to answer with a redirect (303) to the latest link (if it exists) instead of '200', defaults to 0 (no redirect)",
+ *       @OA\Schema(type="integer")
+ *   ),
+ *   @OA\Response(response="200", description="successful operation"),
+ *  )
  */
 $app->get('/thumb/{specimenID}[/{imageNr}]', function (Request $request, Response $response, array $args)
 {

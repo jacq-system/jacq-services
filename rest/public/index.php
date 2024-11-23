@@ -113,14 +113,11 @@ $app->get('/openapi', function (Request $request, Response $response)
     return $jsonResponse;
 });
 $app->get('/doc', function (Request $request, Response $response) {
-    return $response->withRedirect($this->router->pathFor('root') . 'description', 307);
+    return $response->withRedirect('description/', 307);
 });
 $app->get('/documentation', function (Request $request, Response $response) {
-    return $response->withRedirect($this->router->pathFor('root') . 'description', 307);
+    return $response->withRedirect('description/', 307);
 });
-$app->get('/', function(Request $request, Response $response) {
-    // do nothing
-})->setName("root");
 
 
 

@@ -122,7 +122,6 @@ $app->get('/sid/{specimenID}', function (Request $request, Response $response, a
  *      in="path",
  *      description="stable identifier of specimen",
  *      required=true,
- *      style="form",
  *      @OA\Schema(type="string")
  *  ),
  *  @OA\Parameter(
