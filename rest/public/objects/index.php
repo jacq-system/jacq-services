@@ -162,7 +162,7 @@ $app->get('/specimens/search', function (Request $request, Response $response)
 {
     $this->logger->addInfo("called old specimens search ");
 
-    return $response->withRedirect($this->router->pathFor('specimens_root') . '?' . $request->getUri()->getQuery(), 307);
+    return $response->withRedirect(preg_replace('/public\//', '', $this->router->pathFor('specimens_root')) . '?' . $request->getUri()->getQuery(), 307);
 });
 
 /**

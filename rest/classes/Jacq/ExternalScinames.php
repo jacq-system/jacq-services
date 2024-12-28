@@ -12,30 +12,36 @@ public function searchAll($name): array
     $this->scinames['searchString'] = $name;
     $this->scinames['results'] = array();
 
-    $this->curlCh['gbif'] = curl_init();
-    $this->curlCh['wfo']  = curl_init();
+    $this->curlCh['gbif']  = curl_init();
+    $this->curlCh['wfo']   = curl_init();
+    $this->curlCh['worms'] = curl_init();
 
     $this->gbif_setup();
     $this->wfo_setup();
+    $this->worms_setup();
 
     $mh = curl_multi_init();
     curl_multi_add_handle($mh, $this->curlCh['gbif']);
     curl_multi_add_handle($mh, $this->curlCh['wfo']);
+    curl_multi_add_handle($mh, $this->curlCh['worms']);
 
     // execute all queries simultaneously, and continue when all are complete
     do {
         curl_multi_exec($mh, $running);
     } while ($running);
 
+    curl_multi_remove_handle($mh, $this->curlCh['worms']);
     curl_multi_remove_handle($mh, $this->curlCh['wfo']);
     curl_multi_remove_handle($mh, $this->curlCh['gbif']);
     curl_multi_close($mh);
 
     $this->gbif_read();
     $this->wfo_read();
+    $this->worms_read();
 
     curl_close($this->curlCh['gbif']);
     curl_close($this->curlCh['wfo']);
+    curl_close($this->curlCh['worms']);
 
     return $this->scinames;
 }
@@ -49,7 +55,6 @@ private function gbif_setup(): void
     curl_setopt($this->curlCh['gbif'], CURLOPT_RETURNTRANSFER, true);
     curl_setopt($this->curlCh['gbif'], CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($this->curlCh['gbif'], CURLOPT_SSL_VERIFYPEER, false);
-
 }
 
 private function wfo_setup(): void
@@ -58,7 +63,14 @@ private function wfo_setup(): void
     curl_setopt($this->curlCh['wfo'], CURLOPT_RETURNTRANSFER, true);
     curl_setopt($this->curlCh['wfo'], CURLOPT_FOLLOWLOCATION, true);
     curl_setopt($this->curlCh['wfo'], CURLOPT_SSL_VERIFYPEER, false);
+}
 
+private function worms_setup(): void
+{
+    curl_setopt($this->curlCh['worms'], CURLOPT_URL, "https://www.marinespecies.org/rest/AphiaRecordsByName/" . urlencode($this->scinames['searchString']));
+    curl_setopt($this->curlCh['worms'], CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($this->curlCh['worms'], CURLOPT_FOLLOWLOCATION, true);
+    curl_setopt($this->curlCh['worms'], CURLOPT_SSL_VERIFYPEER, false);
 }
 
 private function gbif_read(): void
@@ -83,6 +95,7 @@ private function gbif_read(): void
                                                    'candidates' => array());
 
     }
+    $this->scinames['results']['gbif']['serviceID'] = 51;
 }
 
 private function wfo_read(): void
@@ -104,6 +117,31 @@ private function wfo_read(): void
         $this->scinames['results']['wfo'] = array('match'      => null,
                                                   'candidates' => array());
     }
+    $this->scinames['results']['wfo']['serviceID'] = 57;
+}
+
+private function worms_read(): void
+{
+    $curl_response = curl_multi_getcontent($this->curlCh['worms']);
+    if (!empty($curl_response)) {
+        $result = json_decode($curl_response, true);
+        if (count($result) > 1) {
+            $this->scinames['results']['worms'] = array('match'      => null,
+                                                        'candidates' => array());
+            foreach ($result as $candidate) {
+                $this->scinames['results']['worms']['candidates'][] = array('id'   => $candidate['AphiaID'],
+                                                                            'name' => $candidate['scientificname']);
+            }
+        } else {
+            $this->scinames['results']['worms'] = array('match'      => array('id'   => $result[0]['AphiaID'],
+                                                                              'name' => $result[0]['scientificname']),
+                                                        'candidates' => array());
+        }
+    } else {
+        $this->scinames['results']['worms'] = array('match'      => null,
+                                                    'candidates' => array());
+    }
+    $this->scinames['results']['worms']['serviceID'] = 58;
 }
 
 }
