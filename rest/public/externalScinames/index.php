@@ -1,6 +1,7 @@
 <?php
 require __DIR__ . '/../../vendor/autoload.php';
 
+use Jacq\ExternalScinames;
 use Slim\Http\Request;
 use Slim\Http\Response;
 
@@ -20,6 +21,8 @@ $settings = [
             'username' => $_CONFIG['DATABASES']['HERBARINPUT']['user'],
             'password' => $_CONFIG['DATABASES']['HERBARINPUT']['pass']
         ],
+
+        'externalServices' => $_CONFIG['externalScinameServices'],
 
         // Monolog settings
         'logger' => [
@@ -98,7 +101,7 @@ $app->get('/find/{term}', function (Request $request, Response $response, array 
 {
 //    $this->logger->addInfo("called find ");
 
-    $scanner = new \Jacq\ExternalScinames();
+    $scanner = new ExternalScinames($this->db, $this->get('settings')['externalServices']);
     $data = $scanner->searchAll($args['term']);
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
