@@ -23,7 +23,7 @@ abstract class Mapper
         } else {
             $server_request_scheme = 'http://';
         }
-        $this->serviceBaseUrl = $server_request_scheme . $_SERVER['SERVER_NAME'] . dirname(dirname($_SERVER['SCRIPT_NAME']));
+        $this->serviceBaseUrl = $server_request_scheme . $_SERVER['SERVER_NAME'] . dirname(dirname(dirname($_SERVER['SCRIPT_NAME'])));
     }
 
     /**
