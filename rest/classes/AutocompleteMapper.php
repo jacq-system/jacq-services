@@ -21,8 +21,18 @@ public function getScientificNames($term)
                AND tg.genus LIKE '" . $this->db->escape_string($pieces[0]) . "%' ";
     // Check if we search the first epithet as well
     if (count($pieces) >= 2 && !empty($pieces[1])) {
-        $sql_1 .= " LEFT JOIN tbl_tax_epithets te0 ON te0.epithetID = ts.speciesID ";
-        $sql_2 .= " AND te0.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%' ";
+        $sql_1 .= " LEFT JOIN tbl_tax_epithets te0 ON te0.epithetID = ts.speciesID 
+                    LEFT JOIN tbl_tax_epithets te1 ON te1.epithetID = ts.subspeciesID
+                    LEFT JOIN tbl_tax_epithets te2 ON te2.epithetID = ts.varietyID
+                    LEFT JOIN tbl_tax_epithets te3 ON te3.epithetID = ts.subvarietyID
+                    LEFT JOIN tbl_tax_epithets te4 ON te4.epithetID = ts.formaID
+                    LEFT JOIN tbl_tax_epithets te5 ON te5.epithetID = ts.subformaID ";
+        $sql_2 .= " AND (    te0.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%' 
+                          OR te1.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                          OR te2.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                          OR te3.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                          OR te4.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                          OR te5.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%') ";
     } else {
         $sql_2 .= " AND ts.speciesID IS NULL ";
     }

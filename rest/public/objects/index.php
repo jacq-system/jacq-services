@@ -202,21 +202,21 @@ $app->get('/specimens/{specimenID}', function (Request $request, Response $respo
  *      name="p",
  *      in="query",
  *      description="optional number of page to display, starts with 0 (first page), defaults to 0",
- *      example="2",
+ *      example=2,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="rpp",
  *      in="query",
  *      description="optional number of records per page to display (<= 100), defaults to 50",
- *      example="20",
+ *      example=20,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="list",
  *      in="query",
  *      description="optional switch if all specimen data should be returned (=0) or just a list of specimen-IDs (=1), defaults to 1",
- *      example="1",
+ *      example=1,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -244,7 +244,7 @@ $app->get('/specimens/{specimenID}', function (Request $request, Response $respo
  *      name="type",
  *      in="query",
  *      description="optional switch to search for type records only, defaults to 0",
- *      example="1",
+ *      example=1,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(

@@ -110,14 +110,14 @@ $app->add(function (Request $request, Response $response, $next)
  *      name="lat",
  *      in="query",
  *      description="convert from latitude/longitude. This is latitude, parameter 'lon' is now mandatory",
- *      example="48.21",
+ *      example=48.21,
  *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
  *      name="lon",
  *      in="query",
  *      description="convert from latitude/longitude. This is longitude, parameter 'lat' is now mandatory",
- *      example="16.37",
+ *      example=16.37,
  *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
@@ -169,7 +169,7 @@ $app->get('/convert', function (Request $request, Response $response)
  *      in="query",
  *      description="Latitude",
  *      required=true,
- *      example="48.21",
+ *      example=48.21,
  *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
@@ -177,7 +177,7 @@ $app->get('/convert', function (Request $request, Response $response)
  *      in="query",
  *      description="Longitude",
  *      required=true,
- *      example="16.37",
+ *      example=16.37,
  *      @OA\Schema(type="number")
  *  ),
  *  @OA\Parameter(
@@ -185,14 +185,14 @@ $app->get('/convert', function (Request $request, Response $response)
  *      in="query",
  *      description="Nation-ID",
  *      required=true,
- *      example="70",
+ *      example=70,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="province",
  *      in="query",
  *      description="Province-ID",
- *      example="622",
+ *      example=622,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),

@@ -170,14 +170,14 @@ $app->get('/references/{referenceType}[/{referenceID}]', function (Request $requ
  *      in="path",
  *      description="ID of name to look for",
  *      required=true,
- *      example="46163",
+ *      example=46163,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="excludeReferenceId",
  *      in="query",
  *      description="optional Reference-ID to exclude (to avoid returning the 'active' reference)",
- *      example="31070",
+ *      example=31070,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -222,14 +222,14 @@ $app->get('/nameReferences/{taxonID}', function (Request $request, Response $res
  *      in="path",
  *      description="ID of reference",
  *      required=true,
- *      example="13265",
+ *      example=13265,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="taxonID",
  *      in="query",
  *      description="optional ID of taxon name",
- *      example="235443",
+ *      example=235443,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -275,7 +275,7 @@ $app->get('/children/{referenceType}/{referenceId}', function (Request $request,
  *      in="path",
  *      description="ID of reference",
  *      required=true,
- *      example="31070",
+ *      example=31070,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -329,7 +329,7 @@ $app->get('/synonyms/{referenceType}/{referenceId}/{taxonID}', function (Request
  *      in="path",
  *      description="ID of reference",
  *      required=true,
- *      example="31070",
+ *      example=31070,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
@@ -365,14 +365,14 @@ $app->get('/parent/{referenceType}/{referenceId}/{taxonID}', function (Request $
  *      in="path",
  *      description="ID of reference",
  *      required=true,
- *      example="31070",
+ *      example=31070,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="taxonID",
  *      in="query",
  *      description="optional ID of taxon name",
- *      example="235443",
+ *      example=235443,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),

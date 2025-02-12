@@ -101,21 +101,21 @@ $app->add(function (Request $request, Response $response, $next)
  *      name="org",
  *      in="query",
  *      description="optional id of organisation (and its children), defaults to all",
- *      example="4",
+ *      example=4,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="separated",
  *      in="query",
  *      description="optional status of separated bit (0 or 1), defaults to all",
- *      example="0",
+ *      example=0,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Parameter(
  *      name="derivativeID",
  *      in="query",
  *      description="optional derivate-id; if given, only the derivative with this id will be returned, defaults to all",
- *      example="1645",
+ *      example=1645,
  *      @OA\Schema(type="integer")
  *  ),
  *  @OA\Response(response="200", description="successful operation"),
