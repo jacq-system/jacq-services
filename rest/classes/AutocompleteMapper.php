@@ -14,29 +14,51 @@ public function getScientificNames($term)
         return array();
     }
 
-    $sql_1 = "SELECT ts.taxonID, herbar_view.GetScientificName(ts.taxonID, 0) AS ScientificName
-              FROM tbl_tax_species ts
-               LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID ";
-    $sql_2 = "WHERE ts.external = 0
-               AND tg.genus LIKE '" . $this->db->escape_string($pieces[0]) . "%' ";
-    // Check if we search the first epithet as well
+    // Check if we are also looking for species
     if (count($pieces) >= 2 && !empty($pieces[1])) {
-        $sql_1 .= " LEFT JOIN tbl_tax_epithets te0 ON te0.epithetID = ts.speciesID 
-                    LEFT JOIN tbl_tax_epithets te1 ON te1.epithetID = ts.subspeciesID
-                    LEFT JOIN tbl_tax_epithets te2 ON te2.epithetID = ts.varietyID
-                    LEFT JOIN tbl_tax_epithets te3 ON te3.epithetID = ts.subvarietyID
-                    LEFT JOIN tbl_tax_epithets te4 ON te4.epithetID = ts.formaID
-                    LEFT JOIN tbl_tax_epithets te5 ON te5.epithetID = ts.subformaID ";
-        $sql_2 .= " AND (    te0.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%' 
-                          OR te1.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
-                          OR te2.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
-                          OR te3.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
-                          OR te4.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
-                          OR te5.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%') ";
+        // first run: find only species
+        $rows = $this->db->query("SELECT ts.taxonID, herbar_view.GetScientificName(ts.taxonID, 0) AS ScientificName
+                                  FROM tbl_tax_species ts
+                                   LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID 
+                                   LEFT JOIN tbl_tax_epithets te0 ON te0.epithetID = ts.speciesID 
+                                  WHERE ts.external = 0
+                                   AND tg.genus LIKE '" . $this->db->escape_string($pieces[0]) . "%'
+                                   AND te0.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%' 
+                                  ORDER BY ScientificName")
+                         ->fetch_all(MYSQLI_ASSOC);
+        if (empty($rows)) {
+            // second run: if nothing found, also look for infraspecific taxa
+            $rows = $this->db->query("SELECT ts.taxonID, herbar_view.GetScientificName(ts.taxonID, 0) AS ScientificName
+                                  FROM tbl_tax_species ts
+                                   LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID 
+                                   LEFT JOIN tbl_tax_epithets te0 ON te0.epithetID = ts.speciesID 
+                                   LEFT JOIN tbl_tax_epithets te1 ON te1.epithetID = ts.subspeciesID
+                                   LEFT JOIN tbl_tax_epithets te2 ON te2.epithetID = ts.varietyID
+                                   LEFT JOIN tbl_tax_epithets te3 ON te3.epithetID = ts.subvarietyID
+                                   LEFT JOIN tbl_tax_epithets te4 ON te4.epithetID = ts.formaID
+                                   LEFT JOIN tbl_tax_epithets te5 ON te5.epithetID = ts.subformaID 
+                                  WHERE ts.external = 0
+                                   AND tg.genus LIKE '" . $this->db->escape_string($pieces[0]) . "%'
+                                   AND (    te0.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%' 
+                                         OR te1.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                                         OR te2.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                                         OR te3.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                                         OR te4.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%'
+                                         OR te5.epithet LIKE '" . $this->db->escape_string($pieces[1]) . "%') 
+                                  ORDER BY ScientificName")
+                             ->fetch_all(MYSQLI_ASSOC);
+        }
     } else {
-        $sql_2 .= " AND ts.speciesID IS NULL ";
+        // just find the genus, species therefore must be empty
+        $rows = $this->db->query("SELECT ts.taxonID, herbar_view.GetScientificName(ts.taxonID, 0) AS ScientificName
+                                  FROM tbl_tax_species ts
+                                   LEFT JOIN tbl_tax_genera tg ON tg.genID = ts.genID 
+                                  WHERE ts.external = 0
+                                   AND tg.genus LIKE '" . $this->db->escape_string($pieces[0]) . "%'
+                                   AND ts.speciesID IS NULL 
+                                  ORDER BY ScientificName")
+                         ->fetch_all(MYSQLI_ASSOC);
     }
-    $rows = $this->db->query($sql_1 . $sql_2 . " ORDER BY ScientificName")->fetch_all(MYSQLI_ASSOC);
 
     $results = array();
     foreach ($rows as $row) {
