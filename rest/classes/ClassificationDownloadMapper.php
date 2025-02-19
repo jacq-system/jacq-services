@@ -32,6 +32,11 @@ private $outputBody = array();
  */
 private $settings;
 
+/**
+ * cache answers of the uuid-service regarding citations
+ * @var array
+ */
+private $uuidCitationCache = array();
 
 public function __construct (mysqli $db, $settings)
 {
@@ -216,19 +221,25 @@ private function getHideScientificNameAuthors ($referenceId)
  */
 private function getUuidUrl ($type, $id)
 {
-    $curl = curl_init($this->settings['jacq_input_services'] . "tags/uuid/$type/$id");
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array('APIKEY: ' . $this->settings['apikey']));
-    $curl_response = curl_exec($curl);
-    if ($curl_response === false) {
-        $result = '';
+    if ($type == 'citation' && !empty($this->uuidCitationCache[$id])) {
+        return $this->uuidCitationCache[$id];
     } else {
-        $json = json_decode($curl_response, true);
-        $result = $json['url'];
-    }
-    curl_close($curl);
+        $curl = curl_init($this->settings['jacq_input_services'] . "tags/uuid/$type/$id");
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array('APIKEY: ' . $this->settings['apikey']));
+        $curl_response = curl_exec($curl);
+        if ($curl_response === false) {
+            $result = '';
+        } else {
+            $json = json_decode($curl_response, true);
+            $result = $json['url'];
+        }
+        curl_close($curl);
 
-    return $result;
+        $this->uuidCitationCache[$id] = $result;
+        
+        return $result;
+    }
 }
 
 /**
