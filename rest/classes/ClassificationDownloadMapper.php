@@ -76,12 +76,16 @@ public function createDownload($referenceType, $referenceId, $scientificNameId =
     $sql = "SELECT tsy.source_citationID, tsy.taxonID, tsy.acc_taxon_ID,
                    tr.rank_hierarchy,
                    tc.parent_taxonID,
+                   urc.uuid AS uuid_citiation,
+                   urs.uuid AS uuid_scientific_name,
                    `herbar_view`.GetProtolog(l.citationID) AS citation
             FROM tbl_tax_synonymy tsy
              LEFT JOIN tbl_tax_species ts ON ts.taxonID = tsy.taxonID
              LEFT JOIN tbl_tax_rank tr ON tr.tax_rankID = ts.tax_rankID
              LEFT JOIN tbl_lit l ON l.citationID = tsy.source_citationID
-             LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = tsy.tax_syn_ID ";
+             LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = tsy.tax_syn_ID
+             LEFT JOIN uuid_replica urc ON (urc.internal_id = tsy.source_citationID AND urc.uuid_minter_type = 'citation')
+             LEFT JOIN uuid_replica urs ON (urs.internal_id = tsy.taxonID AND urs.uuid_minter_type = 'scientific_name') ";
     // check if a certain scientific name id is specified & load the fitting synonymy entry
     if ($scientificNameId > 0) {
         $dbRowsTaxSynonymy[] = $this->db->query($sql . " WHERE tsy.source_citationID = $referenceId
@@ -126,12 +130,12 @@ public function createDownload($referenceType, $referenceId, $scientificNameId =
 private function exportClassification ($parentTaxSynonymies, $taxSynonymy)
 {
 
-    $line[0] = $this->getUuidUrl('citation', $taxSynonymy['source_citationID']);
+    $line[0] = (!empty($taxSynonymy['uuid_citiation'])) ? $this->settings['guidUrlPrefix'] . $taxSynonymy['uuid_citiation'] : $this->getUuidUrl('citation', $taxSynonymy['source_citationID']);
     $line[1] = $taxSynonymy['citation'];
     $line[2] = $this->settings['classifications_license'];
     $line[3] = date("Y-m-d H:i:s");
     $line[4] = '';
-    $line[5] = $this->getUuidUrl('scientific_name', $taxSynonymy['taxonID']);
+    $line[5] = (!empty($taxSynonymy['uuid_scientific_name'])) ? $this->settings['guidUrlPrefix'] . $taxSynonymy['uuid_scientific_name'] : $this->getUuidUrl('scientific_name', $taxSynonymy['taxonID']);
     $line[6] = $taxSynonymy['taxonID'];
     $line[7] = $taxSynonymy['parent_taxonID'];
     $line[8] = $taxSynonymy['acc_taxon_ID'];
@@ -151,12 +155,16 @@ private function exportClassification ($parentTaxSynonymies, $taxSynonymy)
     $taxSynonymySynonyms = $this->db->query("SELECT tsy.source_citationID, tsy.taxonID, tsy.acc_taxon_ID,
                                                     tr.rank_hierarchy,
                                                     tc.parent_taxonID,
+                                                    urc.uuid AS uuid_citiation,
+                                                    urs.uuid AS uuid_scientific_name,
                                                     `herbar_view`.GetProtolog(l.citationID) AS citation
                                              FROM tbl_tax_synonymy tsy
                                               LEFT JOIN tbl_tax_species ts ON ts.taxonID = tsy.taxonID
                                               LEFT JOIN tbl_tax_rank tr ON tr.tax_rankID = ts.tax_rankID
                                               LEFT JOIN tbl_lit l ON l.citationID = tsy.source_citationID
                                               LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = tsy.tax_syn_ID
+                                              LEFT JOIN uuid_replica urc ON (urc.internal_id = tsy.source_citationID AND urc.uuid_minter_type = 'citation')
+                                              LEFT JOIN uuid_replica urs ON (urs.internal_id = tsy.taxonID AND urs.uuid_minter_type = 'scientific_name')
                                              WHERE tsy.source_citationID = " . $taxSynonymy['source_citationID'] . "
                                               AND tsy.acc_taxon_ID = " . $taxSynonymy['taxonID'])
                                     ->fetch_all(MYSQLI_ASSOC);
@@ -169,12 +177,16 @@ private function exportClassification ($parentTaxSynonymies, $taxSynonymy)
     $taxSynonymyChildren = $this->db->query("SELECT tsy.source_citationID, tsy.taxonID, tsy.acc_taxon_ID,
                                                     tr.rank_hierarchy,
                                                     tc.parent_taxonID,
+                                                    urc.uuid AS uuid_citiation,
+                                                    urs.uuid AS uuid_scientific_name,
                                                     `herbar_view`.GetProtolog(l.citationID) AS citation
                                              FROM tbl_tax_synonymy tsy
                                               LEFT JOIN tbl_tax_species ts ON ts.taxonID = tsy.taxonID
                                               LEFT JOIN tbl_tax_rank tr ON tr.tax_rankID = ts.tax_rankID
                                               LEFT JOIN tbl_lit l ON l.citationID = tsy.source_citationID
                                               LEFT JOIN tbl_tax_classification tc ON tc.tax_syn_ID = tsy.tax_syn_ID
+                                              LEFT JOIN uuid_replica urc ON (urc.internal_id = tsy.source_citationID AND urc.uuid_minter_type = 'citation')
+                                              LEFT JOIN uuid_replica urs ON (urs.internal_id = tsy.taxonID AND urs.uuid_minter_type = 'scientific_name')
                                              WHERE tsy.source_citationID = " . $taxSynonymy['source_citationID'] . "
                                               AND tc.parent_taxonID = " . $taxSynonymy['taxonID'] . "
                                              ORDER BY tc.order ASC")
@@ -237,7 +249,7 @@ private function getUuidUrl ($type, $id)
         curl_close($curl);
 
         $this->uuidCitationCache[$id] = $result;
-        
+
         return $result;
     }
 }

@@ -37,6 +37,7 @@ $settings = [
         'jacq_input_services' => $_CONFIG['JACQ_INPUT_SERVICES'],
         'APIKEY' => $_CONFIG['APIKEY'],
         'classifications_license' => $_CONFIG['classifications_license'],
+        'guidUrlPrefix' => $_CONFIG['guidUrlPrefix'],
     ],
 ];
 
@@ -460,7 +461,8 @@ $app->get('/download/{referenceType}/{referenceId}', function (Request $request,
 
     $mapper = new ClassificationDownloadMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                                 'apikey' => $this->get('settings')['APIKEY'],
-                                                                'classifications_license' => $this->get('settings')['classifications_license']));
+                                                                'classifications_license' => $this->get('settings')['classifications_license'],
+                                                                'guidUrlPrefix' => $this->get('settings')['guidUrlPrefix']));
     $data = $mapper->createDownload(trim(filter_var($args['referenceType'], FILTER_SANITIZE_STRING)),
                                     intval($args['referenceId']),
                                     intval($request->getQueryParam('scientificNameId')),
