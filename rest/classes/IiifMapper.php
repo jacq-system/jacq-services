@@ -90,7 +90,7 @@ public function getManifest(int $specimenID)
  * create image manifest as an array for a given image filename and server-ID with data from a Cantaloupe-Server extended with a Djatoka-Interface
  *
  * @param int $server_id ID of image server
- * @param string $filename name of image file
+ * @param string $identifier name of image file
  * @return array manifest metadata
  */
 public function createManifestFromExtendedCantaloupeImage(int $server_id, string $identifier)
@@ -228,57 +228,80 @@ private function makeURI (int $specimenID, array $parts): string
     return $uri;
 }
 
-/**
- * create image manifest as an array for a given specimen with data from a Cantaloupe-Server extended with a Djatoka-Interface
- *
- * @param int $specimenID specimen-ID
- * @return array manifest metadata
- */
-private function createManifestFromExtendedCantaloupe(int $server_id, string $identifier, string $urlmanifestpre)
+    /**
+     * create image manifest as an array for a given specimen with data from a Cantaloupe-Server with djatoka-extension or another api
+     *
+     * @param int $server_id ID of image server
+     * @param string $identifier identifier of the image, usually the filename without extension
+     * @param string $urlmanifestpre prepend @id with this, usually the manifest_uri
+     * @param string|null $urlmanifestBackend url of the backend, already parsed and stripped from "POST:"
+     * @return array manifest metadata
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+private function createManifestFromExtendedCantaloupe(int $server_id, string $identifier, string $urlmanifestpre, ?string $urlmanifestBackend = ''): array
 {
-    $imgServer = $this->db->query("SELECT iiif.manifest_backend, img.imgserver_url, img.key
+    $imgServer = $this->db->query("SELECT iiif.manifest_backend, iiif.extension, img.imgserver_url, img.key
                                    FROM tbl_img_definition img
                                     LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = img.source_id_fk
                                    WHERE img.img_def_ID = '$server_id'")
                           ->fetch_assoc();
-    if (empty($imgServer['manifest_backend'])) {
+    if (empty($urlmanifestBackend)) {
+        $urlmanifestBackend = substr($imgServer['manifest_backend'], 5);
+    }
+    if (empty($urlmanifestBackend)) {
         return array();  // nothing found
     }
 
-    // ask the enhanced djatoka server for resources with metadata
-    $data = array(
-        'id' => '1',
-        'method' => 'listResourcesWithMetadata',
-        'params' => array(
-            $imgServer['key'],
-            array(
-                $identifier,
-                $identifier . "_%",
-                $identifier . "A",
-                $identifier . "B",
-                "tab_" . $identifier,
-                "obs_" . $identifier,
-                "tab_" . $identifier . "_%",
-                "obs_" . $identifier . "_%"
-            )
-        )
-    );
+    switch ($imgServer['extension']) {
+        case 'djatoka':
+            // ask the djatoka extension for resources with metadata
+            $data = array(
+                'id' => '1',
+                'method' => 'listResourcesWithMetadata',
+                'params' => array(
+                    $imgServer['key'],
+                    array(
+                        $identifier,
+                        $identifier . "_%",
+                        $identifier . "A",
+                        $identifier . "B",
+                        "tab_" . $identifier,
+                        "obs_" . $identifier,
+                        "tab_" . $identifier . "_%",
+                        "obs_" . $identifier . "_%"
+                    )
+                )
+            );
 
-    $data_string = json_encode($data);
-    $curl = curl_init();
-    curl_setopt($curl, CURLOPT_URL, substr($imgServer['manifest_backend'],5));
-    curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($curl, CURLOPT_SSL_VERIFYHOST,0);
-    curl_setopt($curl, CURLOPT_POST, true);
-    curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
+            $data_string = json_encode($data);
+            $curl = curl_init();
+            curl_setopt($curl, CURLOPT_URL, $urlmanifestBackend);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($curl, CURLOPT_POST, true);
+            curl_setopt($curl, CURLOPT_POSTFIELDS, $data_string);
+            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, array('Content-Type: application/json',
                                                         'Content-Length: ' . strlen($data_string))
-    );
+            );
 
-    $curl_response = curl_exec($curl);
-    $obj = json_decode($curl_response, TRUE);
-    curl_close($curl);
+            $curl_response = curl_exec($curl);
+            $obj = json_decode($curl_response, TRUE);
+            curl_close($curl);
+
+            break;
+        default:
+            // no extension or api present, so ask the iiif-server directly
+            $client = new GuzzleHttp\Client();
+
+            $data = json_decode($client->request('GET', $urlmanifestBackend)->getBody()->getContents(), true);
+            $obj['result'][0] = [
+                'identifier' => $identifier,
+                'path'       => '/' . $identifier,
+                'width'      => $data['width'],
+                'height'     => $data['height']
+            ];
+    }
 
     if (empty($obj['result'])) {
         return array();  // nothing found
@@ -353,17 +376,18 @@ private function createManifestFromExtendedCantaloupe(int $server_id, string $id
 
 private function getManifestIiifServer(int $specimenID): array
 {
-    $specimen = $this->db->query("SELECT iiif.manifest_uri, img.img_def_ID
+    $specimen = $this->db->query("SELECT iiif.manifest_uri, iiif.manifest_backend, img.img_def_ID
                                   FROM tbl_specimens s
                                    LEFT JOIN tbl_management_collections mc        ON mc.collectionID = s.collectionID
                                    LEFT JOIN herbar_pictures.iiif_definition iiif ON iiif.source_id_fk = mc.source_id
                                    LEFT JOIN tbl_img_definition img               ON img.source_id_fk = mc.source_id
                                   WHERE specimen_ID = '$specimenID'")
                      ->fetch_assoc();
-    $urlmanifestpre = $this->makeURI($specimenID, $this->parser($specimen['manifest_uri']));
-    $identifier = $this->getFilename($specimenID);
+    $urlmanifestpre     = $this->makeURI($specimenID, $this->parser($specimen['manifest_uri']));
+    $urlmanifestBackend = substr($this->makeURI($specimenID, $this->parser($specimen['manifest_backend'])), 5);
+    $identifier         = $this->getFilename($specimenID);
 
-    return $this->createManifestFromExtendedCantaloupe($specimen['img_def_ID'], $identifier, $urlmanifestpre);
+    return $this->createManifestFromExtendedCantaloupe($specimen['img_def_ID'], $identifier, $urlmanifestpre, $urlmanifestBackend);
 }
 
 /**
@@ -373,7 +397,7 @@ private function getManifestIiifServer(int $specimenID): array
  * @param array $metadata already existing metadata in manifest (optional)
  * @return array metadata
  */
-private function getMetadata(SpecimenMapper $specimen, array $metadata = array()): array
+private function getMetadata(SpecimenMapper $specimen, ?array $metadata = array()): array
 {
     $meta = $metadata;
 
