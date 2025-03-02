@@ -248,9 +248,6 @@ private function createManifestFromExtendedCantaloupe(int $server_id, string $id
     if (empty($urlmanifestBackend)) {
         $urlmanifestBackend = substr($imgServer['manifest_backend'], 5);
     }
-    if (empty($urlmanifestBackend)) {
-        return array();  // nothing found
-    }
 
     switch ($imgServer['extension']) {
         case 'djatoka':
@@ -294,7 +291,7 @@ private function createManifestFromExtendedCantaloupe(int $server_id, string $id
             // no extension or api present, so ask the iiif-server directly
             $client = new GuzzleHttp\Client();
 
-            $data = json_decode($client->request('GET', $urlmanifestBackend)->getBody()->getContents(), true);
+            $data = json_decode($client->request('GET', $imgServer['imgserver_url'] . $identifier . "/info.json")->getBody()->getContents(), true);
             $obj['result'][0] = [
                 'identifier' => $identifier,
                 'path'       => '/' . $identifier,
