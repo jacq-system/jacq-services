@@ -1,4 +1,8 @@
 <?php
+
+use GuzzleHttp\Client;
+use GuzzleHttp\Exception\GuzzleException;
+
 class IiifMapper extends Mapper
 {
 
@@ -29,7 +33,7 @@ public function getManifestUri(int $specimenID): array
  * @param int $specimenID ID of specimen
  * @return array received manifest
  */
-public function getManifest(int $specimenID)
+public function getManifest(int $specimenID): array
 {
     $row = $this->db->query("SELECT s.specimen_ID, iiif.manifest_backend
                                   FROM tbl_specimens s
@@ -93,7 +97,7 @@ public function getManifest(int $specimenID)
  * @param string $identifier name of image file
  * @return array manifest metadata
  */
-public function createManifestFromExtendedCantaloupeImage(int $server_id, string $identifier)
+public function createManifestFromExtendedCantaloupeImage(int $server_id, string $identifier): array
 {
     // check if this image identifier is already part of a specimen and return the correct manifest if so
     $djatokaImage = $this->db->query("SELECT specimen_ID 
@@ -228,16 +232,15 @@ private function makeURI (int $specimenID, array $parts): string
     return $uri;
 }
 
-    /**
-     * create image manifest as an array for a given specimen with data from a Cantaloupe-Server with djatoka-extension or another api
-     *
-     * @param int $server_id ID of image server
-     * @param string $identifier identifier of the image, usually the filename without extension
-     * @param string $urlmanifestpre prepend @id with this, usually the manifest_uri
-     * @param string|null $urlmanifestBackend url of the backend, already parsed and stripped from "POST:"
-     * @return array manifest metadata
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
+/**
+ * create image manifest as an array for a given specimen with data from a Cantaloupe-Server with djatoka-extension or another api
+ *
+ * @param int $server_id ID of image server
+ * @param string $identifier identifier of the image, usually the filename without extension
+ * @param string $urlmanifestpre prepend @id with this, usually the manifest_uri
+ * @param string|null $urlmanifestBackend url of the backend, already parsed and stripped from "POST:"
+ * @return array manifest metadata
+ */
 private function createManifestFromExtendedCantaloupe(int $server_id, string $identifier, string $urlmanifestpre, ?string $urlmanifestBackend = ''): array
 {
     $imgServer = $this->db->query("SELECT iiif.manifest_backend, iiif.extension, img.imgserver_url, img.key
@@ -250,8 +253,7 @@ private function createManifestFromExtendedCantaloupe(int $server_id, string $id
     }
 
     switch ($imgServer['extension']) {
-        case 'djatoka':
-            // ask the djatoka extension for resources with metadata
+        case 'djatoka': // ask the djatoka extension for resources with metadata
             $data = array(
                 'id' => '1',
                 'method' => 'listResourcesWithMetadata',
@@ -287,17 +289,49 @@ private function createManifestFromExtendedCantaloupe(int $server_id, string $id
             curl_close($curl);
 
             break;
-        default:
-            // no extension or api present, so ask the iiif-server directly
-            $client = new GuzzleHttp\Client();
+        case 's3proxy':  // the iiif-server uses a s3-backend via a proxy, which we can use
+            $client = new Client();
 
-            $data = json_decode($client->request('GET', $imgServer['imgserver_url'] . $identifier . "/info.json")->getBody()->getContents(), true);
-            $obj['result'][0] = [
-                'identifier' => $identifier,
-                'path'       => '/' . $identifier,
-                'width'      => $data['width'],
-                'height'     => $data['height']
-            ];
+            try {
+                $response = $client->request('GET', $urlmanifestBackend . "?prefix=$identifier")->getBody()->getContents();
+                $xml = new SimpleXMLElement($response);
+
+                $obj['result'] = array();
+                // "Contents" gives an array of objects
+                foreach ($xml->Contents as $contents) {
+                    if (!empty($contents->Key[0])) {
+                        $filename = pathinfo($contents->Key, PATHINFO_FILENAME);
+                        // the backend only gives the filenames, to get the width and height we need to ask the iiif-server
+                        $data = json_decode($client->request('GET', $imgServer['imgserver_url'] . $filename . "/info.json")->getBody()->getContents(), true);
+                        $obj['result'][] = [
+                            'identifier' => $filename,
+                            'path' => '/' . $filename,
+                            'width' => $data['width'],
+                            'height' => $data['height']
+                        ];
+                    }
+                }
+            }
+            catch (GuzzleException | Exception) {
+                return array();  //something went wrong, so consider it as "nothing found"
+            }
+
+            break;
+        default:    // no extension or api present, so use the identifier as filename and ask the iiif-server for width and height
+            $client = new Client();
+
+            try {
+                $data = json_decode($client->request('GET', $imgServer['imgserver_url'] . $identifier . "/info.json")->getBody()->getContents(), true);
+                $obj['result'][0] = [
+                    'identifier' => $identifier,
+                    'path' => '/' . $identifier,
+                    'width' => $data['width'],
+                    'height' => $data['height']
+                ];
+            }
+            catch (GuzzleException) {
+                return array();  //something went wrong, so consider it as "nothing found"
+            }
     }
 
     if (empty($obj['result'])) {
@@ -391,7 +425,7 @@ private function getManifestIiifServer(int $specimenID): array
  * get array of metadata for a given specimen
  *
  * @param SpecimenMapper $specimen specimen to get metadata from
- * @param array $metadata already existing metadata in manifest (optional)
+ * @param array|null $metadata already existing metadata in manifest (optional)
  * @return array metadata
  */
 private function getMetadata(SpecimenMapper $specimen, ?array $metadata = array()): array
@@ -406,8 +440,15 @@ private function getMetadata(SpecimenMapper $specimen, ?array $metadata = array(
 
     $dwcData = $specimen->getDWC();
     foreach ($dwcData as $label => $value) {
-        $meta[] = array('label' => $label,
-                        'value' => $value);
+        if (is_array($value)) {
+            foreach ($value as $subValue) {
+                $meta[] = array('label' => $label,
+                                'value' => $subValue);
+            }
+        } else {
+            $meta[] = array('label' => $label,
+                            'value' => $value);
+        }
     }
 
     $specimenProperties = $specimen->getProperties();
@@ -462,7 +503,7 @@ private function getMetadataWithValues(SpecimenMapper $specimen, array $metadata
  * @param int $specimenID specimen-ID
  * @return string the constructed filename or an empty string
  */
-private function getFilename(int $specimenID)
+private function getFilename(int $specimenID): string
 {
     $result = $this->db->query("SELECT s.`HerbNummer`, mc.`picture_filename`,  mc.`coll_short_prj`, id.`HerbNummerNrDigits`
                                 FROM `tbl_specimens` s

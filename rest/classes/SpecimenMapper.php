@@ -163,6 +163,7 @@ public function __construct(mysqli $db, int $specimenID)
         $this->properties['iso_alpha_3_code']        = $row['iso_alpha_3_code'];
         $this->properties['image']                   = $firstImageLink;
         $this->properties['downloadImage']           = $firstImageDownloadLink;
+        $this->properties['typeInformation']         = $this->makeTypus();
     }
 }
 
@@ -284,7 +285,8 @@ public function getDWC(): array
             'dwc:eventDate' => $this->properties['created'],
             'dwc:recordNumber' => ($this->properties['HerbNummer']) ?: ('JACQ-ID ' . $this->properties['specimenID']),
             'dwc:recordedBy' => $this->properties['collectorTeam'],
-            'dwc:fieldNumber' => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']));
+            'dwc:fieldNumber' => trim($this->properties['Nummer'] . ' ' . $this->properties['alt_number']),
+            'dwc:typeStatus' => $this->makeDWCtypeStatus());
     } else {
         return array();
     }
@@ -297,9 +299,15 @@ public function getDWC(): array
  */
 public function getJACQ(): array
 {
+    $replaceNeedle = ['typeStatus', 'typifiedName', 'typeReference', 'typeCurrent'];
+    $replaceWith = ['jacq:typeStatus', 'jacq:typifiedName', 'jacq:typeReference', 'jacq:typeCurrent'];
     $result = array();
     foreach ($this->properties as $key => $value) {
-        $result["jacq:{$key}"] = $value;
+        if (is_array($value)) {
+            $result["jacq:$key"]= json_decode(str_replace($replaceNeedle, $replaceWith, json_encode($value)), true);
+        } else {
+            $result["jacq:$key"] = $value;
+        }
     }
 
     return $result;
@@ -309,6 +317,82 @@ public function getJACQ(): array
 // ---------- private functions ----------
 // ---------------------------------------
 
+private function makeTypus()
+{
+    $result = array();
 
+    $typi = $this->db->query("SELECT typus_lat, herbar_view.GetScientificName(tst.taxonID, 0) AS sciName, herbar_view.GetScientificName(ts.synID, 0) AS accName, ts.taxonID
+                              FROM tbl_specimens_types tst
+                               JOIN tbl_typi tt ON tt.typusID = tst.typusID
+                               JOIN tbl_tax_species ts ON ts.taxonID = tst.taxonID
+                              WHERE tst.specimenID = $this->specimenID 
+                              ORDER by tst.typified_Date DESC")
+                     ->fetch_all(MYSQLI_ASSOC);
+    if (!empty($typi)) {
+        foreach ($typi as $typus) {
+            $citations = $this->db->query("SELECT l.suptitel, la.autor, l.periodicalID, lp.periodical, l.vol, l.part, ti.paginae, ti.figures, l.jahr
+                                           FROM tbl_tax_index ti
+                                            INNER JOIN tbl_lit l ON ti.citationID = l.citationID
+                                            LEFT JOIN tbl_lit_periodicals lp ON lp.periodicalID = l.periodicalID
+                                            LEFT JOIN tbl_lit_authors la ON la.autorID = l.editorsID
+                                           WHERE ti.taxonID = {$typus['taxonID']}")
+                                  ->fetch_all(MYSQLI_ASSOC);
+            $references = array();
+            foreach ($citations as $citation) {
+                $references[] = $this->makeProtolog($citation);
+            }
+            $result[] = [
+                'typeStatus'    => $typus['typus_lat'],
+                'typifiedName'  => $typus['sciName'],
+                'typeReference' => $references,
+                'typeCurrent'   => $typus['accName']
+                ];
+        }
+    }
+
+    if (empty($result)) {
+        return "";
+    } else {
+        return $result;
+    }
+}
+
+private function makeProtolog($data)
+{
+    $text = "";
+    if ($data['suptitel']) {
+        $text .= "in " . $data['autor'] . ": " . $data['suptitel'] . " ";
+    }
+    if ($data['periodicalID']) {
+        $text .= $data['periodical'];
+    }
+    $text .= " " . $data['vol'];
+    if ($data['part']) {
+        $text .= " (" . $data['part'] . ")";
+    }
+    $text .= ": " . $data['paginae'];
+    if ($data['figures']) {
+        $text .= "; " . $data['figures'];
+    }
+    $text .= " (" . $data['jahr'] . ")";
+
+    return $text;
+}
+
+private function makeDWCtypeStatus()
+{
+    if (empty($this->properties['typeInformation'])) {
+        return '';
+    } else {
+        $result = array();
+        foreach ($this->properties['typeInformation'] as $typeInformation) {
+            $result[] = $typeInformation['typeStatus'] . " of "
+                      . $typeInformation['typifiedName']
+                      . implode(', ', $typeInformation['typeReference'])
+                      . ((!empty($typeInformation['typeCurrent'])) ? " Current Name: {$typeInformation['typeCurrent']}" : '');
+        }
+        return $result;
+    }
+}
 
 }

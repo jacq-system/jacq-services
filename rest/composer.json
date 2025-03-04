@@ -9,6 +9,7 @@
         "ext-mysqli": "*",
         "ext-curl": "*",
         "ext-json": "*",
+        "ext-simplexml": "*",
         "srjlewis/json-rpc": "2.*",
         "guzzlehttp/guzzle": "^7.0",
         "php-coord/php-coord": "*",
