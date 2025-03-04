@@ -56,17 +56,11 @@ public function getManifest(int $specimenID): array
         if (substr($manifestBackend,0,5) == 'POST:') {
             $result = $this->getManifestIiifServer($row['specimen_ID']);
         } else {
-            $curl = curl_init($manifestBackend);
-            curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($curl, CURLOPT_FOLLOWLOCATION, true);
-            curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
-            $curl_response = curl_exec($curl);
-
-            if ($curl_response !== false) {
-                $result = json_decode($curl_response, true);
-            }
-            curl_close($curl);
+            $client = new Client();
+            $response = $client->request('GET', $manifestBackend)->getBody()->getContents();
+            $result = (!empty($response)) ? json_decode($response, true) : array();
         }
+        
         if ($result && !$fallback) {  // we used a true backend, so enrich the manifest with additional data
             $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
 
