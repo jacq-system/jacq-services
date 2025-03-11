@@ -351,7 +351,7 @@ private function makeTypus()
     }
 
     if (empty($result)) {
-        return "";
+        return null;
     } else {
         return $result;
     }
@@ -382,7 +382,7 @@ private function makeProtolog($data)
 private function makeDWCtypeStatus()
 {
     if (empty($this->properties['typeInformation'])) {
-        return '';
+        return null;
     } else {
         $result = array();
         foreach ($this->properties['typeInformation'] as $typeInformation) {

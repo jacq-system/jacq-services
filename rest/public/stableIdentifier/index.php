@@ -74,6 +74,18 @@ $container['phpErrorHandler'] = function ($container) {
 };
 
 
+/***********************
+ * Register middleware *
+ ***********************/
+$app->add(function (Request $request, Response $response, $next)
+{
+    $newResponse = $next($request, $response);
+    return $newResponse
+        ->withHeader('Access-Control-Allow-Origin', '*')
+        ->withHeader('Access-Control-Allow-Methods', 'GET');
+});
+
+
 
 /*******************
  * Register routes *
