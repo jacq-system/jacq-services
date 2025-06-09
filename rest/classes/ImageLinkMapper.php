@@ -322,8 +322,8 @@ private function djatoka()
     if (!empty($images)) {
         $firstImage = true;
         foreach ($images as $image) {
-            $this->imageLinks[] = 'https://www.jacq.org/image.php?' . $image . '&method=show';
-            $this->fileLinks['full'][] = 'https://www.jacq.org/image.php?' . $image . '&method=download';
+            $this->imageLinks[] = 'https://www.jacq.org/image?' . $image . '&method=show';
+            $this->fileLinks['full'][] = 'https://www.jacq.org/image?' . $image . '&method=download';
             if (($specimen['filesize'] ?? 0) > 1500 && $firstImage) {  // use europeana-cache only for images without errors and only for the first image
                 $sourceCode = $this->db->query("SELECT m.source_code 
                                                 FROM `tbl_specimens` s
@@ -333,9 +333,9 @@ private function djatoka()
                                        ->fetch_array()['source_code'];
                 $this->fileLinks['europeana'][] = "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
             } else {
-                $this->fileLinks['europeana'][] = 'https://www.jacq.org/image.php?' . $image . '&method=europeana';
+                $this->fileLinks['europeana'][] = 'https://www.jacq.org/image?' . $image . '&method=europeana';
             }
-            $this->fileLinks['thumb'][] = 'https://www.jacq.org/image.php?' . $image . '&method=thumb';
+            $this->fileLinks['thumb'][] = 'https://www.jacq.org/image?' . $image . '&method=thumb';
             $firstImage = false;
         }
     }
