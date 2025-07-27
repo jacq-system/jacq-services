@@ -166,28 +166,29 @@ $app->get('/manifest/{specimenID}', function (Request $request, Response $respon
 });
 
 /**
- * ********** UNDER CONSTRUCTION **********
- *
- * OA\Get(
+ * @OA\Get(
  *  path="/iiif/createManifest/{serverID}/{imageIdentifier}",
  *  tags={"iiif"},
  *  summary="create a manifest for an image server with a given image identifier",
- *  OA\Parameter(
+ *  description="create a manifest for an image with a given image identifer and a given image server. Uses the jacq-servlet interface of an extended cantaloupe image server. ",
+ *  @OA\Parameter(
  *      name="serverID",
  *      in="path",
  *      description="ID of image server",
  *      required=true,
- *      OA\Schema(type="integer")
+ *      example=4,
+ *      @OA\Schema(type="integer")
  *  ),
- *  OA\Parameter(
+ *  @OA\Parameter(
  *      name="imageIdentifier",
  *      in="path",
  *      description="image identifier",
  *      required=true,
- *      OA\Schema(type="string")
+ *      example="gjo_0079614",
+ *      @OA\Schema(type="string")
  *  ),
- *  OA\Response(response="200", description="successful operation"),
- *  OA\Response(response="404", description="no manifest available"),
+ *  @OA\Response(response="200", description="successful operation"),
+ *  @OA\Response(response="404", description="no manifest available"),
  * )
  */
 $app->get('/createManifest/{serverID}/{imageIdentifier}', function (Request $request, Response $response, array $args)

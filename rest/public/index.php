@@ -78,7 +78,7 @@ use OpenApi\Generator;
  * @OA\Tag(
  *     name="statistics"
  * )
- * @OA\Tag(
+ * OA\Tag(
  *     name="livingplants"
  * )
  */
