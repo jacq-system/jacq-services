@@ -183,7 +183,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $arguments['set'] = $this->params['set'] ?? '';
         $arguments['metadataPrefix'] = $this->params['metadataPrefix'] ?? '';
         $arguments['start'] = 0;
-        $arguments['off'] = 0;
+        $arguments['off'] = -1;
     }
     if ($arguments['metadataPrefix'] != 'oai_dc' && $arguments['metadataPrefix'] != 'oai_edm') {
         $this->error('cannotDisseminateFormat', "The metadata format '{$arguments['metadataPrefix']}' is not supported by this repository.");
@@ -207,7 +207,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
     }
     $blocksize = ($identifiersOnly) ? 1000 : 100;
 
-    if ($arguments['off'] == 0) {
+    if ($arguments['off'] < 0) {
         $rows = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, mc.source_id
                                   FROM tbl_specimens s
                                    JOIN (SELECT specimen_ID
@@ -221,6 +221,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
                                    AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ")
                                    $constraint
                                    $constraintSourceJ
+                                  ORDER BY s.specimen_ID
                                   LIMIT {$arguments['start']}, $blocksize")
                          ->fetch_all(MYSQLI_ASSOC);
         if (count($rows) < $blocksize) {
@@ -228,7 +229,8 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
             $limitG = $blocksize - count($rows);
             $offset = $arguments['start'] + count($rows);
         } else {
-            $startG = $limitG = $offset = 0;
+            $startG = $limitG = 0;
+            $offset = -1;
         }
     } else {
         $rows = array();
@@ -242,6 +244,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
                                    WHERE s.source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
                                     $constraint
                                     $constraintSourceG
+                                   ORDER BY s.specimen_ID
                                    LIMIT $startG, $limitG")
                           ->fetch_all(MYSQLI_ASSOC);
         $rows = array_merge($rows, $rowsG);
@@ -282,7 +285,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
                             . (($arguments['from']) ? "|from={$arguments['from']}" : '')
                             . (($arguments['until']) ? "|until={$arguments['until']}" : '')
                             . (($arguments['set']) ? "|set={$arguments['set']}" : '')
-                            . (($offset) ? "|off=$offset" : '')
+                            . (($offset >= 0) ? "|off=$offset" : '')
                             . "|metadataPrefix={$arguments['metadataPrefix']}");
         $this->xml->endElement();
     }
@@ -523,7 +526,7 @@ private function checkArguments(array $allowedList = array()): void
  */
 private function parseResumptionToken(): array
 {
-    $result = array('from' => '', 'until' => '', 'start' => 0, 'metadataPrefix' => '', 'set' => '', 'off' => 0);
+    $result = array('from' => '', 'until' => '', 'start' => 0, 'metadataPrefix' => '', 'set' => '', 'off' => -1);
     foreach (explode('|', $this->params['resumptionToken']) as $chunk) {
         $tokenParam = explode("=", $chunk);
         if (count($tokenParam) == 2) {
@@ -564,7 +567,7 @@ private function parseResumptionToken(): array
                     }
                     break;
                 case 'off':
-                    if (intval($tokenParam[1]) > 0) {
+                    if (intval($tokenParam[1]) >= 0) {
                         $result['off'] = intval($tokenParam[1]);
                     }
                     break;
