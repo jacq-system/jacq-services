@@ -149,8 +149,12 @@ $app->get('/convert', function (Request $request, Response $response)
         $data = array('latlon' => $converter->utm2latlon($params['utm']));
     } elseif (isset($params['mgrs'])) {                     // from MGRS
         $conv = $converter->mgrs2utm($params['mgrs']);
-        $data = array('utm'    => $conv,
-                      'latlon' => $converter->utm2latlon($conv['string']));
+        if (empty($conv['error'])) {
+            $data = array('utm'    => $conv,
+                          'latlon' => $converter->utm2latlon($conv['string']));
+        } else {
+            $data = array('error' => $conv['error']);
+        }
     } else {
         $data = array('error' => "nothing to do");
     }
