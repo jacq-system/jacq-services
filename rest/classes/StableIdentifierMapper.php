@@ -10,7 +10,7 @@ class StableIdentifierMapper extends Mapper
  */
 public function getSpecimenID($sid)
 {
-    // sometimes double slashes get lost, so "https://" mutates to "https:/". Probably slim-related bug
+    // nginx-proxy removes double slashes, so "https://" mutates to "https:/".
     $sidCorr = str_replace(':///', '://', str_replace(':/', '://', $sid));
 
     $pos = strpos($sidCorr, "JACQID");
