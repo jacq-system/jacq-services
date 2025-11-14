@@ -15,7 +15,7 @@ private array $params;
 private bool $errorOccurred;
 private string $baseURL = 'https://services.jacq.org/jacq-services/oai/';
 private string $identifierPrefixJacq = "oai:jacq.org:";
-private array $setsAllowed = [1, 4, 5, 6];
+private array $setsAllowed = [1, 4, 5, 6, 55];
 private array $setsAllowedGbif = [10001, 10002];
 private XMLOaiWriter $xml;
 
