@@ -43,7 +43,7 @@ public function __construct(mysqli $db, int $id)
                              WHERE s.specimen_ID = $this->specimenID")
                     ->fetch_assoc();
 
-    if (!empty($row)) {
+    if (!empty($row) && !empty($row['json'])) {
         $this->isValid = true;  // we have found valid data
         $this->properties = json_decode($row['json'], true);
 

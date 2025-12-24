@@ -62,7 +62,7 @@ class XMLOaiWriter extends XMLWriter
      * @param string $elementName    name of the element
      * @param string $attributeValue value of the element
      */
-    public function writeNonemptyElement(string $elementName, string $attributeValue): void
+    public function writeNonemptyElement(string $elementName, ?string $attributeValue): void
     {
         if (!empty($attributeValue)) {
             $this->writeElement($elementName, $attributeValue);
