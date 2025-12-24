@@ -242,6 +242,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $rowsG = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, s.source_id
                                    FROM gbif_cache.specimens s
                                    WHERE s.source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
+                                    AND s.json IS NOT NULL
                                     $constraint
                                     $constraintSourceG
                                    ORDER BY s.specimen_ID
