@@ -223,7 +223,7 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
         switch ($key) {
             case 'sciname':
                 $joins['sn'] = true;
-                $order .= "sn.scientificName{$orderSequence},";
+                $order .= "sn.scientific_name{$orderSequence},";
                 break;
             case 'cltr':
                 $joins['c'] = true;
@@ -253,7 +253,9 @@ public function searchSpecimensList(array $params, array $taxonIDList = array())
                 case 'gn':  $sql .= " LEFT JOIN tbl_geo_nation n              ON n.nationID      = s.NationID ";    break;
                 case 'c':   $sql .= " LEFT JOIN tbl_collector c               ON c.SammlerID     = s.SammlerID
                                       LEFT JOIN tbl_collector_2 c2            ON c2.Sammler_2ID  = s.Sammler_2ID "; break;
-                case 'sn':  $sql .= " LEFT JOIN tbl_tax_sciname sn            ON sn.taxonID      = s.taxonID ";     break;
+                case 'sn':  $sql .= " LEFT JOIN herbar_view.view_scientificName_mtrlzd sn "
+                                  . "   ON sn.scientific_name_id = s.taxonID ";
+                                  break;
                 case 'ss':  $sql .= " LEFT JOIN tbl_specimens_series ss       ON ss.seriesID     = s.seriesID ";    break;
             }
         }

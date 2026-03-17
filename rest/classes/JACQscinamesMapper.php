@@ -104,19 +104,54 @@ public function getTaxonName($taxonID): string
  * @param string $term search term
  * @return array results of search (taxonID and scientificName)
  */
-public function findScientificName($term): array
+public function findScientificName($term, $withsyn = 0): array
 {
-/*
-INSERT INTO tbl_tax_sciname SELECT taxonID, herbar_view.GetScientificName(taxonID, 0), herbar_view._buildScientificName(taxonID) FROM tbl_tax_species
-SELECT * FROM `tbl_tax_sciname` WHERE MATCH(scientificName) against('+prunus +avium' IN BOOLEAN MODE)
-*/
     $parts = explode(" ", $term);
-    $rows = $this->db->query("SELECT taxonID, scientificName, taxonName
-                              FROM `tbl_tax_sciname`
-                              WHERE MATCH(scientificName) against('" . $this->db->real_escape_string('+' . implode(" +", $parts)) . "' IN BOOLEAN MODE)
-                               OR MATCH(taxonName) against('" . $this->db->real_escape_string('+' . implode(" +", $parts)) . "' IN BOOLEAN MODE)
-                              ORDER BY scientificName")
+    $rows = $this->db->query("SELECT scientific_name_id AS taxonID, scientific_name AS scientificName
+                              FROM `herbar_view`.`view_scientificName_mtrlzd`
+                              WHERE MATCH(scientific_name) against('" . $this->db->real_escape_string('+' . implode(" +", $parts)) . "' IN BOOLEAN MODE)
+                              ORDER BY scientific_name")
                      ->fetch_all(MYSQLI_ASSOC);
+    if ($withsyn && $rows) {
+        $symlist = $scanlist = array();
+        foreach ($rows as $row) {
+            $scanlist[$row['taxonID']] = 1;
+        }
+        do {
+            $sizeSymlist = count($symlist);
+            $IDs = implode(",", array_keys($scanlist));
+            if ($IDs) {
+                $rows_scan = $this->db->query("SELECT taxonID, synID, basID 
+                                               FROM tbl_tax_species 
+                                               WHERE taxonID IN ($IDs)
+                                                OR basID IN ($IDs)
+                                                OR synID IN ($IDs)")
+                                      ->fetch_all(MYSQLI_ASSOC);
+                $scanlist = array();
+                foreach ($rows_scan as $row) {
+                    if ($row['taxonID']) {
+                        $symlist[$row['taxonID']] = 1;
+                        $scanlist[$row['taxonID']] = 1;
+                    }
+                    if ($row['synID']) {
+                        $symlist[$row['synID']] = 1;
+                        $scanlist[$row['synID']] = 1;
+                    }
+                    if ($row['basID']) {
+                        $symlist[$row['basID']] = 1;
+                        $scanlist[$row['basID']] = 1;
+                    }
+                }
+            }
+        } while ($sizeSymlist != count($symlist));
+        $rows_sym =  $this->db->query("SELECT taxonID, herbar_view.GetScientificName(taxonID, 0) AS scientificName
+                                       FROM `tbl_tax_species` 
+                                       WHERE taxonID IN (" . implode(",", array_keys($symlist)) . ")")
+                              ->fetch_all(MYSQLI_ASSOC);
+        foreach ($rows_sym as $row) {
+            $rows[] = $row;
+        }
+    }
     return $rows;
 }
 

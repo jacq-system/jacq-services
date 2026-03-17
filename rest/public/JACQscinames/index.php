@@ -120,8 +120,7 @@ $app->get('/uuid/{taxonID}', function (Request $request, Response $response, arr
     $data = array('uuid'           => $mapper->getUuid($taxonID),
                   'url'            => $mapper->getUuidUrl(),
                   'taxonID'        => $taxonID,
-                  'scientificName' => $mapper->getScientificName($taxonID),
-                  'taxonName'      => $mapper->getTaxonName($taxonID));
+                  'scientificName' => $mapper->getScientificName($taxonID));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -152,8 +151,7 @@ $app->get('/name/{taxonID}', function (Request $request, Response $response, arr
     $data = array('uuid'           => $mapper->getUuid($taxonID),
                   'url'            => $mapper->getUuidUrl(),
                   'taxonID'        => $taxonID,
-                  'scientificName' => $mapper->getScientificName($taxonID),
-                  'taxonName'      => $mapper->getTaxonName($taxonID));
+                  'scientificName' => $mapper->getScientificName($taxonID));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -180,7 +178,7 @@ $app->get('/find/{term}', function (Request $request, Response $response, array 
 
     $mapper = new JACQscinamesMapper($this->db, array('jacq_input_services' => $this->get('settings')['jacq_input_services'],
                                                       'apikey' => $this->get('settings')['APIKEY']));
-    $data = $mapper->findScientificName(trim(filter_var($args['term'], FILTER_SANITIZE_STRING)));
+    $data = $mapper->findScientificName(trim(filter_var($args['term'], FILTER_SANITIZE_STRING)), intval($request->getQueryParam('withsyn')));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });
@@ -212,8 +210,7 @@ $app->get('/resolve/{uuid}', function (Request $request, Response $response, arr
     $data = array('uuid'           => $uuid,
                   'url'            => $mapper->getUuidUrl(),
                   'taxonID'        => $taxonID,
-                  'scientificName' => $mapper->getScientificName($taxonID),
-                  'taxonName'      => $mapper->getTaxonName($taxonID));
+                  'scientificName' => $mapper->getScientificName($taxonID));
     $jsonResponse = $response->withJson($data);
     return $jsonResponse;
 });

@@ -35,7 +35,7 @@ public function searchAll(string $name): array
     $this->scinames['searchString'] = $name;
     $this->scinames['results'] = array();
 
-    $client = new Client(['timeout' => 8]);
+    $client = new Client(['timeout' => 8, 'verify' => false]);
     $promises = array();
     foreach ($this->externalServices as $key => $externalService) {
         $promises[$key] = $client->getAsync($externalService['url'] . urlencode($this->scinames['searchString']));
