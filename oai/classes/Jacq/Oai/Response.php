@@ -5,6 +5,7 @@ namespace Jacq\Oai;
 use DateTime;
 use DateTimeZone;
 use Exception;
+use Jacq\Settings;
 use mysqli;
 
 class Response
@@ -13,23 +14,22 @@ class Response
 private mysqli $db;
 private array $params;
 private bool $errorOccurred;
-private string $baseURL = 'https://services.jacq.org/jacq-services/oai/';
-private string $identifierPrefixJacq = "oai:jacq.org:";
-private array $setsAllowed = [1, 4, 5, 6, 55];
-private array $setsAllowedGbif = [10001, 10002];
+private Settings $settings;
 private XMLOaiWriter $xml;
 
-/**
- * class constructor. Validate all parameters and prepare the xml.
- *
- * @param mysqli $db instance of mysqli-database
- * @param array $params all parameters extracted either from $_GET or $_POST
- */
-public function __construct(mysqli $db, array $params)
+    /**
+     * class constructor. Validate all parameters and prepare the xml.
+     *
+     * @param mysqli $db instance of mysqli-database
+     * @param array $params all parameters extracted either from $_GET or $_POST
+     * @param Settings $settings class to get all settings from inc/variables.php
+     */
+public function __construct(mysqli $db, array $params, Settings $settings)
 {
     $this->db            = $db;
     $this->params        = $params;
     $this->errorOccurred = false;
+    $this->settings      = $settings;
 
     $this->xml = new XMLOaiWriter();
     $this->xml->openMemory();
@@ -92,7 +92,7 @@ private function identify(): void
 
     $this->xml->startElement('Identify');
         $this->xml->writeElement('repositoryName', 'JACQ');
-        $this->xml->writeElement('baseURL', $this->baseURL);
+        $this->xml->writeElement('baseURL', $this->settings->get('BASEURL'));
         $this->xml->writeElement('protocolVersion', '2.0');
         $this->xml->writeElement('earliestDatestamp', '2004-11-01T00:00:00Z');
         $this->xml->writeElement('deletedRecord', 'no');
@@ -134,11 +134,10 @@ private function listSets(): void
 {
     $sets = $this->db->query("SELECT MetadataID, OwnerOrganizationName 
                                FROM metadata
-                               WHERE MetadataID IN (" . implode(',', $this->setsAllowed) . ")
+                               WHERE MetadataID IN (" . implode(',', $this->settings->get('SETSALLOWED')) . ")
                               UNION
                               SELECT source_id AS MetadataID, OwnerOrganizationName 
                                FROM gbif_cache.sources
-                               WHERE source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
                               ORDER BY MetadataID")
                      ->fetch_all(MYSQLI_ASSOC);
 
@@ -218,7 +217,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
                                   WHERE s.`accessible` = 1
                                    AND s.`digital_image` = 1
                                    AND s.HerbNummer IS NOT NULL
-                                   AND mc.source_id IN (" . implode(',', $this->setsAllowed) . ")
+                                   AND mc.source_id IN (" . implode(',', $this->settings->get('SETSALLOWED')) . ")
                                    $constraint
                                    $constraintSourceJ
                                   ORDER BY s.specimen_ID
@@ -241,8 +240,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
     if ($limitG) {
         $rowsG = $this->db->query("SELECT s.specimen_ID, s.aktualdatum, s.source_id
                                    FROM gbif_cache.specimens s
-                                   WHERE s.source_id IN (" . implode(',', $this->setsAllowedGbif) . ")
-                                    AND s.json IS NOT NULL
+                                   WHERE s.json IS NOT NULL
                                     $constraint
                                     $constraintSourceG
                                    ORDER BY s.specimen_ID
@@ -261,7 +259,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
         $this->xml->startElement('ListIdentifiers');
         foreach ($rows as $row) {
             $this->xml->startElement('header');
-                $this->xml->writeElement('identifier', $this->identifierPrefixJacq . (($row['source_id'] > 10000) ? 'g' : '') . $row['specimen_ID']);
+                $this->xml->writeElement('identifier', $this->settings->get('IDENTIFIER_PREFIXJACQ') . (($row['source_id'] > 10000) ? 'g' : '') . $row['specimen_ID']);
                 $this->xml->writeElement('datestamp', $this->changeTimeZone($row['aktualdatum'], 'Europe/Vienna', 'UTC'));
                 $this->xml->writeElement('setSpec', "source_{$row['source_id']}");
             $this->xml->endElement();
@@ -272,7 +270,7 @@ private function listIdentifiersRecords(bool $identifiersOnly = false): void
             if ($row['source_id'] > 10000) {
                 $specimen = new SpecimenGbifMapper($this->db, $row['specimen_ID']);
             } else {
-                $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
+                $specimen = new SpecimenMapper($this->db, $row['specimen_ID'], $this->settings);
             }
             if ($specimen->isValid()) {
                 $this->exportRecord($specimen, $arguments['metadataPrefix']);
@@ -304,13 +302,13 @@ private function getRecord(): void
         $this->error('cannotDisseminateFormat', "The metadata format '{$this->params['metadataPrefix']}' is not supported by this repository.");
         return;
     }
-    $id = substr($this->params['identifier'], strlen($this->identifierPrefixJacq));
+    $id = substr($this->params['identifier'], strlen($this->settings->get('IDENTIFIER_PREFIXJACQ')));
     if (substr($id, 0, 1) == 'g') {
         $specimen = new SpecimenGbifMapper($this->db, intval(substr($id, 1)));
     } else {
-        $specimen = new SpecimenMapper($this->db, intval($id));
+        $specimen = new SpecimenMapper($this->db, intval($id), $this->settings);
     }
-    if (!str_starts_with($this->params['identifier'], $this->identifierPrefixJacq) || !$specimen->isValid()) {
+    if (!str_starts_with($this->params['identifier'], $this->settings->get('IDENTIFIER_PREFIXJACQ')) || !$specimen->isValid()) {
         $this->error('idDoesNotExist', "The identifier '{$this->params['identifier']}' does not exist.");
         return;
     }
@@ -336,7 +334,7 @@ private function exportRecord(SpecimenInterface $specimen, string $metadataPrefi
 {
     $this->xml->startElement('record');
         $this->xml->startElement('header');
-            $this->xml->writeElement('identifier', $this->identifierPrefixJacq . $specimen->getSpecimenID());
+            $this->xml->writeElement('identifier', $this->settings->get('IDENTIFIER_PREFIXJACQ') . $specimen->getSpecimenID());
             $this->xml->writeElement('datestamp', $this->changeTimeZone($specimen->getProperty('aktualdatum'), 'Europe/Vienna', 'UTC'));
             $this->xml->writeElement('setSpec', "source_" . $specimen->getProperty('source_id'));
         $this->xml->endElement();
@@ -453,7 +451,7 @@ private function request(bool $baseUrlOnly = false): void
             }
         }
     }
-    $this->xml->text($this->baseURL);
+    $this->xml->text($this->settings->get('BASEURL'));
     $this->xml->endElement();
 }
 

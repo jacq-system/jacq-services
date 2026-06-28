@@ -2,6 +2,7 @@
 
 namespace Jacq\Oai;
 
+use Jacq\Settings;
 use mysqli;
 
 class SpecimenMapper implements SpecimenInterface
@@ -10,7 +11,7 @@ class SpecimenMapper implements SpecimenInterface
 protected mysqli $db;
 protected int $specimenID = 0;
 protected bool $isValid = false;
-private string $baseURL = 'https://services.jacq.org/jacq-services/rest';
+private Settings $settings;
 
 /**
  * holds the specimen properties
@@ -24,10 +25,12 @@ protected array $properties = array();
  *
  * @param mysqli $db instance of mysqli-database
  * @param mixed $id either specimen-ID (int) or stable Identifier (string)
+ * @param Settings $settings class to get all settings from inc/variables.php
  */
-public function __construct(mysqli $db, mixed $id)
+public function __construct(mysqli $db, mixed $id, Settings $settings)
 {
-    $this->db = $db;
+    $this->db       = $db;
+    $this->settings = $settings;
 
     if (empty($id)) {
         return;  // nothing to look for, so just stop
@@ -164,11 +167,11 @@ public function __construct(mysqli $db, mixed $id)
                                        WHERE specimen_ID = $this->specimenID")
                               ->fetch_assoc();
         $nrOfImages = $rowImages['nr'] ?? 1;
-        $media[] = array('download'  => $this->baseURL . "/images/download/" . $this->specimenID . "?withredirect=1",
-                         'europeana' => $this->baseURL . "/images/europeana/" . $this->specimenID . "?withredirect=1");
+        $media[] = array('download'  => $this->settings->get('IMAGESBASEURL') . "download/" . $this->specimenID . "?withredirect=1",
+                         'europeana' => $this->settings->get('IMAGESBASEURL') . "europeana/" . $this->specimenID . "?withredirect=1");
         for ($i = 1; $i < $nrOfImages; $i++) {
-            $media[] = array('download'  => $this->baseURL . "/images/download/" . $this->specimenID . "/$i?withredirect=1",
-                             'europeana' => $this->baseURL . "/images/europeana/" . $this->specimenID . "/$i?withredirect=1");
+            $media[] = array('download'  => $this->settings->get('IMAGESBASEURL') . "download/" . $this->specimenID . "/$i?withredirect=1",
+                             'europeana' => $this->settings->get('IMAGESBASEURL') . "europeana/" . $this->specimenID . "/$i?withredirect=1");
         }
 
 

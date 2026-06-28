@@ -25,5 +25,5 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET');
 header('Content-Type: text/xml;charset=UTF-8');
 
-$response = new Jacq\Oai\Response($dbLink, $params);
+$response = new Jacq\Oai\Response($dbLink, $params, $settings);
 echo $response->getXml()->flush();
