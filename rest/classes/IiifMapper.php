@@ -57,28 +57,40 @@ public function getManifest(int $specimenID): array
             $result = $this->getManifestIiifServer($row['specimen_ID']);
         } else {
             $client = new Client();
-            $response = $client->request('GET', $manifestBackend)->getBody()->getContents();
-            $result = (!empty($response)) ? json_decode($response, true) : array();
+            error_log("GET: $manifestBackend");
+            try {
+                $response = $client->request('GET', $manifestBackend)->getBody()->getContents();
+                $result = (!empty($response)) ? json_decode($response, true) : array();
+            } catch (GuzzleException $e) {
+            }
         }
         
         if ($result && !$fallback) {  // we used a true backend, so enrich the manifest with additional data
-            $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
-
-            $result['@id']         = $this->getServiceBaseUrl() . "/iiif/manifest/$specimenID";  // to point at ourselves
-            $result['description'] = $specimen->getDescription();
-            $result['label']       = $specimen->getLabel();
-            $result['attribution'] = $specimen->getAttribution();
-            $result['logo']        = array('@id' => $specimen->getLogoURI());
-            $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
-                                           'label'   => 'RDF',
-                                           'format'  => 'application/rdf+xml',
-                                           'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
-            if (empty($result['seeAlso'])) {
-                $result['seeAlso'] = array($rdfLink);
-            } else {
-                $result['seeAlso'][] = $rdfLink;
+            // first get the version of the manifest
+            $version = 2;
+            if (is_array($result['@context']) && in_array("http://iiif.io/api/presentation/2/context.json", $result['@context'])) {
+                $version = 3;
             }
-            $result['metadata'] = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
+            // only continue if we found a version 2 manifest
+            if ($version == 2) {
+                $specimen = new SpecimenMapper($this->db, $row['specimen_ID']);
+
+                $result['@id']         = $this->getServiceBaseUrl() . "/iiif/manifest/$specimenID";  // to point at ourselves
+                $result['description'] = $specimen->getDescription();
+                $result['label']       = $specimen->getLabel();
+                $result['attribution'] = $specimen->getAttribution();
+                $result['logo']        = array('@id' => $specimen->getLogoURI());
+                $rdfLink               = array('@id'     => $specimen->getStableIdentifier(),
+                                               'label'   => 'RDF',
+                                               'format'  => 'application/rdf+xml',
+                                               'profile' => 'https://cetafidentifiers.biowikifarm.net/wiki/CSPP');
+                if (empty($result['seeAlso'])) {
+                    $result['seeAlso'] = array($rdfLink);
+                } else {
+                    $result['seeAlso'][] = $rdfLink;
+                }
+                $result['metadata'] = $this->getMetadataWithValues($specimen, (isset($result['metadata'])) ? $result['metadata'] : array());
+            }
         }
     }
     return $result;
