@@ -163,10 +163,12 @@ private function iiif()
     $manifest = $iiif->getManifest($this->specimenID);
     if ($manifest) {
         $version = 2;
-        foreach ($manifest['@context'] as $context) {
-            if ($context == "http://iiif.io/api/presentation/3/context.json") {
-                $version = 3;
-                break;
+        if (is_array($manifest['@context'])) {
+            foreach ($manifest['@context'] as $context) {
+                if ($context == "http://iiif.io/api/presentation/3/context.json") {
+                    $version = 3;
+                    break;
+                }
             }
         }
         if ($version == 2) {
