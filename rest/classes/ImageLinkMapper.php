@@ -31,19 +31,13 @@ public function getDownloadLink(int $nr = 0): mixed
 
 public function getEuropeanaLink(int $nr = 0): mixed
 {
-    if ($nr < 1) { // only do this, if it's the first (main) image
-        $filesize = $this->db->query("SELECT filesize
-                                  FROM gbif_pilot.europeana_images
-                                  WHERE `specimen_ID` = $this->specimenID")
-                             ->fetch_assoc();
-        if (($filesize['filesize'] ?? 0) > 1500) {  // use europeana-cache only for images without errors
-            $sourceCode = $this->db->query("SELECT m.source_code 
-                                            FROM `tbl_specimens` s
-                                             LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
-                                             LEFT JOIN `meta` m ON m.source_id = mc.source_id 
-                                            WHERE s.`specimen_ID` = $this->specimenID")
-                                   ->fetch_array()['source_code'];
-            return "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
+    if ($nr < 1) { // only do this if it's the first (main) image
+        $url = $this->db->query("SELECT url
+                                 FROM gbif_pilot.europeana_images
+                                 WHERE `specimen_ID` = $this->specimenID")
+                        ->fetch_assoc();
+        if (!empty($url['url'])) {  // use europeana-cache only for images without errors
+            return $url['url'];
         }
     }
     $this->linkbuilder();
@@ -219,7 +213,7 @@ private function djatoka()
     $specimen = $this->db->query("SELECT s.`HerbNummer`, 
                                    id.imgserver_url, id.`HerbNummerNrDigits`, id.`key`,
                                    mc.`coll_short_prj`, mc.`picture_filename`, mc.`source_id`,
-                                   ei.filesize
+                                   ei.url
                                   FROM `tbl_specimens` s
                                    LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
                                    LEFT JOIN `tbl_img_definition` id         ON id.`source_id_fk` = mc.`source_id`
@@ -324,16 +318,10 @@ private function djatoka()
         foreach ($images as $image) {
             $this->imageLinks[] = 'https://www.jacq.org/image?' . $image . '&method=show';
             $this->fileLinks['full'][] = 'https://www.jacq.org/image?' . $image . '&method=download';
-            if (($specimen['filesize'] ?? 0) > 1500 && $firstImage) {  // use europeana-cache only for images without errors and only for the first image
-                $sourceCode = $this->db->query("SELECT m.source_code 
-                                                FROM `tbl_specimens` s
-                                                 LEFT JOIN `tbl_management_collections` mc ON mc.`collectionID` = s.`collectionID`
-                                                 LEFT JOIN `meta` m ON m.source_id = mc.source_id 
-                                                WHERE s.`specimen_ID` = $this->specimenID")
-                                       ->fetch_array()['source_code'];
-                $this->fileLinks['europeana'][] = "https://object.jacq.org/europeana/$sourceCode/$this->specimenID.jpg";
+            if (!empty($specimen['url']) && $firstImage) {  // use europeana-cache only for images without errors and only for the first image
+                $this->fileLinks['europeana'][] = $specimen['url'];
             } else {
-                $this->fileLinks['europeana'][] = 'https://www.jacq.org/image?' . $image . '&method=europeana';
+                $this->fileLinks['europeana'][] = 'https://methus.jacq.org/image.php?' . $image . '&method=europeana';
             }
             $this->fileLinks['thumb'][] = 'https://www.jacq.org/image?' . $image . '&method=thumb';
             $firstImage = false;
